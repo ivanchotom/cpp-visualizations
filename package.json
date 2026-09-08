@@ -1,0 +1,36 @@
+{
+  "name": "cpp-visualizations",
+  "version": "0.1.0",
+  "description": "An interactive, web-based C++ visual cheat sheet explaining data types, memory layouts, and common patterns.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host",
+    "typecheck": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ivanchotom/cpp-visualizations.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ivanchotom/cpp-visualizations/issues"
+  },
+  "homepage": "https://github.com/ivanchotom/cpp-visualizations#readme",
+  "type": "module",
+  "private": "true",
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2"
+  }
+}
