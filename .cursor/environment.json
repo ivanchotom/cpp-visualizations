@@ -1,0 +1,17 @@
+{
+  "name": "cpp-visualizations",
+  "install": "npm ci",
+  "terminals": [
+    {
+      "name": "dev-server",
+      "command": "npm run dev",
+      "description": "Vite dev server for the C++ visual cheat sheet (http://localhost:5173)."
+    }
+  ],
+  "ports": [
+    {
+      "name": "web",
+      "port": 5173
+    }
+  ]
+}
