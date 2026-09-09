@@ -1,7 +1,7 @@
 {
   "name": "cpp-visualizations",
   "version": "0.1.0",
-  "description": "An interactive, web-based C++ visual cheat sheet explaining data types, memory layouts, and common patterns.",
+  "description": "An interactive C++14 visual cheatsheet covering the language, memory model, standard library, and idioms.",
   "main": "index.js",
   "scripts": {
     "dev": "vite --host",

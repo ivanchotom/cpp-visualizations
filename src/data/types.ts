@@ -146,6 +146,29 @@ export const cppTypes: CppType[] = [
     range: 'one memory address',
     note: 'Pointer size matches the address width: 8 bytes on 64-bit systems.',
   },
+  {
+    name: 'wchar_t',
+    category: 'character',
+    bytes: 4,
+    range: 'UTF-32 code unit (Linux)',
+    note: 'Wide character. 4 bytes on LP64, 2 bytes on Windows. Prefer char16_t/char32_t.',
+    signed: false,
+  },
+  {
+    name: 'std::size_t',
+    category: 'integer',
+    bytes: 8,
+    range: '0 to 1.84e19',
+    note: 'Unsigned size of objects / array index. Returned by sizeof.',
+    signed: false,
+  },
+  {
+    name: 'std::nullptr_t',
+    category: 'pointer',
+    bytes: 8,
+    range: 'nullptr only',
+    note: 'Type of nullptr. Converts to any pointer; not an integer.',
+  },
 ]
 
 export const categoryLabels: Record<TypeCategory, string> = {

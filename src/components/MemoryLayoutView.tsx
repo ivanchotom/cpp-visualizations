@@ -40,16 +40,7 @@ export function MemoryLayoutView() {
   }
 
   return (
-    <section className="view">
-      <header className="view-head">
-        <h1>Struct Memory Layout</h1>
-        <p>
-          The compiler inserts <strong>padding</strong> so every member is properly
-          aligned. Reorder or change members and watch the total size — and wasted
-          space — change.
-        </p>
-      </header>
-
+    <div className="viz-root">
       <div className="palette">
         <span className="palette-label">Add member:</span>
         {memberTypes.map((t) => (
@@ -139,6 +130,6 @@ export function MemoryLayoutView() {
           </p>
         </div>
       </div>
-    </section>
+    </div>
   )
 }

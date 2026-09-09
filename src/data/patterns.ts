@@ -81,4 +81,42 @@ auto other = std::move(data); // steal buffer`,
     explanation:
       'Move semantics transfer ownership of an object\'s internal resources instead of duplicating them, avoiding expensive deep copies.',
   },
+  {
+    title: 'Erase-remove',
+    tagline: 'Delete matching elements from a vector',
+    code: `v.erase(
+    std::remove_if(v.begin(), v.end(),
+                   [](int x) { return x < 0; }),
+    v.end());`,
+    explanation:
+      'std::remove_if only slides keepers forward and returns the new logical end. erase the tail or the elements stay.',
+  },
+  {
+    title: 'Copy-and-swap',
+    tagline: 'Assignment that is strongly exception-safe',
+    code: `T& operator=(T other) noexcept {
+  using std::swap;
+  swap(*this, other);
+  return *this;
+}`,
+    explanation:
+      'Take the rhs by value (copy or move), then swap. If the copy throws, *this is unchanged. other cleans up the old state.',
+  },
+  {
+    title: 'PIMPL',
+    tagline: 'Hide implementation behind a pointer',
+    code: `class Widget {
+public:
+  Widget();
+  ~Widget();
+  Widget(Widget&&) noexcept;
+  Widget& operator=(Widget&&) noexcept;
+  void draw() const;
+private:
+  struct Impl;
+  std::unique_ptr<Impl> impl_;
+};`,
+    explanation:
+      'The public header stays stable and cheap to include. The destructor must be defined where Impl is complete.',
+  },
 ]
