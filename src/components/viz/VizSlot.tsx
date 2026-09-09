@@ -15,6 +15,12 @@ import { InheritanceViz } from './InheritanceViz.tsx'
 import { ExceptionsViz } from './ExceptionsViz.tsx'
 import { ContainersViz } from './ContainersViz.tsx'
 import { OwnershipViz } from './OwnershipViz.tsx'
+import { TemplatesViz } from './TemplatesViz.tsx'
+import { SfinaeViz } from './SfinaeViz.tsx'
+import { ForwardingViz } from './ForwardingViz.tsx'
+import { VtableViz } from './VtableViz.tsx'
+import { AlgorithmsViz } from './AlgorithmsViz.tsx'
+import { InvalidationViz } from './InvalidationViz.tsx'
 
 const registry: Record<VizKind, () => ReactElement> = {
   types: () => <DataTypesView />,
@@ -32,6 +38,12 @@ const registry: Record<VizKind, () => ReactElement> = {
   exceptions: () => <ExceptionsViz />,
   containers: () => <ContainersViz />,
   ownership: () => <OwnershipViz />,
+  templates: () => <TemplatesViz />,
+  sfinae: () => <SfinaeViz />,
+  forwarding: () => <ForwardingViz />,
+  vtable: () => <VtableViz />,
+  algorithms: () => <AlgorithmsViz />,
+  invalidation: () => <InvalidationViz />,
 }
 
 export function VizSlot({ kind }: { kind: VizKind }) {

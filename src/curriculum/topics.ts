@@ -150,7 +150,7 @@ std::size_t   n = 0;     // unsigned, object size / index`,
       'Mixing signed and unsigned in comparisons: -1 < 1u is false because -1 converts to a huge unsigned.',
       'Using float for money or exact decimals.',
     ],
-    related: ['cv-qualifiers', 'layout', 'literals', 'conversions'],
+    related: ['cv-qualifiers', 'layout', 'literals', 'enums'],
   },
   {
     id: 'cv-qualifiers',
@@ -398,7 +398,7 @@ int counter() {
       'Static initialization order across TUs (“SIOF”) is unspecified — don’t have globals depend on other globals.',
       'A reference bound to a function-local that already died is a dangling reference.',
     ],
-    related: ['lifetime', 'stack-heap', 'functions'],
+    related: ['lifetime', 'stack-heap', 'adl'],
   },
   {
     id: 'conversions',
@@ -628,7 +628,7 @@ struct Good { double d; int n; char c; };
       'Assuming members occupy consecutive bytes.',
       'Bit-fields and virtual bases have extra layout rules (vtables, vbptrs).',
     ],
-    related: ['types', 'inheritance', 'classes'],
+    related: ['types', 'inheritance', 'unions-bitfields'],
   },
   {
     id: 'value-categories',
@@ -816,7 +816,7 @@ auto add(int a, int b) -> int {
       'Putting non-inline function definitions in headers.',
       'Ambiguous overloads after default arguments are filled in.',
     ],
-    related: ['overloading', 'pass-by', 'compilation'],
+    related: ['overloading', 'function-pointers', 'pass-by'],
   },
   {
     id: 'overloading',
@@ -859,7 +859,7 @@ draw(1);      // ok, int
       'initializer_list constructors being greedy with braces.',
       'Using-declaration of a base function is needed if you overload in the derived class (otherwise the base is hidden).',
     ],
-    related: ['functions', 'conversions', 'templates', 'inheritance'],
+    related: ['functions', 'conversions', 'adl', 'templates'],
   },
   {
     id: 'pass-by',
@@ -905,7 +905,7 @@ store(std::string{"tmp"});    // constructs into the parameter`,
       'T&& on a non-template function is just an rvalue reference — it will not bind to lvalues.',
       'std::forward only on forwarding references, std::move on owned rvalues you are done with.',
     ],
-    related: ['value-categories', 'copy-move', 'pointers-refs', 'smart-pointers'],
+    related: ['value-categories', 'copy-move', 'forwarding', 'smart-pointers'],
   },
   {
     id: 'lambdas',
@@ -1102,7 +1102,7 @@ public:
       'Generating a copy of a type that owns a raw pointer → double free.',
       'Declaring an empty destructor “for virtuality” without =default on moves.',
     ],
-    related: ['copy-move', 'rule-of-zero', 'polymorphism'],
+    related: ['copy-move', 'rule-of-zero', 'pimpl'],
   },
   {
     id: 'lifetime',
@@ -1200,6 +1200,7 @@ struct Derived : Base {
     blurb: 'Dynamic dispatch and vtables',
     track: 'classes',
     keywords: ['virtual', 'vtable', 'override', 'pure virtual'],
+    viz: 'vtable',
     summary:
       'virtual means “call the most-derived override at runtime.” Compilers typically implement this with a vptr in the object pointing at a vtable of function pointers. You pay a slot in the object and an indirect call.',
     facts: [
@@ -1237,7 +1238,7 @@ private:
       'Forgetting override and accidentally creating a new function (wrong const or parameter).',
       'A vtable is per-class, a vptr is per-object (two with multiple polymorphic bases).',
     ],
-    related: ['inheritance', 'layout', 'conversions', 'special-members'],
+    related: ['inheritance', 'layout', 'access-control', 'special-members'],
   },
   {
     id: 'operator-overloading',
@@ -1294,6 +1295,7 @@ inline Vec operator+(Vec a, const Vec& b) {
     blurb: 'Code generation with types as parameters',
     track: 'templates',
     keywords: ['template', 'generic', 'instantiation', 'two-phase'],
+    viz: 'templates',
     summary:
       'A template is a recipe. Instantiation stamps out a real function or class for a given set of arguments. Errors often appear at the use site, deep in a stack of substitutions. Keep templates thin and constraints obvious.',
     facts: [
@@ -1331,7 +1333,7 @@ auto s = maxof<std::string>("a", "b");`,
       'Using a dependent type without typename.',
       'Uncontrolled instantiation bloat — hide the heavy part behind a non-template .cpp when types are few.',
     ],
-    related: ['specialization', 'type-traits', 'overloading', 'compilation'],
+    related: ['specialization', 'type-traits', 'template-deduction', 'forwarding'],
     later: [
       { standard: 'C++20', note: 'Concepts and requires-clauses replace most enable_if soup.' },
     ],
@@ -1342,6 +1344,7 @@ auto s = maxof<std::string>("a", "b");`,
     blurb: 'Custom recipes and substitution failure',
     track: 'templates',
     keywords: ['specialization', 'partial', 'SFINAE', 'enable_if'],
+    viz: 'sfinae',
     summary:
       'Full specialization replaces the recipe for exact arguments. Partial specialization (classes only) is a more specific recipe. SFINAE: a substitution that would be invalid quietly removes an overload instead of erroring — that’s how enable_if works.',
     facts: [
@@ -1419,7 +1422,7 @@ using value_t = typename std::iterator_traits<It>::value_type;`,
       'decltype((x)) is a reference (extra parens make an lvalue expression).',
       'Traits on incomplete types are often ill-formed or unspecified.',
     ],
-    related: ['templates', 'specialization', 'constexpr'],
+    related: ['templates', 'specialization', 'variadic-templates'],
     later: [
       { standard: 'C++17', note: 'if constexpr, void_t in std, bool_constant convenience.' },
     ],
@@ -1618,6 +1621,7 @@ std::unordered_map<std::string, int> fast;`,
     blurb: 'The glue between containers and algorithms',
     track: 'stdlib',
     keywords: ['iterator', 'begin', 'end', 'invalidation', 'category'],
+    viz: 'invalidation',
     summary:
       'An iterator is a generalized pointer: *it, ++it, and a half-open range [begin, end). Categories (input → random access) describe what you may do. Invalidation rules are per-container — that’s the table you actually need.',
     facts: [
@@ -1662,6 +1666,7 @@ std::unordered_map<std::string, int> fast;`,
     blurb: '<algorithm> instead of raw loops',
     track: 'stdlib',
     keywords: ['sort', 'find', 'transform', 'accumulate', 'binary_search'],
+    viz: 'algorithms',
     summary:
       'The STL algorithms are named loops with known complexity. They operate on iterator ranges. Learn find/find_if, sort, lower_bound, transform, copy_if, accumulate — then reach for the rest as needed.',
     facts: [
@@ -1883,7 +1888,7 @@ t.join();`,
       'Deadlock: two mutexes locked in opposite order. std::lock / scoped_lock (C++17) help.',
       'Capturing [&] into a thread that outlives the locals.',
     ],
-    related: ['undefined-behavior', 'smart-pointers', 'exceptions', 'cv-qualifiers'],
+    related: ['undefined-behavior', 'smart-pointers', 'atomics', 'cv-qualifiers'],
     later: [
       { standard: 'C++20', note: 'std::jthread (joins on destroy), std::stop_token, std::atomic_ref, latch/barrier/semaphore.' },
     ],
@@ -1980,7 +1985,7 @@ public:
       'Mixing a raw owning pointer with Rule of Zero thinking.',
       'Forgetting virtual ~Base() = default on a polymorphic base.',
     ],
-    related: ['special-members', 'smart-pointers', 'patterns', 'classes'],
+    related: ['special-members', 'smart-pointers', 'pimpl', 'classes'],
   },
   {
     id: 'undefined-behavior',

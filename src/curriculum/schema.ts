@@ -24,6 +24,12 @@ export type VizKind =
   | 'exceptions'
   | 'containers'
   | 'ownership'
+  | 'templates'
+  | 'sfinae'
+  | 'forwarding'
+  | 'vtable'
+  | 'algorithms'
+  | 'invalidation'
 
 export interface Fact {
   label: string

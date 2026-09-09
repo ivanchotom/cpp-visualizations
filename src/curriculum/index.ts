@@ -1,10 +1,12 @@
 import { tracks } from './tracks.ts'
-import { topics } from './topics.ts'
+import { moreTopics } from './topics.more.ts'
+import { topics as coreTopics } from './topics.ts'
 import type { Topic, Track, TrackId } from './schema.ts'
 
 export type { Topic, Track, TrackId, VizKind, Fact, CodeSample, LaterNote } from './schema.ts'
 export { tracks } from './tracks.ts'
-export { topics } from './topics.ts'
+
+export const topics: Topic[] = [...coreTopics, ...moreTopics]
 
 const topicById = new Map(topics.map((t) => [t.id, t]))
 const trackById = new Map(tracks.map((t) => [t.id, t]))
@@ -52,6 +54,10 @@ for (const track of tracks) {
 for (const topic of topics) {
   if (!trackById.has(topic.track)) {
     throw new Error(`Topic "${topic.id}" has unknown track "${topic.track}"`)
+  }
+  const home = trackById.get(topic.track)
+  if (home && !home.topicIds.includes(topic.id)) {
+    throw new Error(`Topic "${topic.id}" is not listed on track "${topic.track}"`)
   }
   for (const id of topic.related) {
     if (!topicById.has(id)) {

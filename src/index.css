@@ -1249,6 +1249,239 @@ pre {
   line-height: 1.6;
 }
 
+/* ---------- New visualizations ---------- */
+.tpl-board,
+.vt-board {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.tpl-stamps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.tpl-card {
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  padding: 10px 12px;
+  min-width: 180px;
+  opacity: 0.45;
+}
+
+.tpl-card--recipe,
+.tpl-card--on {
+  opacity: 1;
+  border-style: solid;
+  border-color: rgba(0, 163, 255, 0.45);
+}
+
+.tpl-card pre {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.tpl-kicker {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sfinae-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sfinae-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--bg);
+}
+
+.sfinae-card p {
+  margin: 8px 0 0;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.sfinae-card--ok {
+  border-color: #98c379;
+  background: rgba(152, 195, 121, 0.1);
+}
+
+.sfinae-card--fail {
+  opacity: 0.55;
+  text-decoration: none;
+}
+
+.sfinae-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  color: var(--text-dim);
+}
+
+.sfinae-card--ok .sfinae-tag {
+  color: #98c379;
+}
+
+.fwd-sig {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  margin: 0 0 12px;
+}
+
+.vt-object,
+.vt-table {
+  flex: 1;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vt-slot {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: var(--bg);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.vt-slot span {
+  color: var(--text-dim);
+}
+
+.vt-slot--on {
+  border-color: var(--accent);
+  background: rgba(0, 163, 255, 0.12);
+  font-weight: 650;
+}
+
+.algo-row,
+.list-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.algo-cell {
+  min-width: 52px;
+  border: 1px solid rgba(0, 163, 255, 0.4);
+  background: linear-gradient(135deg, rgba(0, 163, 255, 0.18), rgba(0, 89, 156, 0.3));
+  border-radius: 8px;
+  padding: 10px 8px 6px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.algo-cell--empty {
+  background: transparent;
+  border-style: dashed;
+  color: var(--text-dim);
+}
+
+.algo-cell--junk {
+  opacity: 0.4;
+  border-style: dashed;
+}
+
+.algo-cell--write {
+  border-color: #98c379;
+  box-shadow: inset 0 -3px 0 #98c379;
+}
+
+.algo-cell--read {
+  border-color: var(--accent);
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+
+.algo-cell--it {
+  border-color: var(--warn);
+  box-shadow: inset 0 -3px 0 var(--warn);
+}
+
+.algo-val {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.algo-idx {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.inv-meta {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+.inv-dang {
+  color: #e06c75;
+  font-weight: 700;
+}
+
+.list-node-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.list-node {
+  border: 1px solid rgba(0, 163, 255, 0.45);
+  background: var(--bg-elev-2);
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-family: var(--mono);
+  font-weight: 650;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.list-node--it {
+  border-color: var(--warn);
+  box-shadow: inset 0 0 0 1px var(--warn);
+}
+
+.chip:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 /* ---------- Patterns ---------- */
 .pattern-grid {
   display: grid;
