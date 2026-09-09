@@ -1,6 +1,6 @@
 # cpp-visualizations
 
-An interactive C++14 cheatsheet: eight tracks, forty topics, and live visualizations for the parts of the language that are easier to *see* than to recite.
+An interactive C++14 cheatsheet: eight tracks, 45 topics, and 15 live visualizations for the parts of the language that are easier to *see* than to recite.
 
 It is a single-page app (React 19 + TypeScript + Vite) with hash routes (`#/` overview, `#/t/<topic>`). Search the sidebar, open a topic, and — where a cyan dot appears — play with a visualization.
 

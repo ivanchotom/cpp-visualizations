@@ -88,7 +88,7 @@ export function Sidebar({
       </nav>
 
       <footer className="sidebar-foot">
-        {filtered.length} topics · LP64 sizes
+        {filtered.length} topic{filtered.length === 1 ? '' : 's'} · LP64 sizes
         <br />
         Snippets are C++14.
       </footer>
