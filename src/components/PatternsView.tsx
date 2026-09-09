@@ -15,15 +15,7 @@ export function PatternsView() {
   }
 
   return (
-    <section className="view">
-      <header className="view-head">
-        <h1>Common Patterns</h1>
-        <p>
-          Idiomatic, modern C++ snippets — all valid under the C++14 standard. Hover a
-          card and copy the code to try it out.
-        </p>
-      </header>
-
+    <div className="viz-root">
       <div className="pattern-grid">
         {cppPatterns.map((p) => (
           <article key={p.title} className="pattern-card">
@@ -47,6 +39,6 @@ export function PatternsView() {
           </article>
         ))}
       </div>
-    </section>
+    </div>
   )
 }

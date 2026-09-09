@@ -37,15 +37,7 @@ export function DataTypesView() {
   )
 
   return (
-    <section className="view">
-      <header className="view-head">
-        <h1>Fundamental Data Types</h1>
-        <p>
-          The building blocks of every C++ program. Click a row to inspect it. The bar
-          visualizes each type&apos;s width, one cell per byte.
-        </p>
-      </header>
-
+    <div className="viz-root">
       <div className="filters">
         {filters.map((f) => (
           <button
@@ -123,6 +115,6 @@ export function DataTypesView() {
           <p className="detail-note">{selected.note}</p>
         </aside>
       </div>
-    </section>
+    </div>
   )
 }
