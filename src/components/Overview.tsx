@@ -10,8 +10,9 @@ export function Overview() {
         <p>
           The original three views — sizes, padding, a handful of idioms — are still here.
           Around them is a full curriculum: compilation, memory, functions, classes,
-          templates, the standard library, and the pitfalls that actually bite. Every
-          topic is a compact cheatsheet. Dots in the sidebar mark a live visualization.
+          templates (instantiation, SFINAE, forwarding), the standard library, and the
+          pitfalls that actually bite. Every topic is a compact cheatsheet. Dots in the
+          sidebar mark a live visualization.
         </p>
       </header>
 

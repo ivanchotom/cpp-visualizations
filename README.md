@@ -1,19 +1,19 @@
 # cpp-visualizations
 
-An interactive C++14 cheatsheet: eight tracks, 45 topics, and 15 live visualizations for the parts of the language that are easier to *see* than to recite.
+An interactive C++14 cheatsheet: eight tracks, 56 topics, and 21 live visualizations for the parts of the language that are easier to *see* than to recite.
 
 It is a single-page app (React 19 + TypeScript + Vite) with hash routes (`#/` overview, `#/t/<topic>`). Search the sidebar, open a topic, and — where a cyan dot appears — play with a visualization.
 
 ## What’s here
 
-- **Foundations** — compilation pipeline, preprocessor, types, cv-qualifiers, literals, operators, control flow, scope, casts
+- **Foundations** — compilation pipeline, preprocessor, types, cv-qualifiers, literals, operators, control flow, scope, casts, enums, unions
 - **Memory & values** — stack vs heap, pointers/references, arrays, struct layout & padding, value categories, copy/move, new/delete
-- **Functions** — overloading, pass-by, lambdas, constexpr
-- **Classes** — special members, lifetime/ctor order, inheritance layouts, virtual dispatch, operator overloading
-- **Templates** — instantiation, specialization / SFINAE, type traits
+- **Functions** — overloading, pass-by, lambdas, constexpr, function pointers, ADL
+- **Classes** — special members, lifetime/ctor order, inheritance layouts, virtual dispatch / vtables, operator overloading, access control
+- **Templates** — instantiation, deduction, packs, perfect forwarding, specialization / SFINAE, type traits
 - **Errors** — exceptions & unwind, noexcept
-- **Standard library** — string, containers, iterators, algorithms, smart pointers, iostreams, chrono, threads
-- **Idioms** — RAII patterns, Rule of Zero, undefined behavior, const-correctness, classic pitfalls
+- **Standard library** — string, containers, iterator invalidation, erase-remove, smart pointers, pair/tuple, iostreams, chrono, threads, atomics
+- **Idioms** — RAII patterns, Rule of Zero, PIMPL, undefined behavior, const-correctness, classic pitfalls
 
 Snippets are C++14. Topics that changed later carry a short “Looking ahead” note for C++17/20/23 — they are not the examples.
 

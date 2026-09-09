@@ -16,6 +16,8 @@ export const tracks: Track[] = [
       'control-flow',
       'scope-namespaces',
       'conversions',
+      'enums',
+      'unions-bitfields',
     ],
   },
   {
@@ -38,7 +40,15 @@ export const tracks: Track[] = [
     title: 'Functions',
     blurb: 'Calling, overloading, and callables',
     icon: 'fn',
-    topicIds: ['functions', 'overloading', 'pass-by', 'lambdas', 'constexpr'],
+    topicIds: [
+      'functions',
+      'overloading',
+      'pass-by',
+      'lambdas',
+      'constexpr',
+      'function-pointers',
+      'adl',
+    ],
   },
   {
     id: 'classes',
@@ -52,6 +62,7 @@ export const tracks: Track[] = [
       'inheritance',
       'polymorphism',
       'operator-overloading',
+      'access-control',
     ],
   },
   {
@@ -59,7 +70,14 @@ export const tracks: Track[] = [
     title: 'Templates',
     blurb: 'Generic code generated at compile time',
     icon: '<T>',
-    topicIds: ['templates', 'specialization', 'type-traits'],
+    topicIds: [
+      'templates',
+      'template-deduction',
+      'variadic-templates',
+      'forwarding',
+      'specialization',
+      'type-traits',
+    ],
   },
   {
     id: 'errors',
@@ -80,8 +98,10 @@ export const tracks: Track[] = [
       'algorithms',
       'smart-pointers',
       'iostreams',
+      'pair-tuple',
       'chrono',
       'concurrency',
+      'atomics',
     ],
   },
   {
@@ -94,6 +114,7 @@ export const tracks: Track[] = [
       'rule-of-zero',
       'undefined-behavior',
       'const-correctness',
+      'pimpl',
       'pitfalls',
     ],
   },
