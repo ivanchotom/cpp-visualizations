@@ -1,0 +1,12 @@
+#!/bin/sh
+# Strip attribution trailers so GitHub does not list extra commit authors.
+msgfile="$1"
+tmp=$(mktemp)
+trap 'rm -f "$tmp"' EXIT
+sed -e '/^Co-authored-by:/d' \
+    -e '/^Co-Authored-By:/d' \
+    -e '/^Made-with:/d' \
+    -e '/^Made-With:/d' \
+    "$msgfile" > "$tmp"
+mv "$tmp" "$msgfile"
+trap - EXIT
