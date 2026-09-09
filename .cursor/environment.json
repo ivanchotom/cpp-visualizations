@@ -1,6 +1,6 @@
 {
   "name": "cpp-visualizations",
-  "install": "npm ci",
+  "install": "npm ci && sh scripts/setup-git-attribution.sh",
   "terminals": [
     {
       "name": "dev-server",

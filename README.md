@@ -29,5 +29,7 @@ npm run dev   # start the Vite dev server at http://localhost:5173
 ## Cloud Agent environment
 
 `.cursor/environment.json` configures the Cursor Cloud Agent environment: it runs
-`npm ci` on setup and launches `npm run dev` in a persistent terminal, exposing
-port 5173.
+`npm ci` on setup, then `scripts/setup-git-attribution.sh` (git hooks + Ivan as
+the only commit author), and launches `npm run dev` in a persistent terminal,
+exposing port 5173. Commits must not list Cursor as author or co-author; see
+`AGENTS.md`.

@@ -1,0 +1,11 @@
+---
+description: Git commits are Ivan-only; never Cursor co-author
+alwaysApply: true
+---
+
+Follow `AGENTS.md` section **Git attribution**.
+
+- Author and committer must be `Ivan <46633666+ivanchotom@users.noreply.github.com>`.
+- Never add `Co-authored-by:` or `Made-with:` trailers.
+- Pass `--author="Ivan <46633666+ivanchotom@users.noreply.github.com>"` on every `git commit`.
+- After committing, if `git log -1` shows Cursor, amend before pushing.
