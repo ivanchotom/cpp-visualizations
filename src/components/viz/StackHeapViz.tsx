@@ -1,118 +1,184 @@
-import { useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { curve, edge, usePrefersReducedMotion } from './motion.ts'
 
-interface Cell {
-  place: 'stack' | 'heap'
-  name: string
-  value: string
-  note?: string
-  ghost?: boolean
-}
+type Mode = 'leak' | 'raii'
 
-interface Scene {
-  title: string
-  code: string
-  stack: Cell[]
-  heap: Cell[]
-  hint: string
-}
-
-const scenes: Scene[] = [
-  {
-    title: 'Automatic local',
-    code: `void f() {
-  int x = 7;
-}`,
-    stack: [{ place: 'stack', name: 'x', value: '7' }],
-    heap: [],
-    hint: 'x lives in f’s stack frame. Returning from f destroys it — no delete, no leak.',
-  },
-  {
-    title: 'Bare new',
-    code: `void f() {
-  int x = 7;
-  int* p = new int{42};
-}`,
-    stack: [
-      { place: 'stack', name: 'x', value: '7' },
-      { place: 'stack', name: 'p', value: '→ heap' },
-    ],
-    heap: [{ place: 'heap', name: '*p', value: '42', note: 'until delete' }],
-    hint: 'p is on the stack (the address). The int 42 is on the free store. Forget delete and it leaks.',
-  },
-  {
-    title: 'Owner on the stack',
-    code: `void f() {
-  auto p = std::make_unique<int>(42);
-}`,
-    stack: [{ place: 'stack', name: 'p', value: 'unique_ptr' }],
-    heap: [{ place: 'heap', name: '*p', value: '42', note: 'owned' }],
-    hint: 'The unique_ptr is automatic. Its destructor delete’s the heap int when f returns — even if f throws.',
-  },
-  {
-    title: 'After return (leak)',
-    code: `void f() {
-  int* p = new int{42};
-} // p dies, *p does not`,
-    stack: [],
-    heap: [{ place: 'heap', name: 'orphaned', value: '42', ghost: true, note: 'leaked' }],
-    hint: 'The stack frame is gone. The heap object has no name. That is a leak — still reachable from nowhere.',
-  },
-]
+const BEATS = 4
 
 export function StackHeapViz() {
-  const [i, setI] = useState(0)
-  const s = scenes[i]
+  const reduced = usePrefersReducedMotion()
+  const [mode, setMode] = useState<Mode>('leak')
+  const [beat, setBeat] = useState(0)
+  const [playing, setPlaying] = useState(false)
+  const [arrow, setArrow] = useState('')
+
+  const stageRef = useRef<HTMLDivElement>(null)
+  const pRef = useRef<HTMLDivElement>(null)
+  const heapRef = useRef<HTMLDivElement>(null)
+
+  const inFrame = beat === 1 || beat === 2
+  const hasHeap = mode === 'leak' ? beat >= 2 : beat === 2
+  const leaked = mode === 'leak' && beat === 3
+  const deleted = mode === 'raii' && beat === 3
+  const showPtr = beat === 2
+
+  useEffect(() => {
+    if (!playing) return
+    if (reduced) {
+      setBeat(BEATS - 1)
+      setPlaying(false)
+      return
+    }
+    const delays = [0, 850, 1750, 2700]
+    const ids = delays.map((d, i) =>
+      window.setTimeout(() => {
+        setBeat(i)
+        if (i === BEATS - 1) setPlaying(false)
+      }, d),
+    )
+    return () => ids.forEach((id) => window.clearTimeout(id))
+  }, [playing, mode, reduced])
+
+  useLayoutEffect(() => {
+    const stage = stageRef.current
+    if (!stage || !pRef.current || !heapRef.current || !showPtr) {
+      setArrow('')
+      return
+    }
+    const origin = stage.getBoundingClientRect()
+    setArrow(curve(edge(pRef.current, origin, 'right'), edge(heapRef.current, origin, 'left'), 22))
+  }, [showPtr, beat, mode, hasHeap])
+
+  function reset(next: Mode = mode) {
+    setPlaying(false)
+    setBeat(0)
+    setMode(next)
+  }
+
+  function play() {
+    setBeat(0)
+    setPlaying(true)
+  }
+
+  const showX = mode === 'leak' && inFrame
+
+  const code =
+    mode === 'leak'
+      ? beat === 0
+        ? `void f() {\n  // not yet entered\n}`
+        : beat === 1
+          ? `void f() {\n  int x = 7;          // live\n}`
+          : beat === 2
+            ? `void f() {\n  int x = 7;\n  int* p = new int{42}; // p on stack, 42 on heap\n}`
+            : `void f() {\n  int* p = new int{42};\n} // p dies, *p does not  ← leak`
+      : beat === 0
+        ? `void f() {\n  // not yet entered\n}`
+        : beat === 1 || beat === 2
+          ? `void f() {\n  auto p = std::make_unique<int>(42);\n}`
+          : `void f() {\n  auto p = std::make_unique<int>(42);\n} // ~unique_ptr deletes`
+
+  const caption =
+    beat === 0
+      ? 'Play a call to f(). The stack frame does not exist until the function is entered.'
+      : beat === 1
+        ? mode === 'leak'
+          ? 'x is automatic. It will vanish when f returns — no delete, no leak.'
+          : 'The unique_ptr lives on the stack. It is the owner, not the int.'
+        : beat === 2
+          ? mode === 'leak'
+            ? 'p is just an address on the stack. The 42 is a separate heap object. They are not the same lifetime.'
+            : 'Green weld: the stack owner is bound to the heap int. Returning will run the destructor.'
+          : mode === 'leak'
+            ? 'The frame is gone. The heap object has no pointer left. That is a leak — still allocated, reachable from nowhere.'
+            : 'Destructor ran. Heap int is gone. RAII made the cleanup the same path as the return — even if f threw.'
 
   return (
     <div className="viz viz--col">
       <div className="stepper">
-        {scenes.map((sc, idx) => (
-          <button
-            key={sc.title}
-            className={`chip${i === idx ? ' chip--active' : ''}`}
-            onClick={() => setI(idx)}
-          >
-            {idx + 1}. {sc.title}
-          </button>
-        ))}
+        <button className={`chip${mode === 'leak' ? ' chip--active' : ''}`} onClick={() => reset('leak')}>
+          bare new
+        </button>
+        <button className={`chip${mode === 'raii' ? ' chip--active' : ''}`} onClick={() => reset('raii')}>
+          unique_ptr
+        </button>
+        <button className="chip chip--play" onClick={play} disabled={playing}>
+          Play f()
+        </button>
+        <button className="chip chip--ghost" onClick={() => reset(mode)}>
+          reset
+        </button>
       </div>
-      <div className="mem-split">
-        <pre className="code-block">
-          <code>{s.code}</code>
-        </pre>
-        <div className="mem-cols">
-          <MemColumn title="Stack (automatic)" cells={s.stack} empty="frame empty" />
-          <MemColumn title="Heap (free store)" cells={s.heap} empty="no allocations" />
-        </div>
-      </div>
-      <p className="layout-hint">{s.hint}</p>
-    </div>
-  )
-}
 
-function MemColumn({
-  title,
-  cells,
-  empty,
-}: {
-  title: string
-  cells: Cell[]
-  empty: string
-}) {
-  return (
-    <div className="mem-col">
-      <h3>{title}</h3>
-      {cells.length === 0 && <p className="mem-empty">{empty}</p>}
-      {cells.map((c) => (
-        <div
-          key={c.name}
-          className={`mem-cell mem-cell--${c.place}${c.ghost ? ' mem-cell--ghost' : ''}`}
-        >
-          <span className="mem-name">{c.name}</span>
-          <span className="mem-val">{c.value}</span>
-          {c.note && <span className="mem-note">{c.note}</span>}
+      <div
+        ref={stageRef}
+        className={`viz-stage sh-stage viz-stage--live${leaked ? ' sh-stage--leak' : ''}${mode === 'raii' ? ' sh-stage--raii' : ''}`}
+      >
+        <div className="sh-grid">
+          <div className="sh-col">
+            <span className="sh-kicker">stack · automatic</span>
+            <div className={`sh-frame${inFrame ? ' sh-frame--on' : ''}${beat === 3 ? ' sh-frame--gone' : ''}`}>
+              <span className="sh-frame-label">f()</span>
+              {showX && (
+                <div className="sh-cell sh-cell--stack sh-cell--in">
+                  <span className="mem-name">int x</span>
+                  <span className="mem-val">7</span>
+                </div>
+              )}
+              {showPtr && (
+                <div ref={pRef} className="sh-cell sh-cell--ptr sh-cell--in">
+                  <span className="mem-name">{mode === 'leak' ? 'int* p' : 'unique_ptr p'}</span>
+                  <span className="mem-val">{mode === 'leak' ? '0xH0' : 'owns →'}</span>
+                </div>
+              )}
+              {!inFrame && (
+                <p className="mem-empty">{beat === 3 ? 'frame destroyed' : 'no frame yet'}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="sh-col">
+            <span className="sh-kicker">heap · free store</span>
+            {hasHeap && (
+              <div
+                ref={heapRef}
+                className={`sh-cell sh-cell--heap sh-cell--in${leaked ? ' sh-cell--leaked' : ''}${mode === 'raii' && beat === 2 ? ' sh-cell--owned' : ''}`}
+              >
+                <span className="mem-name">int</span>
+                <span className="sh-heap-val">42</span>
+                <span className="mem-note">{leaked ? 'orphaned — leaked' : 'new int{42}'}</span>
+              </div>
+            )}
+            {deleted && (
+              <div className="sh-cell sh-cell--deleted sh-cell--in">
+                <span className="mem-name">deleted</span>
+                <span className="mem-val">~unique_ptr</span>
+                <span className="mem-note">destructor ran delete</span>
+              </div>
+            )}
+            {!hasHeap && !deleted && <p className="mem-empty">no allocations</p>}
+          </div>
         </div>
-      ))}
+
+        <svg className="ptr-svg" aria-hidden>
+          <defs>
+            <linearGradient id="sh-grad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor={mode === 'raii' ? '#7dce82' : '#3ee0ff'} />
+              <stop offset="100%" stopColor="#c678dd" />
+            </linearGradient>
+            <marker id="sh-head" markerWidth="10" markerHeight="10" refX="7" refY="5" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill={mode === 'raii' ? '#7dce82' : '#3ee0ff'} />
+            </marker>
+          </defs>
+          {arrow && (
+            <path d={arrow} className={`sh-arc${mode === 'raii' ? ' sh-arc--own' : ''}`} fill="none" markerEnd="url(#sh-head)" />
+          )}
+        </svg>
+      </div>
+
+      <pre className="code-block sh-code">
+        <code>{code}</code>
+      </pre>
+      <p className="layout-hint">{caption}</p>
     </div>
   )
 }
