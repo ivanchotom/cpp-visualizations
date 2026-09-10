@@ -7,6 +7,10 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
+    watch: {
+      // Linux inotify is small on some machines; do not watch editor/agent dirs.
+      ignored: ['**/.git/**', '**/.cursor/**'],
+    },
   },
   preview: {
     host: true,
