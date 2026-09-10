@@ -1,18 +1,20 @@
-import { tracks, topicsInTrack, topicCount, vizCount } from '../curriculum/index.ts'
-import { topicHash } from '../lib/hashRoute.ts'
+import { labCount } from '../lab/index.ts'
+import { tracks, topicsInTrack, topicCount } from '../curriculum/index.ts'
+import { aheadHash, topicHash, voiceHash } from '../lib/hashRoute.ts'
 
 export function Overview() {
   return (
     <section className="view">
       <header className="view-head">
-        <p className="kicker">Interactive C++14 cheatsheet</p>
-        <h1>Rehash the whole language, not just the types.</h1>
+        <p className="kicker">C++ object-model lab</p>
+        <h1>I made the C++ object model visible.</h1>
         <p>
-          The original three views — sizes, padding, a handful of idioms — are still here.
-          Around them is a full curriculum: compilation, memory, functions, classes,
-          templates (instantiation, SFINAE, forwarding), the standard library, and the
-          pitfalls that actually bite. Every topic is a compact cheatsheet. Dots in the
-          sidebar mark a live visualization.
+          A public visual lab for the pictures seniors still draw badly on a whiteboard:
+          identity versus steal, constructor order and unwind, ownership contracts, and
+          why <code>static_cast&lt;BaseB*&gt;(p)</code> moves the address. Not a personal
+          vault. Not a textbook. Not Compiler Explorer, C++ Insights, cxxfilt, or Python
+          Tutor — those remain the references. Every topic is a cheatsheet plus a lab you
+          can click, type into, and hear.
         </p>
       </header>
 
@@ -22,12 +24,12 @@ export function Overview() {
           <span className="stat-label">topics</span>
         </div>
         <div className="stat">
-          <span className="stat-value">{vizCount}</span>
-          <span className="stat-label">visualizations</span>
+          <span className="stat-value">{labCount}</span>
+          <span className="stat-label">labs with voice</span>
         </div>
         <div className="stat">
           <span className="stat-value">{tracks.length}</span>
-          <span className="stat-label">tracks</span>
+          <span className="stat-label">guided tracks</span>
         </div>
         <div className="stat">
           <span className="stat-value">14</span>
@@ -35,10 +37,18 @@ export function Overview() {
         </div>
       </div>
 
+      <p className="lab-refs">
+        <a className="chip chip--link" href={aheadHash()}>
+          Plans ahead
+        </a>
+        <a className="chip chip--link" href={voiceHash()}>
+          Voice scripts to record
+        </a>
+      </p>
+
       <div className="track-grid">
         {tracks.map((track) => {
           const topics = topicsInTrack(track)
-          const vis = topics.filter((t) => t.viz).length
           return (
             <article key={track.id} className="track-card">
               <div className="track-card-head">
@@ -48,15 +58,11 @@ export function Overview() {
                   <p>{track.blurb}</p>
                 </div>
               </div>
-              <p className="track-meta">
-                {topics.length} topics
-                {vis > 0 ? ` · ${vis} visual` : ''}
-              </p>
+              <p className="track-meta">{topics.length} labs · visualize + voice + try</p>
               <div className="track-chips">
                 {topics.map((t) => (
                   <a key={t.id} className="chip chip--link" href={topicHash(t.id)}>
                     {t.title}
-                    {t.viz ? ' ◈' : ''}
                   </a>
                 ))}
               </div>
@@ -66,8 +72,8 @@ export function Overview() {
       </div>
 
       <p className="overview-foot">
-        Later-standard notes appear on a topic when C++17/20/23 changed the picture —
-        examples stay C++14.
+        Snippets stay C++14. Later-standard notes appear when 17/20/23 changed the picture.
+        Sizes assume typical 64-bit LP64 — not a compiler dump.
       </p>
     </section>
   )

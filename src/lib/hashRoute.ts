@@ -1,13 +1,18 @@
-export type Route = { page: 'home' } | { page: 'topic'; id: string }
+export type Route =
+  | { page: 'home' }
+  | { page: 'ahead' }
+  | { page: 'voice' }
+  | { page: 'topic'; id: string }
 
 export function parseHash(hash: string): Route {
   const raw = hash.replace(/^#/, '').replace(/^\/+/, '')
   if (!raw) return { page: 'home' }
   const parts = raw.split('/')
+  if (parts[0] === 'ahead') return { page: 'ahead' }
+  if (parts[0] === 'voice') return { page: 'voice' }
   if (parts[0] === 't' && parts[1]) {
     return { page: 'topic', id: decodeURIComponent(parts[1]) }
   }
-  // Bare ids from older bookmarks: #types
   if (parts.length === 1 && parts[0]) {
     return { page: 'topic', id: decodeURIComponent(parts[0]) }
   }
@@ -16,6 +21,14 @@ export function parseHash(hash: string): Route {
 
 export function homeHash(): string {
   return '#/'
+}
+
+export function aheadHash(): string {
+  return '#/ahead'
+}
+
+export function voiceHash(): string {
+  return '#/voice'
 }
 
 export function topicHash(id: string): string {
