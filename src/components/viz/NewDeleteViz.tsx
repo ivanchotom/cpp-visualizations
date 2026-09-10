@@ -209,7 +209,7 @@ export function NewDeleteViz() {
                 <div className="ar-cells">
                   {(leftover ? CELLS : visibleCells).map((c) => (
                     <span key={c} className={`ar-cell${deadCells.includes(c) ? ' nd-cell--dead' : ''}`}>
-                      {!isArray ? '7' : leftover && deadCells.includes(c) ? `${c}⚠` : c}
+                      {!isArray ? '7' : c}
                     </span>
                   ))}
                 </div>
