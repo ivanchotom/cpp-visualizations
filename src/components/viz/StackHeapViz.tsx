@@ -1,10 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { curve, edge, usePrefersReducedMotion } from './motion.ts'
+import { curve, edge } from './motion.ts'
 
 type Mode = 'leak' | 'raii'
 
 export function StackHeapViz() {
-  const reduced = usePrefersReducedMotion()
   const [mode, setMode] = useState<Mode>('leak')
   const [beat, setBeat] = useState(0)
   const [playing, setPlaying] = useState(false)
@@ -23,18 +22,16 @@ export function StackHeapViz() {
 
   useEffect(() => {
     if (!playing) return
-    const allocMs = reduced ? 700 : 2000
-    const returnMs = reduced ? 1400 : 4800
-    const tAlloc = window.setTimeout(() => setBeat(2), allocMs)
+    const tAlloc = window.setTimeout(() => setBeat(2), 2200)
     const tReturn = window.setTimeout(() => {
       setBeat(3)
       setPlaying(false)
-    }, returnMs)
+    }, 5200)
     return () => {
       window.clearTimeout(tAlloc)
       window.clearTimeout(tReturn)
     }
-  }, [playing, mode, reduced])
+  }, [playing, mode])
 
   useLayoutEffect(() => {
     const stage = stageRef.current
