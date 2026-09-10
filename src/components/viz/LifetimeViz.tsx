@@ -103,7 +103,7 @@ export function LifetimeViz() {
                 m2
               </div>
             ) : (
-              <div className="lf-piece lf-empty">{kind === 'ctor' && i >= 1 ? 'm2 not yet' : 'm2 gone'}</div>
+              <div className="lf-piece lf-empty">{kind === 'ctor' ? 'm2 not yet' : 'm2 gone'}</div>
             )}
           </div>
           {body ? (
