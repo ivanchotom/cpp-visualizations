@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { curve, edge, hop, playBeats, type Point } from './motion.ts'
+import { curve, edge, hop, waitNextBeat, type Point } from './motion.ts'
 
 type Kind = 'unique' | 'shared' | 'weak'
 
@@ -143,19 +143,27 @@ export function OwnershipViz() {
 
   useEffect(() => {
     if (!playing) return
-    return playBeats(
-      stepCount,
-      STEP_MS,
-      (index, local) => {
-        setI(index)
-        setHopT(Math.min(1, local / 700))
-      },
-      () => {
+    const hopBorn = performance.now()
+    let raf = 0
+    const hopLoop = (now: number) => {
+      setHopT(Math.min(1, (now - hopBorn) / 700))
+      if (now - hopBorn < 700) raf = requestAnimationFrame(hopLoop)
+    }
+    raf = requestAnimationFrame(hopLoop)
+    const stopBeat = waitNextBeat(STEP_MS, () => {
+      if (i >= stepCount - 1) {
         setPlaying(false)
         setHopT(1)
-      },
-    )
-  }, [playing, stepCount])
+        return
+      }
+      setI(i + 1)
+      setHopT(0)
+    })
+    return () => {
+      cancelAnimationFrame(raf)
+      stopBeat()
+    }
+  }, [playing, i, stepCount])
 
   function select(next: Kind) {
     setPlaying(false)

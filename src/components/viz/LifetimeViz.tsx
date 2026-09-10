@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { playBeats } from './motion.ts'
+import { waitNextBeat } from './motion.ts'
 
 const STEPS = [
   { t: 'Base()', label: 'construct Base subobject first', kind: 'ctor' as const, target: 'base' },
@@ -29,13 +29,14 @@ export function LifetimeViz() {
 
   useEffect(() => {
     if (!playing) return
-    return playBeats(
-      STEPS.length,
-      STEP_MS,
-      (index) => setI(index),
-      () => setPlaying(false),
-    )
-  }, [playing])
+    return waitNextBeat(STEP_MS, () => {
+      if (i >= STEPS.length - 1) {
+        setPlaying(false)
+        return
+      }
+      setI(i + 1)
+    })
+  }, [playing, i])
 
   function play() {
     setI(0)
@@ -81,6 +82,14 @@ export function LifetimeViz() {
         <p className="ptr-hint-top">
           Step {i + 1}/{STEPS.length} · <strong>{step.t}</strong>
         </p>
+        <div className="lf-beats" aria-hidden>
+          {STEPS.map((s, n) => (
+            <span
+              key={s.t}
+              className={`lf-beat${n === i ? ' lf-beat--on' : ''}${n < i ? ' lf-beat--done' : ''}${s.kind === 'dtor' ? ' lf-beat--dtor' : ''}`}
+            />
+          ))}
+        </div>
         <div className={`lf-shell${base ? ' lf-on' : ' lf-dead'}${target === 'base' ? ` lf-now lf-now--${kind}` : ''}`}>
           <span className="lf-tag">Base subobject</span>
           <div className="lf-members">

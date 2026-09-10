@@ -66,32 +66,11 @@ export function hop(from: Point, to: Point, t: number): Point {
   }
 }
 
-/** One pedagogical beat at a time. Dropped frames wait — they do not skip. */
-export function playBeats(
-  count: number,
-  stepMs: number,
-  onBeat: (index: number, localMs: number) => void,
-  onDone: () => void,
-): () => void {
-  let i = 0
-  let born = performance.now()
-  let raf = 0
-  const loop = (now: number) => {
-    const local = now - born
-    onBeat(i, local)
-    if (local < stepMs) {
-      raf = requestAnimationFrame(loop)
-      return
-    }
-    if (i >= count - 1) {
-      onDone()
-      return
-    }
-    i += 1
-    born = now
-    onBeat(i, 0)
-    raf = requestAnimationFrame(loop)
-  }
-  raf = requestAnimationFrame(loop)
-  return () => cancelAnimationFrame(raf)
+/**
+ * One pending timeout to the next beat. Never schedule the whole sequence
+ * up front — those fire together in a busy tab and React batches a skip.
+ */
+export function waitNextBeat(stepMs: number, go: () => void): () => void {
+  const id = window.setTimeout(go, stepMs)
+  return () => window.clearTimeout(id)
 }

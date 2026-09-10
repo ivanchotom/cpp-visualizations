@@ -2291,6 +2291,39 @@ pre {
   animation: lf-die 0.55s var(--ease-out);
 }
 
+.lf-beats {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.lf-beat {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2a3240;
+  transition: background 0.25s ease, transform 0.25s var(--ease-back);
+}
+
+.lf-beat--done {
+  background: #3ee0ff;
+}
+
+.lf-beat--done.lf-beat--dtor {
+  background: #f0883e;
+}
+
+.lf-beat--on {
+  transform: scale(1.35);
+  background: #fff;
+  box-shadow: 0 0 10px #3ee0ff;
+}
+
+.lf-beat--on.lf-beat--dtor {
+  background: #ffe08a;
+  box-shadow: 0 0 10px #f0883e;
+}
+
 @keyframes lf-die {
   from {
     transform: scale(1.04);

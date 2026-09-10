@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { hop, playBeats, type Point } from './motion.ts'
+import { hop, waitNextBeat, type Point } from './motion.ts'
 
 const FRAMES = [
   { id: 'main', fn: 'main()', live: 'waiting' },
@@ -104,19 +104,27 @@ export function ExceptionsViz() {
 
   useEffect(() => {
     if (!playing) return
-    return playBeats(
-      STEPS.length,
-      STEP_MS,
-      (index, local) => {
-        setI(index)
-        setHopT(Math.min(1, local / HOP_MS))
-      },
-      () => {
+    const hopBorn = performance.now()
+    let raf = 0
+    const hopLoop = (now: number) => {
+      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
+      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
+    }
+    raf = requestAnimationFrame(hopLoop)
+    const stopBeat = waitNextBeat(STEP_MS, () => {
+      if (i >= STEPS.length - 1) {
         setPlaying(false)
         setHopT(1)
-      },
-    )
-  }, [playing])
+        return
+      }
+      setI(i + 1)
+      setHopT(0)
+    })
+    return () => {
+      cancelAnimationFrame(raf)
+      stopBeat()
+    }
+  }, [playing, i])
 
   function play() {
     setI(0)
@@ -161,6 +169,11 @@ export function ExceptionsViz() {
           Step {i + 1}/{STEPS.length}
           {step.throwAt ? ' · exception in flight' : caught ? ' · caught' : ' · running'}
         </p>
+        <div className="lf-beats" aria-hidden>
+          {STEPS.map((s, n) => (
+            <span key={s.label} className={`lf-beat${n === i ? ' lf-beat--on' : ''}${n < i ? ' lf-beat--done' : ''}${n >= 1 && n < 4 ? ' lf-beat--dtor' : ''}`} />
+          ))}
+        </div>
         <div className="ex-stack">
           {FRAMES.map((f, idx) => {
             const gone = dead.has(f.id)
