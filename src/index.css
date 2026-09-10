@@ -3724,6 +3724,12 @@ pre {
   box-shadow: 0 0 22px #e5c07b;
 }
 
+.sm-flyer--steal {
+  background: linear-gradient(160deg, #fff4d6, #ff7ab6);
+  color: #3a1020;
+  box-shadow: 0 0 22px #ff7ab6;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .viz-stage--live::before,
   .ptr-arc--ptr,

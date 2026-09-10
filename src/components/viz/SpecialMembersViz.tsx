@@ -251,7 +251,7 @@ Handle& operator=(const Handle&) = delete;`
           </div>
         </div>
         {pos && (
-          <span className={`ptr-pulse sm-flyer${copied ? ' sm-flyer--copy' : stolen ? ' lm-flyer--steal' : ''}`} style={{ left: pos.x, top: pos.y }}>
+          <span className={`ptr-pulse sm-flyer${copied ? ' sm-flyer--copy' : stolen ? ' sm-flyer--steal' : ''}`} style={{ left: pos.x, top: pos.y }}>
             {flyerText}
           </span>
         )}
