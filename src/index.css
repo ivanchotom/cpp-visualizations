@@ -2368,6 +2368,193 @@ pre {
   gap: 8px;
 }
 
+.ex-stage {
+  min-height: 320px;
+}
+
+.ex-stage .ex-stack {
+  max-width: none;
+  gap: 10px;
+}
+
+.ex-frame {
+  position: relative;
+  transition: opacity 0.45s var(--ease-out), border-color 0.35s ease, box-shadow 0.35s ease, transform 0.4s var(--ease-out);
+}
+
+.ex-frame--throw {
+  box-shadow: 0 0 26px rgba(224, 108, 117, 0.35);
+  animation: cell-pop 0.45s var(--ease-back);
+}
+
+.ex-frame--catch {
+  box-shadow: 0 0 26px rgba(152, 195, 121, 0.4);
+}
+
+.ex-frame--dead {
+  transform: scale(0.98) translateY(4px);
+}
+
+.ex-dtor {
+  position: absolute;
+  right: 12px;
+  top: -10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: linear-gradient(160deg, #ffb36a, #f0883e);
+  color: #1a1000;
+  font-size: 11px;
+  font-weight: 800;
+  animation: cell-pop 0.4s var(--ease-back);
+}
+
+.ptr-pulse--throw {
+  background: radial-gradient(circle at 35% 30%, #fff, #ff8a7a 55%, #c0392b);
+  color: #e06c75;
+  display: grid;
+  place-items: center;
+}
+
+.ex-ball-label {
+  font-size: 9px;
+  font-weight: 800;
+  color: #2a0606;
+  letter-spacing: 0.04em;
+}
+
+.ex-caught-flag {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: linear-gradient(160deg, #b8f29b, #7dce82);
+  color: #06200a;
+  font-weight: 800;
+  animation: cell-pop 0.4s var(--ease-back);
+}
+
+.ex-stage--caught {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(125, 206, 130, 0.16), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(62, 224, 255, 0.1), transparent 50%),
+    #0f141c;
+}
+
+.own-stage {
+  min-height: 300px;
+}
+
+.own-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.own-stage--unique .own-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.own-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.own-card,
+.own-ctrl,
+.own-heap {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: rgba(22, 27, 34, 0.92);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 92px;
+}
+
+.own-card--unique {
+  border-color: rgba(62, 224, 255, 0.55);
+  box-shadow: 0 0 18px rgba(62, 224, 255, 0.18);
+}
+
+.own-card--shared {
+  border-color: rgba(198, 120, 221, 0.55);
+  box-shadow: 0 0 18px rgba(198, 120, 221, 0.16);
+}
+
+.own-card--weak {
+  border-color: rgba(125, 206, 130, 0.55);
+  border-style: dashed;
+}
+
+.own-name {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.own-ctrl--live {
+  border-color: rgba(229, 192, 123, 0.5);
+}
+
+.own-ctrl--ghost {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
+.own-count {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--warn);
+}
+
+.own-count--weak {
+  color: var(--ref);
+  font-size: 13px;
+}
+
+.own-heap--unique {
+  border-color: rgba(62, 224, 255, 0.5);
+}
+
+.own-heap--shared {
+  border-color: rgba(198, 120, 221, 0.5);
+}
+
+.own-heap--gone {
+  opacity: 0.45;
+  border-style: dashed;
+}
+
+.own-arc {
+  stroke: url(#own-grad);
+  stroke-width: 3;
+  stroke-dasharray: 7 8;
+  animation: dash-flow 1.1s linear infinite;
+  stroke-linecap: round;
+}
+
+.own-arc--weak {
+  stroke-dasharray: 3 8;
+  opacity: 0.7;
+}
+
+.own-lock-fail {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: linear-gradient(160deg, #ffb36a, #f0883e);
+  color: #1a1000;
+  font-weight: 800;
+  animation: cell-pop 0.4s var(--ease-back);
+}
+
 .viz-stage > .ptr-pulse {
   z-index: 6;
 }
@@ -2386,7 +2573,12 @@ pre {
   .lf-now,
   .lf-now--dtor,
   .vt-arc,
-  .vt-say {
+  .vt-say,
+  .own-arc,
+  .ex-frame--throw,
+  .ex-dtor,
+  .ex-caught-flag,
+  .own-lock-fail {
     animation: none;
   }
 }
@@ -2425,7 +2617,9 @@ pre {
   .sh-grid,
   .cc-stations,
   .lf-members,
-  .vt-row {
+  .vt-row,
+  .own-grid,
+  .own-stage--unique .own-grid {
     grid-template-columns: 1fr;
   }
   .ptr-objects,

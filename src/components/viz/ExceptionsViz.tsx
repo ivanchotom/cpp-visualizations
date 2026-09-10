@@ -1,66 +1,221 @@
-import { useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { hop, type Point } from './motion.ts'
 
-const frames = ['main', 'run', 'openFile', 'parse'] as const
+const FRAMES = [
+  { id: 'main', fn: 'main()', live: 'waiting' },
+  { id: 'run', fn: 'run()', raii: 'try { openFile(); }' },
+  { id: 'openFile', fn: 'openFile()', raii: 'fstream file' },
+  { id: 'parse', fn: 'parse()', raii: 'locals alive' },
+] as const
+
+type FrameId = (typeof FRAMES)[number]['id']
+
+const STEPS = [
+  {
+    label: 'Normal call stack. Play throw and watch RAII unwind toward the catch.',
+    dead: [] as FrameId[],
+    throwAt: null as FrameId | null,
+    catchAt: false,
+    dtor: null as string | null,
+    code: `void run() {
+  try { openFile(); }
+  catch (const std::exception& e) {
+    log(e.what());
+  }
+}`,
+  },
+  {
+    label: 'parse() throws. The exception object is in flight — no catch in this frame.',
+    dead: [] as FrameId[],
+    throwAt: 'parse' as FrameId | null,
+    catchAt: false,
+    dtor: null as string | null,
+    code: `void parse() {
+  throw std::runtime_error("bad");
+}`,
+  },
+  {
+    label: 'parse() is gone. Automatic locals were destroyed on the way out.',
+    dead: ['parse'] as FrameId[],
+    throwAt: 'openFile' as FrameId | null,
+    catchAt: false,
+    dtor: '~parse locals',
+    code: `void parse() {
+  throw std::runtime_error("bad");
+} // locals destroyed`,
+  },
+  {
+    label: 'openFile() unwinds. ~fstream closes the file — that is why RAII exists.',
+    dead: ['parse', 'openFile'] as FrameId[],
+    throwAt: 'run' as FrameId | null,
+    catchAt: false,
+    dtor: '~fstream file',
+    code: `void openFile() {
+  std::fstream file("x");
+  parse();
+} // ~file closes`,
+  },
+  {
+    label: 'run() caught it. parse and openFile already ran their destructors. The file is closed.',
+    dead: ['parse', 'openFile'] as FrameId[],
+    throwAt: null as FrameId | null,
+    catchAt: true,
+    dtor: null as string | null,
+    code: `} catch (const std::exception& e) {
+  log(e.what());
+}`,
+  },
+]
+
+const STEP_MS = 1300
+const HOP_MS = 620
 
 export function ExceptionsViz() {
-  const [phase, setPhase] = useState(0)
-  // 0: all alive, 1: throw in parse, 2: parse gone, 3: openFile gone, 4: caught in run
+  const [i, setI] = useState(0)
+  const [playing, setPlaying] = useState(false)
+  const [hopT, setHopT] = useState(1)
+  const [centers, setCenters] = useState<Point[]>([])
 
-  const thrown = phase >= 1
-  const gone = new Set<string>()
-  if (phase >= 2) gone.add('parse')
-  if (phase >= 3) gone.add('openFile')
-  if (phase >= 4) gone.add('parse')
+  const stageRef = useRef<HTMLDivElement>(null)
+  const frameRefs = useRef<(HTMLDivElement | null)[]>([])
 
-  const caught = phase >= 4
+  const step = STEPS[i]
+  const dead = new Set(step.dead)
+
+  useLayoutEffect(() => {
+    const stage = stageRef.current
+    if (!stage) {
+      setCenters([])
+      return
+    }
+    const origin = stage.getBoundingClientRect()
+    setCenters(
+      FRAMES.map((_, idx) => {
+        const el = frameRefs.current[idx]
+        if (!el) return { x: 40, y: 40 }
+        const r = el.getBoundingClientRect()
+        return {
+          x: r.left - origin.left + r.width * 0.82,
+          y: r.top - origin.top + r.height / 2,
+        }
+      }),
+    )
+  }, [i])
+
+  useEffect(() => {
+    if (!playing) return
+    const t0 = performance.now()
+    let raf = 0
+    const loop = (now: number) => {
+      const elapsed = now - t0
+      const next = Math.min(STEPS.length - 1, Math.floor(elapsed / STEP_MS))
+      setI(next)
+      const local = elapsed - next * STEP_MS
+      setHopT(Math.min(1, local / HOP_MS))
+      if (next >= STEPS.length - 1 && local >= HOP_MS) {
+        setPlaying(false)
+        setHopT(1)
+        return
+      }
+      raf = requestAnimationFrame(loop)
+    }
+    raf = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(raf)
+  }, [playing])
+
+  function play() {
+    setI(0)
+    setHopT(0)
+    setPlaying(true)
+  }
+
+  const fromIdx = i <= 1 ? 3 : i === 2 ? 3 : i === 3 ? 2 : 1
+  const toIdx = i <= 1 ? 3 : i === 2 ? 2 : i === 3 ? 1 : 1
+  const from = centers[fromIdx]
+  const to = centers[toIdx]
+  const showBall = i >= 1 && i < 4
+  const pos = showBall && from && to ? hop(from, to, i === 1 ? 1 : hopT) : null
+  const caught = step.catchAt
 
   return (
     <div className="viz viz--col">
       <div className="stepper">
-        <button className="chip" onClick={() => setPhase(0)}>
-          running
+        <button className="chip chip--play" onClick={play} disabled={playing}>
+          Play throw → unwind
         </button>
-        <button className="chip" onClick={() => setPhase(1)}>
-          throw
+        <button className="chip" onClick={() => setI((n) => Math.max(0, n - 1))} disabled={playing}>
+          ◂ prev
         </button>
-        <button className="chip" onClick={() => setPhase(2)}>
-          unwind parse
+        <button className="chip" onClick={() => setI((n) => Math.min(STEPS.length - 1, n + 1))} disabled={playing}>
+          next ▸
         </button>
-        <button className="chip" onClick={() => setPhase(3)}>
-          unwind openFile
-        </button>
-        <button className="chip" onClick={() => setPhase(4)}>
-          catch in run
+        <button
+          className="chip chip--ghost"
+          onClick={() => {
+            setPlaying(false)
+            setI(0)
+            setHopT(1)
+          }}
+        >
+          reset
         </button>
       </div>
-      <div className="ex-stack">
-        {frames.map((f) => {
-          const dead = gone.has(f)
-          const isThrow = f === 'parse' && thrown && !dead
-          const isCatch = f === 'run' && caught
-          return (
-            <div
-              key={f}
-              className={`ex-frame${dead ? ' ex-frame--dead' : ''}${isThrow ? ' ex-frame--throw' : ''}${isCatch ? ' ex-frame--catch' : ''}`}
-            >
-              <span className="ex-fn">{f}()</span>
-              <span className="ex-raii">
-                {f === 'openFile' && !dead && 'fstream file  (will close)'}
-                {f === 'parse' && !dead && (thrown ? 'throw std::runtime_error' : 'locals alive')}
-                {f === 'run' && (caught ? 'catch (const std::exception&)' : 'try { … }')}
-                {f === 'main' && 'waiting'}
-              </span>
-            </div>
-          )
-        })}
+
+      <div ref={stageRef} className={`viz-stage ex-stage viz-stage--live${caught ? ' ex-stage--caught' : ''}`}>
+        <p className="ptr-hint-top">
+          Step {i + 1}/{STEPS.length}
+          {step.throwAt ? ' · exception in flight' : caught ? ' · caught' : ' · running'}
+        </p>
+        <div className="ex-stack">
+          {FRAMES.map((f, idx) => {
+            const gone = dead.has(f.id)
+            const isThrow = step.throwAt === f.id
+            const isCatch = f.id === 'run' && caught
+            const raii =
+              f.id === 'openFile'
+                ? gone
+                  ? '~fstream closed the file'
+                  : 'fstream file  (will close)'
+                : f.id === 'parse'
+                  ? gone
+                    ? 'frame destroyed'
+                    : i >= 1
+                      ? 'throw std::runtime_error'
+                      : f.raii
+                  : f.id === 'run'
+                    ? caught
+                      ? 'catch (const std::exception&)'
+                      : f.raii
+                    : f.live
+            return (
+              <div
+                key={f.id}
+                ref={(el) => {
+                  frameRefs.current[idx] = el
+                }}
+                className={`ex-frame${gone ? ' ex-frame--dead' : ''}${isThrow ? ' ex-frame--throw' : ''}${isCatch ? ' ex-frame--catch' : ''}`}
+              >
+                <span className="ex-fn">{f.fn}</span>
+                <span className="ex-raii">{raii}</span>
+                {step.dtor && gone && f.id === (i === 2 ? 'parse' : 'openFile') && (
+                  <span className="ex-dtor">{step.dtor}</span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+        {pos && (
+          <span className="ptr-pulse ptr-pulse--throw" style={{ left: pos.x, top: pos.y }}>
+            <span className="ex-ball-label">ex</span>
+          </span>
+        )}
+        {caught && <span className="ex-caught-flag">caught</span>}
       </div>
-      <p className="layout-hint">
-        {caught
-          ? 'run() caught it. parse and openFile already ran their destructors — the file is closed. That is RAII.'
-          : thrown
-            ? 'The exception is in flight. Each frame’s automatic objects are destroyed on the way out. No catch yet in parse.'
-            : 'Normal call stack. Click throw, then step the unwind.'}
-      </p>
+
+      <pre className="code-block sh-code">
+        <code>{step.code}</code>
+      </pre>
+      <p className="layout-hint">{step.label}</p>
     </div>
   )
 }
