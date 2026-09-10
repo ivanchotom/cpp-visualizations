@@ -161,6 +161,7 @@ int g = (w.*pm)();`,
     blurb: 'Where the compiler searches for names',
     track: 'functions',
     keywords: ['ADL', 'Koenig', 'lookup', 'using', 'hidden friend'],
+    viz: 'adl',
     summary:
       'Unqualified lookup walks the scopes around the use. Argument-dependent lookup (ADL, “Koenig lookup”) also searches the namespaces of the argument types — that is why std::cout << x works: operator<< is found in namespace std. Hidden friends are found only via ADL.',
     facts: [
@@ -208,6 +209,7 @@ void f(N::Item a, N::Item b) {
     blurb: 'public, protected, private, friend',
     track: 'classes',
     keywords: ['public', 'private', 'protected', 'friend', 'encapsulation'],
+    viz: 'access-control',
     summary:
       'Access is a compile-time check on names, not a runtime sandbox. class defaults to private; struct defaults to public. protected is for derived classes. friend punches a hole for a function or class. Invariants belong in the private section, not in a comment.',
     facts: [

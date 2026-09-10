@@ -49,6 +49,8 @@ import { PitfallsViz } from './PitfallsViz.tsx'
 import { EnumsViz } from './EnumsViz.tsx'
 import { UnionViz } from './UnionViz.tsx'
 import { FnPtrViz } from './FnPtrViz.tsx'
+import { AdlViz } from './AdlViz.tsx'
+import { AccessViz } from './AccessViz.tsx'
 
 const registry: Record<VizKind, () => ReactElement> = {
   types: () => <DataTypesView />,
@@ -100,6 +102,8 @@ const registry: Record<VizKind, () => ReactElement> = {
   enums: () => <EnumsViz />,
   unions: () => <UnionViz />,
   'function-pointers': () => <FnPtrViz />,
+  adl: () => <AdlViz />,
+  'access-control': () => <AccessViz />,
 }
 
 export function VizSlot({ kind }: { kind: VizKind }) {

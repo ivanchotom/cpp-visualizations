@@ -58,6 +58,8 @@ export type VizKind =
   | 'enums'
   | 'unions'
   | 'function-pointers'
+  | 'adl'
+  | 'access-control'
 
 export interface Fact {
   label: string
