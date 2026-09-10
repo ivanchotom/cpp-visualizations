@@ -39,6 +39,8 @@ import { OpOverloadViz } from './OpOverloadViz.tsx'
 import { TypeTraitsViz } from './TypeTraitsViz.tsx'
 import { NoexceptViz } from './NoexceptViz.tsx'
 import { StringViz } from './StringViz.tsx'
+import { IostreamsViz } from './IostreamsViz.tsx'
+import { ChronoViz } from './ChronoViz.tsx'
 
 const registry: Record<VizKind, () => ReactElement> = {
   types: () => <DataTypesView />,
@@ -80,6 +82,8 @@ const registry: Record<VizKind, () => ReactElement> = {
   'type-traits': () => <TypeTraitsViz />,
   noexcept: () => <NoexceptViz />,
   string: () => <StringViz />,
+  iostreams: () => <IostreamsViz />,
+  chrono: () => <ChronoViz />,
 }
 
 export function VizSlot({ kind }: { kind: VizKind }) {

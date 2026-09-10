@@ -48,6 +48,8 @@ export type VizKind =
   | 'type-traits'
   | 'noexcept'
   | 'string'
+  | 'iostreams'
+  | 'chrono'
 
 export interface Fact {
   label: string

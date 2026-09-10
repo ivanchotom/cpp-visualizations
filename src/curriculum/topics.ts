@@ -1781,6 +1781,7 @@ struct Node {
     blurb: 'iostream, files, and formatting',
     track: 'stdlib',
     keywords: ['cout', 'cin', 'fstream', 'stringstream', 'iomanip'],
+    viz: 'iostreams',
     summary:
       'Streams are typed, overloadable I/O. operator<< / >> chain. Failures set failbit/eofbit/badbit — check the stream or enable exceptions. For files, RAII fstream closes the handle in the destructor.',
     facts: [
@@ -1825,6 +1826,7 @@ while (std::getline(in, line)) {
     blurb: 'Durations, clocks, casts',
     track: 'stdlib',
     keywords: ['chrono', 'duration', 'steady_clock', 'time_point'],
+    viz: 'chrono',
     summary:
       '<chrono> separates duration (how long) from time_point (when) from clock (which epoch). Use steady_clock to measure intervals; system_clock to talk to the wall / std::time.',
     facts: [
