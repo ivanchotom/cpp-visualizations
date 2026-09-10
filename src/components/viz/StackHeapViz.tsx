@@ -3,8 +3,6 @@ import { curve, edge, usePrefersReducedMotion } from './motion.ts'
 
 type Mode = 'leak' | 'raii'
 
-const BEATS = 4
-
 export function StackHeapViz() {
   const reduced = usePrefersReducedMotion()
   const [mode, setMode] = useState<Mode>('leak')
@@ -25,16 +23,13 @@ export function StackHeapViz() {
 
   useEffect(() => {
     if (!playing) return
-    if (reduced) {
-      setBeat(BEATS - 1)
-      setPlaying(false)
-      return
-    }
-    const tAlloc = window.setTimeout(() => setBeat(2), 1600)
+    const allocMs = reduced ? 700 : 2000
+    const returnMs = reduced ? 1400 : 4800
+    const tAlloc = window.setTimeout(() => setBeat(2), allocMs)
     const tReturn = window.setTimeout(() => {
       setBeat(3)
       setPlaying(false)
-    }, 4000)
+    }, returnMs)
     return () => {
       window.clearTimeout(tAlloc)
       window.clearTimeout(tReturn)

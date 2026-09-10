@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { clamp01, easeInOutCubic, lerp, usePrefersReducedMotion } from './motion.ts'
+import { clamp01, easeInOutCubic, lerp } from './motion.ts'
 
 const STATIONS = [
   { id: 'src', title: 'Source', sub: '.cpp' },
@@ -27,7 +27,6 @@ interface Layout {
 }
 
 export function CompilationViz() {
-  const reduced = usePrefersReducedMotion()
   const [playing, setPlaying] = useState(false)
   const [resolved, setResolved] = useState(false)
   const [math, setMath] = useState(0)
@@ -81,15 +80,6 @@ export function CompilationViz() {
     setMath(0)
     setMain(0)
     setPlaying(true)
-
-    if (reduced) {
-      setMath(4)
-      setMain(4)
-      setResolved(true)
-      setShowExe(true)
-      setPlaying(false)
-      return
-    }
 
     const t0 = performance.now()
     const tickRaf = (now: number) => {
