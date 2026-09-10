@@ -2019,6 +2019,7 @@ public:
     blurb: 'The compiler owes you nothing',
     track: 'idioms',
     keywords: ['UB', 'data race', 'dangling', 'overflow', 'aliasing'],
+    viz: 'undefined-behavior',
     summary:
       'Undefined behavior is not “implementation-defined” or “a crash.” The compiler may assume it never happens and delete your checks. Signed overflow, use-after-free, data races, out-of-bounds, uninitialized reads — all UB.',
     facts: [
@@ -2063,6 +2064,7 @@ int n = INT_MAX;
     blurb: 'A habit that documents and enables',
     track: 'idioms',
     keywords: ['const', 'constexpr', 'member', 'thread-safe'],
+    viz: 'const-correctness',
     summary:
       'Mark everything that doesn’t mutate. Const member functions can be called on const objects and are the first step toward thinking about thread safety. Compilers also use const to reason about aliasing.',
     facts: [

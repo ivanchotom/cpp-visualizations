@@ -52,6 +52,8 @@ export type VizKind =
   | 'chrono'
   | 'concurrency'
   | 'rule-of-zero'
+  | 'undefined-behavior'
+  | 'const-correctness'
 
 export interface Fact {
   label: string
