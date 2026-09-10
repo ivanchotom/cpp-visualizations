@@ -1,7 +1,7 @@
 {
   "name": "cpp-visualizations",
   "version": "0.1.0",
-  "description": "An interactive C++14 visual cheatsheet covering the language, memory model, standard library, and idioms.",
+  "description": "A public C++14 object-model lab: visualizations, voice, and try-it controls for memory, lifetime, and ownership.",
   "main": "index.js",
   "scripts": {
     "dev": "vite --host",

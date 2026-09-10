@@ -17,6 +17,11 @@ const examples: Example[] = [
   { expr: 'std::move(x)', cat: 'xvalue', why: 'static_cast<T&&>(x) — an expiring lvalue you may steal from.' },
   { expr: 'std::string{"hi"}', cat: 'prvalue', why: 'A temporary of a specified type, no name.' },
   { expr: '*p', cat: 'lvalue', why: 'Dereference names the pointee (assuming p is valid).' },
+  {
+    expr: 'return std::move(local)',
+    cat: 'xvalue',
+    why: 'You forced an xvalue and may have blocked NRVO. Prefer return local; — the compiler already knows it is leaving.',
+  },
 ]
 
 const taxonomy: { cat: Cat; aka: string; steal: string; identity: string }[] = [
