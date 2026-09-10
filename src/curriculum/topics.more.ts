@@ -7,6 +7,7 @@ export const moreTopics: Topic[] = [
     blurb: 'Named integer constants, scoped and unscoped',
     track: 'foundations',
     keywords: ['enum', 'enum class', 'scoped', 'underlying type'],
+    viz: 'enums',
     summary:
       'Unscoped enum leaks enumerators into the surrounding scope and converts to int without asking. enum class (C++11) is the default choice: scoped names, no implicit conversion to int.',
     facts: [

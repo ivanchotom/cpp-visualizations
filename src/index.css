@@ -1711,7 +1711,9 @@ pre {
 .viz-stage > .th-flyer,
 .viz-stage > .rz-flyer,
 .viz-stage > .ub-flyer,
-.viz-stage > .cr-flyer {
+.viz-stage > .cr-flyer,
+.viz-stage > .pf-flyer,
+.viz-stage > .en-flyer {
   position: absolute;
   z-index: 6;
 }
@@ -3597,7 +3599,9 @@ pre {
 .th-flyer,
 .rz-flyer,
 .ub-flyer,
-.cr-flyer {
+.cr-flyer,
+.pf-flyer,
+.en-flyer {
   min-width: 64px;
   height: 28px;
   margin: -14px 0 0 -32px;
@@ -3956,7 +3960,9 @@ pre {
 .th-flyer--trap,
 .rz-flyer--trap,
 .ub-flyer--trap,
-.cr-flyer--trap {
+.cr-flyer--trap,
+.pf-flyer--trap,
+.en-flyer--trap {
   background: linear-gradient(160deg, #ffd6c8, #e06c75);
   color: #2a0808;
   box-shadow: 0 0 22px #e06c75;
@@ -3981,7 +3987,9 @@ pre {
 .th-stage,
 .rz-stage,
 .ub-stage,
-.cr-stage {
+.cr-stage,
+.pf-stage,
+.en-stage {
   min-height: 300px;
 }
 
@@ -3992,7 +4000,9 @@ pre {
 .th-row,
 .rz-row,
 .ub-row,
-.cr-row {
+.cr-row,
+.pf-row,
+.en-row {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 12px;
@@ -4006,7 +4016,9 @@ pre {
 .th-stage--win,
 .rz-stage--win,
 .ub-stage--win,
-.cr-stage--win {
+.cr-stage--win,
+.pf-stage--win,
+.en-stage--win {
   background:
     radial-gradient(120% 90% at 8% -10%, rgba(125, 206, 130, 0.16), transparent 52%),
     radial-gradient(90% 80% at 100% 120%, rgba(0, 163, 255, 0.1), transparent 50%),
@@ -4020,7 +4032,9 @@ pre {
 .th-stage--reject,
 .rz-stage--reject,
 .ub-stage--reject,
-.cr-stage--reject {
+.cr-stage--reject,
+.pf-stage--reject,
+.en-stage--reject {
   background:
     radial-gradient(120% 90% at 8% -10%, rgba(224, 108, 117, 0.18), transparent 52%),
     radial-gradient(90% 80% at 100% 120%, rgba(240, 136, 62, 0.12), transparent 50%),
@@ -4131,7 +4145,9 @@ pre {
   .th-flyer,
   .rz-flyer,
   .ub-flyer,
-  .cr-flyer {
+  .cr-flyer,
+  .pf-flyer,
+  .en-flyer {
     animation: none;
   }
 }
@@ -4201,7 +4217,9 @@ pre {
   .th-row,
   .rz-row,
   .ub-row,
-  .cr-row {
+  .cr-row,
+  .pf-row,
+  .en-row {
     grid-template-columns: 1fr;
   }
   .ptr-objects,

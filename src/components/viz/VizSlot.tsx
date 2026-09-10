@@ -45,6 +45,8 @@ import { ConcurrencyViz } from './ConcurrencyViz.tsx'
 import { RuleOfZeroViz } from './RuleOfZeroViz.tsx'
 import { UbViz } from './UbViz.tsx'
 import { ConstCorrectViz } from './ConstCorrectViz.tsx'
+import { PitfallsViz } from './PitfallsViz.tsx'
+import { EnumsViz } from './EnumsViz.tsx'
 
 const registry: Record<VizKind, () => ReactElement> = {
   types: () => <DataTypesView />,
@@ -92,6 +94,8 @@ const registry: Record<VizKind, () => ReactElement> = {
   'rule-of-zero': () => <RuleOfZeroViz />,
   'undefined-behavior': () => <UbViz />,
   'const-correctness': () => <ConstCorrectViz />,
+  pitfalls: () => <PitfallsViz />,
+  enums: () => <EnumsViz />,
 }
 
 export function VizSlot({ kind }: { kind: VizKind }) {

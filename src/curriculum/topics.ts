@@ -2111,6 +2111,7 @@ private:
     blurb: 'A field guide to classic own-goals',
     track: 'idioms',
     keywords: ['gotcha', 'slicing', 'most vexing parse', 'using namespace'],
+    viz: 'pitfalls',
     summary:
       'A short list of mistakes that keep showing up in real code reviews. If you only re-read one page before an interview or a refactor, make it this one plus Undefined behavior.',
     facts: [

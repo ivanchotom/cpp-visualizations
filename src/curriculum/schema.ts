@@ -54,6 +54,8 @@ export type VizKind =
   | 'rule-of-zero'
   | 'undefined-behavior'
   | 'const-correctness'
+  | 'pitfalls'
+  | 'enums'
 
 export interface Fact {
   label: string
