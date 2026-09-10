@@ -1336,11 +1336,19 @@ pre {
 .sfinae-card--ok {
   border-color: #98c379;
   background: rgba(152, 195, 121, 0.1);
+  animation: cell-pop 0.45s var(--ease-back);
 }
 
 .sfinae-card--fail {
-  opacity: 0.55;
+  opacity: 0.45;
   text-decoration: none;
+  filter: grayscale(0.4);
+}
+
+.sfinae-card--try {
+  border-color: rgba(62, 224, 255, 0.55);
+  box-shadow: 0 0 16px rgba(62, 224, 255, 0.2);
+  animation: cell-pop 0.4s var(--ease-back);
 }
 
 .sfinae-tag {
@@ -1636,7 +1644,9 @@ pre {
 .viz-stage > .cm-flyer,
 .viz-stage > .ptr-pulse,
 .viz-stage > .algo-flyer,
-.viz-stage > .tpl-flyer {
+.viz-stage > .tpl-flyer,
+.viz-stage > .sf-flyer,
+.viz-stage > .fwd-flyer {
   position: absolute;
   z-index: 6;
 }
@@ -2304,6 +2314,15 @@ pre {
   animation: lf-die 0.55s var(--ease-out);
 }
 
+.lf-tag {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
 .lf-beats {
   display: flex;
   gap: 6px;
@@ -2831,6 +2850,114 @@ pre {
   background: rgba(198, 120, 221, 0.12);
 }
 
+.sf-stage,
+.fwd-stage {
+  min-height: 300px;
+}
+
+.sf-stage--hard {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(224, 108, 117, 0.2), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(240, 136, 62, 0.12), transparent 50%),
+    #0f141c;
+}
+
+.sf-call {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 12px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+  opacity: 0.5;
+}
+
+.sf-call--on {
+  opacity: 1;
+  border-style: solid;
+  border-color: rgba(62, 224, 255, 0.5);
+  background: rgba(0, 163, 255, 0.1);
+}
+
+.sf-call--hard {
+  border-color: rgba(224, 108, 117, 0.7);
+  background: rgba(224, 108, 117, 0.12);
+}
+
+.sf-flyer,
+.fwd-flyer {
+  position: absolute;
+  z-index: 6;
+  min-width: 36px;
+  height: 32px;
+  padding: 0 10px;
+  margin: -16px 0 0 -18px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-weight: 800;
+  pointer-events: none;
+  box-shadow: 0 0 22px currentColor;
+  background: linear-gradient(160deg, #fff, #b8f29b);
+  color: #06200a;
+}
+
+.sf-flyer--hard,
+.fwd-flyer--steal {
+  background: linear-gradient(160deg, #fff4d6, #ff7ab6);
+  color: #3a1020;
+}
+
+.sf-hard {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: linear-gradient(160deg, #ff8a7a, #e06c75);
+  color: #2a0606;
+  font-weight: 800;
+  animation: cell-pop 0.4s var(--ease-back);
+}
+
+.fwd-stage--steal {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(255, 122, 182, 0.16), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(198, 120, 221, 0.14), transparent 50%),
+    #0f141c;
+}
+
+.fwd-stage--lval {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(125, 206, 130, 0.16), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(62, 224, 255, 0.1), transparent 50%),
+    #0f141c;
+}
+
+.fwd-row {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.fwd-collapse {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.fwd-flyer {
+  background: linear-gradient(160deg, #fff, #b8f29b);
+  color: #06200a;
+}
+
 .ct-incoming {
   position: absolute;
   left: 16px;
@@ -2931,6 +3058,11 @@ pre {
   .tpl-flyer,
   .tpl-card--fresh,
   .tpl-call--on,
+  .sfinae-card--ok,
+  .sfinae-card--try,
+  .sf-hard,
+  .sf-flyer,
+  .fwd-flyer,
   .ct-flag,
   .inv-flag {
     animation: none;
@@ -2974,7 +3106,8 @@ pre {
   .vt-row,
   .own-grid,
   .own-stage--unique .own-grid,
-  .pb-row {
+  .pb-row,
+  .fwd-row {
     grid-template-columns: 1fr;
   }
   .ptr-objects,
