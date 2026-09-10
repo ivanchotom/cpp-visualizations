@@ -1687,7 +1687,9 @@ pre {
 .viz-stage > .inh-flyer,
 .viz-stage > .cat-flyer,
 .viz-stage > .ty-flyer,
-.viz-stage > .lay-flyer {
+.viz-stage > .lay-flyer,
+.viz-stage > .lm-flyer,
+.viz-stage > .ar-flyer {
   position: absolute;
   z-index: 6;
 }
@@ -3274,6 +3276,140 @@ pre {
     #0f141c;
 }
 
+.lm-stage,
+.ar-stage {
+  min-height: 300px;
+}
+
+.lm-row,
+.ar-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: stretch;
+}
+
+.lm-closure {
+  min-height: 108px;
+}
+
+.lm-closure--ub {
+  border-color: rgba(224, 108, 117, 0.75);
+  box-shadow: 0 0 22px rgba(224, 108, 117, 0.28);
+}
+
+.lm-frame--gone {
+  opacity: 0.42;
+  border-style: dashed;
+  filter: grayscale(0.4);
+}
+
+.lm-arc--dead {
+  stroke: #e06c75;
+  stroke-dasharray: 5 7;
+  animation: dash-flow 0.7s linear infinite;
+}
+
+.lm-stage--dead {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(224, 108, 117, 0.18), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(240, 136, 62, 0.12), transparent 50%),
+    #0f141c;
+}
+
+.lm-flyer {
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  color: #00344d;
+}
+
+.lm-flyer--steal {
+  background: linear-gradient(160deg, #fff4d6, #ff7ab6);
+  color: #3a1020;
+  box-shadow: 0 0 22px #ff7ab6;
+}
+
+.lm-stage .own-arc {
+  stroke: url(#lm-grad);
+}
+
+.ar-cells {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 6px 0 4px;
+}
+
+.ar-cell {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-weight: 800;
+  font-size: 15px;
+  background: linear-gradient(160deg, #1c3144, #123048);
+  border: 1px solid rgba(62, 224, 255, 0.4);
+  color: #d8f6ff;
+  animation: cell-pop 0.35s var(--ease-back);
+}
+
+.ar-cell--nul {
+  border-color: rgba(229, 192, 123, 0.65);
+  color: var(--warn);
+  background: linear-gradient(160deg, #3a3018, #2a2410);
+}
+
+.ar-size {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.ar-ptr {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 800;
+  color: #3ee0ff;
+  text-shadow: 0 0 16px rgba(62, 224, 255, 0.45);
+}
+
+.ar-card--trap {
+  border-color: rgba(240, 136, 62, 0.7);
+  box-shadow: 0 0 20px rgba(240, 136, 62, 0.25);
+}
+
+.ar-stage--trap {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(240, 136, 62, 0.18), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(224, 108, 117, 0.12), transparent 50%),
+    #0f141c;
+}
+
+.ar-flyer {
+  min-width: 72px;
+  height: 28px;
+  margin: -14px 0 0 -36px;
+  padding: 0 8px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 800;
+  background: linear-gradient(160deg, #fff, #3ee0ff);
+  color: #00344d;
+  box-shadow: 0 0 22px #3ee0ff;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .viz-stage--live::before,
   .ptr-arc--ptr,
@@ -3316,7 +3452,14 @@ pre {
   .lay-flyer,
   .slot--pad-hot,
   .ct-flag,
-  .inv-flag {
+  .inv-flag,
+  .lm-flyer,
+  .lm-frame--gone,
+  .lm-closure--ub,
+  .lm-arc--dead,
+  .ar-flyer,
+  .ar-cell,
+  .ar-card--trap {
     animation: none;
   }
 }
@@ -3360,7 +3503,9 @@ pre {
   .own-stage--unique .own-grid,
   .pb-row,
   .fwd-row,
-  .ty-trap {
+  .ty-trap,
+  .lm-row,
+  .ar-row {
     grid-template-columns: 1fr;
   }
   .ptr-objects,

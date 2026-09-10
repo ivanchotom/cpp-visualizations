@@ -546,6 +546,7 @@ r = b;           // assigns to a, does not reseat r
     blurb: 'Fixed buffers and the decay trap',
     track: 'memory',
     keywords: ['array', 'decay', 'cstring', 'std::array', 'vector'],
+    viz: 'arrays',
     summary:
       'Built-in arrays are a raw block of objects. They decay to a pointer at the slightest excuse, losing their length. Prefer std::array for fixed size and std::vector for dynamic size. C-strings are arrays of char terminated by \\0.',
     facts: [
@@ -913,6 +914,7 @@ store(std::string{"tmp"});    // constructs into the parameter`,
     blurb: 'Inline function objects',
     track: 'functions',
     keywords: ['lambda', 'capture', 'closure', 'generic lambda'],
+    viz: 'lambdas',
     summary:
       'A lambda is syntactic sugar for a unique unnamed class with operator(). Captures become members. In C++14, generic lambdas (auto parameters) and init-captures are available.',
     facts: [

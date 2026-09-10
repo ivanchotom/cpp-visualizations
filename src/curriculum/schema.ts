@@ -30,6 +30,8 @@ export type VizKind =
   | 'vtable'
   | 'algorithms'
   | 'invalidation'
+  | 'lambdas'
+  | 'arrays'
 
 export interface Fact {
   label: string

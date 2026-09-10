@@ -21,6 +21,8 @@ import { ForwardingViz } from './ForwardingViz.tsx'
 import { VtableViz } from './VtableViz.tsx'
 import { AlgorithmsViz } from './AlgorithmsViz.tsx'
 import { InvalidationViz } from './InvalidationViz.tsx'
+import { LambdasViz } from './LambdasViz.tsx'
+import { ArraysViz } from './ArraysViz.tsx'
 
 const registry: Record<VizKind, () => ReactElement> = {
   types: () => <DataTypesView />,
@@ -44,6 +46,8 @@ const registry: Record<VizKind, () => ReactElement> = {
   vtable: () => <VtableViz />,
   algorithms: () => <AlgorithmsViz />,
   invalidation: () => <InvalidationViz />,
+  lambdas: () => <LambdasViz />,
+  arrays: () => <ArraysViz />,
 }
 
 export function VizSlot({ kind }: { kind: VizKind }) {
