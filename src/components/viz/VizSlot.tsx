@@ -51,6 +51,8 @@ import { UnionViz } from './UnionViz.tsx'
 import { FnPtrViz } from './FnPtrViz.tsx'
 import { AdlViz } from './AdlViz.tsx'
 import { AccessViz } from './AccessViz.tsx'
+import { DeductionViz } from './DeductionViz.tsx'
+import { VariadicViz } from './VariadicViz.tsx'
 
 const registry: Record<VizKind, () => ReactElement> = {
   types: () => <DataTypesView />,
@@ -104,6 +106,8 @@ const registry: Record<VizKind, () => ReactElement> = {
   'function-pointers': () => <FnPtrViz />,
   adl: () => <AdlViz />,
   'access-control': () => <AccessViz />,
+  'template-deduction': () => <DeductionViz />,
+  'variadic-templates': () => <VariadicViz />,
 }
 
 export function VizSlot({ kind }: { kind: VizKind }) {

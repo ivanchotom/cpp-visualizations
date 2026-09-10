@@ -258,6 +258,7 @@ Token makeToken(int id) { return Token{id}; }`,
     blurb: 'How T is inferred from a call',
     track: 'templates',
     keywords: ['deduction', 'auto', 'decltype', 'universal reference', 'C++14'],
+    viz: 'template-deduction',
     summary:
       'For a function template, each T is deduced from the arguments (or given explicitly). References and cv drop or stick according to the parameter form: T by value decays; T& keeps lvalue-ness; T&& is a forwarding reference if T is deduced. C++14 also lets auto stand in for a deduced return type and for generic lambda parameters.',
     facts: [
@@ -310,6 +311,7 @@ auto id = [](auto x) { return x; };   // C++14 generic lambda`,
     blurb: 'Parameter packs and expansion',
     track: 'templates',
     keywords: ['variadic', 'parameter pack', 'sizeof...', 'index_sequence'],
+    viz: 'variadic-templates',
     summary:
       'A parameter pack is a list of types or values. You expand it with Pattern... in the right place: function parameter lists, template argument lists, initializer lists. Recursion or an index_sequence (C++14) is how you walk a pack when you need per-element work.',
     facts: [

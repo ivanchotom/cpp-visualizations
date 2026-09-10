@@ -60,6 +60,8 @@ export type VizKind =
   | 'function-pointers'
   | 'adl'
   | 'access-control'
+  | 'template-deduction'
+  | 'variadic-templates'
 
 export interface Fact {
   label: string
