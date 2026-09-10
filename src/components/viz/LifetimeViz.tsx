@@ -11,6 +11,8 @@ const STEPS = [
   { t: '~Base()', label: 'Base last. The object is fully dead.', kind: 'dtor' as const, target: 'base' },
 ]
 
+const STEP_MS = 1100
+
 export function LifetimeViz() {
   const [i, setI] = useState(0)
   const [playing, setPlaying] = useState(false)
@@ -25,13 +27,19 @@ export function LifetimeViz() {
 
   useEffect(() => {
     if (!playing) return
-    const ids = STEPS.map((_, idx) =>
-      window.setTimeout(() => {
-        setI(idx)
-        if (idx === STEPS.length - 1) setPlaying(false)
-      }, idx * 900),
-    )
-    return () => ids.forEach((id) => window.clearTimeout(id))
+    const t0 = performance.now()
+    let raf = 0
+    const loop = (now: number) => {
+      const step = Math.min(STEPS.length - 1, Math.floor((now - t0) / STEP_MS))
+      setI(step)
+      if (step >= STEPS.length - 1) {
+        setPlaying(false)
+        return
+      }
+      raf = requestAnimationFrame(loop)
+    }
+    raf = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(raf)
   }, [playing])
 
   function play() {
@@ -78,22 +86,34 @@ export function LifetimeViz() {
         <p className="ptr-hint-top">
           Step {i + 1}/{STEPS.length} · <strong>{STEPS[i].t}</strong>
         </p>
-        <div className={`lf-shell${base ? ' lf-on' : ''}${target === 'base' ? ` lf-now lf-now--${kind}` : ''}`}>
+        <div className={`lf-shell${base ? ' lf-on' : ' lf-dead'}${target === 'base' ? ` lf-now lf-now--${kind}` : ''}`}>
           <span className="lf-tag">Base subobject</span>
           <div className="lf-members">
-            <div className={`lf-piece${m1 ? ' lf-on' : ''}${target === 'm1' ? ` lf-now lf-now--${kind}` : ''}`}>
-              <span className="lf-tag">member</span>
-              m1
-            </div>
-            <div className={`lf-piece${m2 ? ' lf-on' : ''}${target === 'm2' ? ` lf-now lf-now--${kind}` : ''}`}>
-              <span className="lf-tag">member</span>
-              m2
-            </div>
+            {m1 ? (
+              <div className={`lf-piece lf-on${target === 'm1' ? ` lf-now lf-now--${kind}` : ''}`}>
+                <span className="lf-tag">member</span>
+                m1
+              </div>
+            ) : (
+              <div className="lf-piece lf-empty">{kind === 'ctor' ? 'm1 not yet' : 'm1 gone'}</div>
+            )}
+            {m2 ? (
+              <div className={`lf-piece lf-on${target === 'm2' ? ` lf-now lf-now--${kind}` : ''}`}>
+                <span className="lf-tag">member</span>
+                m2
+              </div>
+            ) : (
+              <div className="lf-piece lf-empty">{kind === 'ctor' && i >= 1 ? 'm2 not yet' : 'm2 gone'}</div>
+            )}
           </div>
-          <div className={`lf-body${body ? ' lf-on' : ''}${target === 'body' ? ` lf-now lf-now--${kind}` : ''}`}>
-            <span className="lf-tag">Derived</span>
-            {constructing ? 'constructor body' : 'destructor body'}
-          </div>
+          {body ? (
+            <div className={`lf-body lf-on${target === 'body' ? ` lf-now lf-now--${kind}` : ''}`}>
+              <span className="lf-tag">Derived</span>
+              {constructing ? 'constructor body' : 'destructor body'}
+            </div>
+          ) : (
+            <div className="lf-body lf-empty">{constructing ? 'body not yet' : 'body done'}</div>
+          )}
         </div>
       </div>
 

@@ -2249,12 +2249,14 @@ pre {
   margin: 10px 0;
 }
 
-.lf-tag {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-dim);
+.lf-empty {
+  opacity: 0.35;
+  font-weight: 500;
+  font-style: italic;
+}
+
+.lf-dead {
+  opacity: 0.4;
 }
 
 .lf-on {
