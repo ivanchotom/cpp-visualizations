@@ -1874,6 +1874,7 @@ std::cout << ms.count() << " ms\\n";`,
     blurb: 'std::thread, mutex, memory order',
     track: 'stdlib',
     keywords: ['thread', 'mutex', 'atomic', 'data race', 'lock_guard'],
+    viz: 'concurrency',
     summary:
       'A data race is undefined behavior — not a “maybe stale value.” Protect shared mutable data with a mutex or make it atomic. RAII locks (lock_guard / unique_lock) are mandatory. Join or detach every thread; destroying a joinable thread calls terminate.',
     facts: [
@@ -1972,6 +1973,7 @@ private:
     blurb: 'Members manage; the class stays quiet',
     track: 'idioms',
     keywords: ['rule of zero', 'rule of five', 'RAII'],
+    viz: 'rule-of-zero',
     summary:
       'If every resource is already owned by a member that knows how to copy/move/destroy (string, vector, unique_ptr), your class needs no custom special members. That’s the Rule of Zero — the one you want.',
     facts: [

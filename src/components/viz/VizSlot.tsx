@@ -41,6 +41,8 @@ import { NoexceptViz } from './NoexceptViz.tsx'
 import { StringViz } from './StringViz.tsx'
 import { IostreamsViz } from './IostreamsViz.tsx'
 import { ChronoViz } from './ChronoViz.tsx'
+import { ConcurrencyViz } from './ConcurrencyViz.tsx'
+import { RuleOfZeroViz } from './RuleOfZeroViz.tsx'
 
 const registry: Record<VizKind, () => ReactElement> = {
   types: () => <DataTypesView />,
@@ -84,6 +86,8 @@ const registry: Record<VizKind, () => ReactElement> = {
   string: () => <StringViz />,
   iostreams: () => <IostreamsViz />,
   chrono: () => <ChronoViz />,
+  concurrency: () => <ConcurrencyViz />,
+  'rule-of-zero': () => <RuleOfZeroViz />,
 }
 
 export function VizSlot({ kind }: { kind: VizKind }) {

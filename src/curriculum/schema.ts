@@ -50,6 +50,8 @@ export type VizKind =
   | 'string'
   | 'iostreams'
   | 'chrono'
+  | 'concurrency'
+  | 'rule-of-zero'
 
 export interface Fact {
   label: string
