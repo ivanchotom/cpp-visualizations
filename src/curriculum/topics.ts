@@ -1502,6 +1502,7 @@ using value_t = typename std::iterator_traits<It>::value_type;`,
     blurb: 'Pick a policy and stick to it',
     track: 'errors',
     keywords: ['noexcept', 'error_code', 'expected', 'terminate'],
+    viz: 'noexcept',
     summary:
       'C++ offers exceptions, error codes, and abort. Mixing them without a boundary is how APIs become unusable. noexcept is both documentation and an optimization hint (vector moves). A violation calls terminate.',
     facts: [
@@ -1551,6 +1552,7 @@ void relocate(T* d, T* s)
     blurb: 'Owning text, not char*',
     track: 'stdlib',
     keywords: ['string', 'string_view', 'c_str', 'SSO'],
+    viz: 'string',
     summary:
       'std::string owns a mutable buffer of char, guarantees contiguous storage, and always keeps a terminating \\0 so c_str() is cheap. Small-string optimization (SSO) keeps short strings off the heap — implementation-defined size.',
     facts: [

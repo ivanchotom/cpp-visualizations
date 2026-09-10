@@ -46,6 +46,8 @@ export type VizKind =
   | 'classes'
   | 'op-overload'
   | 'type-traits'
+  | 'noexcept'
+  | 'string'
 
 export interface Fact {
   label: string
