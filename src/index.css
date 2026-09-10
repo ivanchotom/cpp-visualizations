@@ -1691,7 +1691,9 @@ pre {
 .viz-stage > .lm-flyer,
 .viz-stage > .ar-flyer,
 .viz-stage > .nd-flyer,
-.viz-stage > .cx-flyer {
+.viz-stage > .cx-flyer,
+.viz-stage > .pp-flyer,
+.viz-stage > .cv-flyer {
   position: absolute;
   z-index: 6;
 }
@@ -3545,6 +3547,89 @@ pre {
   box-shadow: 0 0 22px #e5c07b;
 }
 
+.pp-stage,
+.cv-stage {
+  min-height: 300px;
+}
+
+.pp-row,
+.cv-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: stretch;
+}
+
+.pp-flyer,
+.cv-flyer {
+  min-width: 64px;
+  height: 28px;
+  margin: -14px 0 0 -32px;
+  padding: 0 8px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 800;
+  background: linear-gradient(160deg, #fff, #3ee0ff);
+  color: #00344d;
+  box-shadow: 0 0 22px #3ee0ff;
+}
+
+.pp-flyer--trap {
+  background: linear-gradient(160deg, #ffd6c8, #e06c75);
+  color: #2a0808;
+  box-shadow: 0 0 22px #e06c75;
+}
+
+.pp-stage--trap {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(240, 136, 62, 0.18), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(224, 108, 117, 0.12), transparent 50%),
+    #0f141c;
+}
+
+.pp-stage--guard {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(125, 206, 130, 0.16), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(0, 163, 255, 0.1), transparent 50%),
+    #0f141c;
+}
+
+.cv-stage--lock {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(125, 206, 130, 0.16), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(0, 163, 255, 0.1), transparent 50%),
+    #0f141c;
+}
+
+.cv-stage--ub {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(224, 108, 117, 0.18), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(240, 136, 62, 0.12), transparent 50%),
+    #0f141c;
+}
+
+.cv-lock-obj {
+  border-color: rgba(125, 206, 130, 0.7);
+  box-shadow: 0 0 18px rgba(125, 206, 130, 0.22);
+}
+
+.cv-lock {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #041208;
+  background: linear-gradient(135deg, #b8f29b, #3d9a4a);
+  animation: cell-pop 0.35s var(--ease-back);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .viz-stage--live::before,
   .ptr-arc--ptr,
@@ -3599,7 +3684,10 @@ pre {
   .nd-cell--dead,
   .cx-flyer,
   .cx-dot--gold,
-  .cx-dot--run {
+  .cx-dot--run,
+  .pp-flyer,
+  .cv-flyer,
+  .cv-lock {
     animation: none;
   }
 }
@@ -3647,7 +3735,9 @@ pre {
   .lm-row,
   .ar-row,
   .nd-row,
-  .cx-row {
+  .cx-row,
+  .pp-row,
+  .cv-row {
     grid-template-columns: 1fr;
   }
   .ptr-objects,

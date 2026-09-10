@@ -65,6 +65,7 @@ int main() { return add(1, 2); }`,
     blurb: 'Text in, text out — before the compiler',
     track: 'foundations',
     keywords: ['#include', '#define', 'macro', 'ifdef', 'pragma once'],
+    viz: 'preprocessor',
     summary:
       'The preprocessor is a text engine. It pastes headers, expands macros, and strips code behind #if. Prefer the language (constants, inline, templates) over macros whenever you can.',
     facts: [
@@ -158,6 +159,7 @@ std::size_t   n = 0;     // unsigned, object size / index`,
     blurb: 'What you may change, and when',
     track: 'foundations',
     keywords: ['const', 'constexpr', 'mutable', 'volatile', 'const-correct'],
+    viz: 'cv-qualifiers',
     summary:
       'const is a compile-time promise: this object will not be mutated through this name. It is the backbone of APIs that are safe to reason about. volatile is almost never what you want in application code.',
     facts: [

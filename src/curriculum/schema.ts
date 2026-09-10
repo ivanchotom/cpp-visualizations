@@ -34,6 +34,8 @@ export type VizKind =
   | 'arrays'
   | 'new-delete'
   | 'constexpr'
+  | 'preprocessor'
+  | 'cv-qualifiers'
 
 export interface Fact {
   label: string

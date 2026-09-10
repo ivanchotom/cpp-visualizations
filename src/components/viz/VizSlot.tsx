@@ -25,6 +25,8 @@ import { LambdasViz } from './LambdasViz.tsx'
 import { ArraysViz } from './ArraysViz.tsx'
 import { NewDeleteViz } from './NewDeleteViz.tsx'
 import { ConstexprViz } from './ConstexprViz.tsx'
+import { PreprocessorViz } from './PreprocessorViz.tsx'
+import { CvQualViz } from './CvQualViz.tsx'
 
 const registry: Record<VizKind, () => ReactElement> = {
   types: () => <DataTypesView />,
@@ -52,6 +54,8 @@ const registry: Record<VizKind, () => ReactElement> = {
   arrays: () => <ArraysViz />,
   'new-delete': () => <NewDeleteViz />,
   constexpr: () => <ConstexprViz />,
+  preprocessor: () => <PreprocessorViz />,
+  'cv-qualifiers': () => <CvQualViz />,
 }
 
 export function VizSlot({ kind }: { kind: VizKind }) {
