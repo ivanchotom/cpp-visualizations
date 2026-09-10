@@ -727,6 +727,24 @@ pre {
   background: rgba(0, 163, 255, 0.1);
 }
 
+.cat-cell--lvalue.cat-cell--on {
+  border-color: rgba(97, 175, 239, 0.8);
+  background: rgba(97, 175, 239, 0.14);
+  box-shadow: 0 0 18px rgba(97, 175, 239, 0.2);
+}
+
+.cat-cell--prvalue.cat-cell--on {
+  border-color: rgba(152, 195, 121, 0.8);
+  background: rgba(152, 195, 121, 0.14);
+  box-shadow: 0 0 18px rgba(152, 195, 121, 0.2);
+}
+
+.cat-cell--xvalue.cat-cell--on {
+  border-color: rgba(198, 120, 221, 0.8);
+  background: rgba(198, 120, 221, 0.14);
+  box-shadow: 0 0 18px rgba(198, 120, 221, 0.2);
+}
+
 .cat-badge--lvalue { background: #61afef; }
 .cat-badge--xvalue { background: #c678dd; }
 .cat-badge--prvalue { background: #98c379; }
@@ -815,6 +833,21 @@ pre {
   padding: 12px 14px;
   font-family: var(--mono);
   font-size: 13px;
+  animation: cell-pop 0.4s var(--ease-back);
+}
+
+.inh-row--dup {
+  border-color: rgba(240, 136, 62, 0.7);
+  background: linear-gradient(135deg, rgba(240, 136, 62, 0.22), rgba(224, 108, 117, 0.28));
+}
+
+.inh-row--shared {
+  border-color: rgba(152, 195, 121, 0.7);
+  background: linear-gradient(135deg, rgba(152, 195, 121, 0.22), rgba(0, 163, 255, 0.2));
+}
+
+.inh-row--hot {
+  box-shadow: 0 0 16px rgba(62, 224, 255, 0.28);
 }
 
 .ex-stack {
@@ -1650,7 +1683,9 @@ pre {
 .viz-stage > .algo-flyer,
 .viz-stage > .tpl-flyer,
 .viz-stage > .sf-flyer,
-.viz-stage > .fwd-flyer {
+.viz-stage > .fwd-flyer,
+.viz-stage > .inh-flyer,
+.viz-stage > .cat-flyer {
   position: absolute;
   z-index: 6;
 }
@@ -2962,6 +2997,117 @@ pre {
   color: #06200a;
 }
 
+.inh-stage,
+.cat-stage {
+  min-height: 300px;
+}
+
+.inh-stage--diamond {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(240, 136, 62, 0.18), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(224, 108, 117, 0.12), transparent 50%),
+    #0f141c;
+}
+
+.inh-stage--virtual {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(125, 206, 130, 0.16), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(0, 163, 255, 0.12), transparent 50%),
+    #0f141c;
+}
+
+.inh-call {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 12px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(62, 224, 255, 0.45);
+  background: rgba(0, 163, 255, 0.1);
+}
+
+.inh-flyer,
+.cat-flyer {
+  position: absolute;
+  z-index: 6;
+  min-width: 36px;
+  height: 32px;
+  padding: 0 10px;
+  margin: -16px 0 0 -20px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-weight: 800;
+  font-size: 12px;
+  pointer-events: none;
+  box-shadow: 0 0 22px currentColor;
+  background: linear-gradient(160deg, #fff, #3ee0ff);
+  color: #00344d;
+}
+
+.inh-flyer--dup {
+  background: linear-gradient(160deg, #fff4d6, #ff7ab6);
+  color: #3a1020;
+}
+
+.inh-flyer--shared {
+  background: linear-gradient(160deg, #fff, #b8f29b);
+  color: #06200a;
+}
+
+.cat-expr {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 12px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(22, 27, 34, 0.9);
+}
+
+.cat-expr--lvalue { border-color: rgba(97, 175, 239, 0.6); }
+.cat-expr--prvalue { border-color: rgba(152, 195, 121, 0.6); }
+.cat-expr--xvalue { border-color: rgba(198, 120, 221, 0.6); }
+
+.cat-flyer--lvalue {
+  background: linear-gradient(160deg, #fff, #61afef);
+  color: #041018;
+}
+
+.cat-flyer--prvalue {
+  background: linear-gradient(160deg, #fff, #98c379);
+  color: #06200a;
+}
+
+.cat-flyer--xvalue {
+  background: linear-gradient(160deg, #fff, #e2b0ff);
+  color: #2a1038;
+}
+
+.cat-stage--lvalue {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(97, 175, 239, 0.16), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(0, 163, 255, 0.1), transparent 50%),
+    #0f141c;
+}
+
+.cat-stage--prvalue {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(152, 195, 121, 0.16), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(62, 224, 255, 0.1), transparent 50%),
+    #0f141c;
+}
+
+.cat-stage--xvalue {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(198, 120, 221, 0.18), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(255, 122, 182, 0.1), transparent 50%),
+    #0f141c;
+}
+
 .ct-incoming {
   position: absolute;
   left: 16px;
@@ -3067,6 +3213,9 @@ pre {
   .sf-hard,
   .sf-flyer,
   .fwd-flyer,
+  .inh-row,
+  .inh-flyer,
+  .cat-flyer,
   .ct-flag,
   .inv-flag {
     animation: none;
