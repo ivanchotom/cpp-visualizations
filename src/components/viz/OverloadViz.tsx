@@ -106,7 +106,15 @@ export function OverloadViz() {
   const rightName = id === 'rank' ? 'f(double)' : id === 'del' ? 'draw(double)' : id === 'boolp' ? 'f(bool)' : 'D::f(double)'
   const leftWin = id === 'rank' && ranked
   const rightWin = (id === 'del' && i >= 1) || (id === 'boolp' && ranked) || (id === 'hide' && ranked)
-  const leftNote = leftWin ? 'exact / promotion' : id === 'del' ? 'viable, unused' : id === 'boolp' ? 'no conversion' : 'hidden'
+  const leftNote = leftWin
+    ? 'exact / promotion'
+    : id === 'rank'
+      ? 'viable'
+      : id === 'del'
+        ? 'viable, unused'
+        : id === 'boolp'
+          ? 'no conversion'
+          : 'hidden'
   const rightNote =
     id === 'del' && rejected
       ? '= delete wins'
