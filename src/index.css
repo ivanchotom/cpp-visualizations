@@ -1695,7 +1695,9 @@ pre {
 .viz-stage > .pp-flyer,
 .viz-stage > .cv-flyer,
 .viz-stage > .cvn-flyer,
-.viz-stage > .sm-flyer {
+.viz-stage > .sm-flyer,
+.viz-stage > .lit-flyer,
+.viz-stage > .cf-flyer {
   position: absolute;
   z-index: 6;
 }
@@ -3565,7 +3567,9 @@ pre {
 .pp-flyer,
 .cv-flyer,
 .cvn-flyer,
-.sm-flyer {
+.sm-flyer,
+.lit-flyer,
+.cf-flyer {
   min-width: 64px;
   height: 28px;
   margin: -14px 0 0 -32px;
@@ -3730,6 +3734,100 @@ pre {
   box-shadow: 0 0 22px #ff7ab6;
 }
 
+.lit-stage,
+.cf-stage {
+  min-height: 300px;
+}
+
+.lit-row,
+.cf-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: stretch;
+}
+
+.cf-row {
+  grid-template-columns: 1fr;
+  max-width: 420px;
+  margin: 12px auto 0;
+}
+
+.cf-cells {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 4px 0 8px;
+}
+
+.cf-cell--on {
+  border-color: rgba(62, 224, 255, 0.85);
+  box-shadow: 0 0 16px rgba(62, 224, 255, 0.28);
+  transform: translateY(-2px);
+}
+
+.cf-cases {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.cf-case {
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(22, 27, 34, 0.92);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 88px;
+}
+
+.cf-case--on {
+  border-style: solid;
+  border-color: rgba(229, 192, 123, 0.75);
+  box-shadow: 0 0 16px rgba(229, 192, 123, 0.22);
+}
+
+.lit-stage--trap,
+.cf-stage--copy {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(224, 108, 117, 0.16), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(240, 136, 62, 0.1), transparent 50%),
+    #0f141c;
+}
+
+.lit-stage--ok,
+.cf-stage--write {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(125, 206, 130, 0.16), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(0, 163, 255, 0.1), transparent 50%),
+    #0f141c;
+}
+
+.cf-stage--fall {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(229, 192, 123, 0.18), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(0, 163, 255, 0.1), transparent 50%),
+    #0f141c;
+}
+
+.lit-flyer--trap,
+.cf-flyer--trap {
+  background: linear-gradient(160deg, #ffd6c8, #e06c75);
+  color: #2a0808;
+  box-shadow: 0 0 22px #e06c75;
+}
+
+.lit-flyer--ok,
+.cf-flyer--weld {
+  background: linear-gradient(160deg, #e8ffd6, #7dce82);
+  color: #041208;
+  box-shadow: 0 0 22px #7dce82;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .viz-stage--live::before,
   .ptr-arc--ptr,
@@ -3789,7 +3887,9 @@ pre {
   .cv-flyer,
   .cv-lock,
   .cvn-flyer,
-  .sm-flyer {
+  .sm-flyer,
+  .lit-flyer,
+  .cf-flyer {
     animation: none;
   }
 }
@@ -3842,7 +3942,10 @@ pre {
   .cv-row,
   .cvn-row,
   .sm-row,
-  .sm-grid {
+  .sm-grid,
+  .lit-row,
+  .cf-row,
+  .cf-cases {
     grid-template-columns: 1fr;
   }
   .ptr-objects,

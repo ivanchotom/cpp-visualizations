@@ -38,6 +38,8 @@ export type VizKind =
   | 'cv-qualifiers'
   | 'conversions'
   | 'special-members'
+  | 'literals'
+  | 'control-flow'
 
 export interface Fact {
   label: string

@@ -208,6 +208,7 @@ struct Counter {
     blurb: 'How values enter the language',
     track: 'foundations',
     keywords: ['literal', 'auto', 'brace', 'uniform init', 'nullptr'],
+    viz: 'literals',
     summary:
       'A literal has a type. Initialization syntax decides what that type becomes in a variable, and whether narrowing is allowed. Brace initialization is the modern default because it refuses silent narrowing.',
     facts: [
@@ -302,6 +303,7 @@ std::cout << (a ? b : c);`,
     blurb: 'if, switch, loops, jump',
     track: 'foundations',
     keywords: ['if', 'switch', 'for', 'while', 'break', 'goto'],
+    viz: 'control-flow',
     summary:
       'Structured control is boring on purpose. Prefer range-for for containers, switch for dense integer dispatch, and keep goto in the museum except for a few low-level cleanup patterns you will rarely need.',
     facts: [

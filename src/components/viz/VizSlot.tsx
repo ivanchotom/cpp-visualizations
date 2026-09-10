@@ -29,6 +29,8 @@ import { PreprocessorViz } from './PreprocessorViz.tsx'
 import { CvQualViz } from './CvQualViz.tsx'
 import { ConversionsViz } from './ConversionsViz.tsx'
 import { SpecialMembersViz } from './SpecialMembersViz.tsx'
+import { LiteralsViz } from './LiteralsViz.tsx'
+import { ControlFlowViz } from './ControlFlowViz.tsx'
 
 const registry: Record<VizKind, () => ReactElement> = {
   types: () => <DataTypesView />,
@@ -60,6 +62,8 @@ const registry: Record<VizKind, () => ReactElement> = {
   'cv-qualifiers': () => <CvQualViz />,
   conversions: () => <ConversionsViz />,
   'special-members': () => <SpecialMembersViz />,
+  literals: () => <LiteralsViz />,
+  'control-flow': () => <ControlFlowViz />,
 }
 
 export function VizSlot({ kind }: { kind: VizKind }) {
