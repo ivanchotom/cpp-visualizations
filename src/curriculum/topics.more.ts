@@ -418,6 +418,7 @@ auto c = make<Widget>(std::move(local));  // moves`,
     blurb: 'Fixed-size heterogeneous bundles',
     track: 'stdlib',
     keywords: ['pair', 'tuple', 'tie', 'get', 'make_pair'],
+    viz: 'pair-tuple',
     summary:
       'std::pair<A,B> is first/second. std::tuple<Ts...> is an indexed pack of values. They are the vocabulary types for “return two things” and for generic zip. C++14 has no structured bindings — use std::tie, std::get<I>, or a named pair.',
     facts: [
@@ -470,6 +471,7 @@ bool operator<(const Rec& a, const Rec& b) {
     blurb: 'std::atomic without inventing a protocol',
     track: 'stdlib',
     keywords: ['atomic', 'memory_order', 'CAS', 'race', 'mutex'],
+    viz: 'atomics',
     summary:
       'A data race on a non-atomic is undefined behavior, not “a torn read.” std::atomic<T> makes loads and stores atomic. Start with seq_cst (the default). Relaxed/acquire/release exist for when you have measured and you know the protocol. mutex + lock_guard remains the default for anything bigger than a counter or a flag.',
     facts: [

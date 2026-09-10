@@ -62,6 +62,8 @@ export type VizKind =
   | 'access-control'
   | 'template-deduction'
   | 'variadic-templates'
+  | 'pair-tuple'
+  | 'atomics'
 
 export interface Fact {
   label: string

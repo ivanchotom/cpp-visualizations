@@ -53,6 +53,8 @@ import { AdlViz } from './AdlViz.tsx'
 import { AccessViz } from './AccessViz.tsx'
 import { DeductionViz } from './DeductionViz.tsx'
 import { VariadicViz } from './VariadicViz.tsx'
+import { PairViz } from './PairViz.tsx'
+import { AtomicsViz } from './AtomicsViz.tsx'
 
 const registry: Record<VizKind, () => ReactElement> = {
   types: () => <DataTypesView />,
@@ -108,6 +110,8 @@ const registry: Record<VizKind, () => ReactElement> = {
   'access-control': () => <AccessViz />,
   'template-deduction': () => <DeductionViz />,
   'variadic-templates': () => <VariadicViz />,
+  'pair-tuple': () => <PairViz />,
+  atomics: () => <AtomicsViz />,
 }
 
 export function VizSlot({ kind }: { kind: VizKind }) {
