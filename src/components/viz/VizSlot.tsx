@@ -31,6 +31,8 @@ import { ConversionsViz } from './ConversionsViz.tsx'
 import { SpecialMembersViz } from './SpecialMembersViz.tsx'
 import { LiteralsViz } from './LiteralsViz.tsx'
 import { ControlFlowViz } from './ControlFlowViz.tsx'
+import { ScopeViz } from './ScopeViz.tsx'
+import { FunctionsViz } from './FunctionsViz.tsx'
 
 const registry: Record<VizKind, () => ReactElement> = {
   types: () => <DataTypesView />,
@@ -64,6 +66,8 @@ const registry: Record<VizKind, () => ReactElement> = {
   'special-members': () => <SpecialMembersViz />,
   literals: () => <LiteralsViz />,
   'control-flow': () => <ControlFlowViz />,
+  scope: () => <ScopeViz />,
+  functions: () => <FunctionsViz />,
 }
 
 export function VizSlot({ kind }: { kind: VizKind }) {

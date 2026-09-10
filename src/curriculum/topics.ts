@@ -362,6 +362,7 @@ switch (kind) {
     blurb: 'Who can see a name, how long it lives',
     track: 'foundations',
     keywords: ['scope', 'namespace', 'static', 'global', 'ADL'],
+    viz: 'scope',
     summary:
       'Scope is visibility. Lifetime is how long the object exists. They often line up (a local lives until its block ends) and sometimes don’t (new lives until delete; static locals live until program exit).',
     facts: [
@@ -792,6 +793,7 @@ p->~Widget();`,
     blurb: 'Declarations, defaults, inline',
     track: 'functions',
     keywords: ['function', 'inline', 'default argument', 'trailing return'],
+    viz: 'functions',
     summary:
       'A function declaration names a callable. Definitions live in one TU unless the function is inline (or a template). Default arguments are filled in at the call site from the declaration the caller sees.',
     facts: [

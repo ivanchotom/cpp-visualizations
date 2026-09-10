@@ -40,6 +40,8 @@ export type VizKind =
   | 'special-members'
   | 'literals'
   | 'control-flow'
+  | 'scope'
+  | 'functions'
 
 export interface Fact {
   label: string
