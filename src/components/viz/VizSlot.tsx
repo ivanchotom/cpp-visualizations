@@ -23,6 +23,8 @@ import { AlgorithmsViz } from './AlgorithmsViz.tsx'
 import { InvalidationViz } from './InvalidationViz.tsx'
 import { LambdasViz } from './LambdasViz.tsx'
 import { ArraysViz } from './ArraysViz.tsx'
+import { NewDeleteViz } from './NewDeleteViz.tsx'
+import { ConstexprViz } from './ConstexprViz.tsx'
 
 const registry: Record<VizKind, () => ReactElement> = {
   types: () => <DataTypesView />,
@@ -48,6 +50,8 @@ const registry: Record<VizKind, () => ReactElement> = {
   invalidation: () => <InvalidationViz />,
   lambdas: () => <LambdasViz />,
   arrays: () => <ArraysViz />,
+  'new-delete': () => <NewDeleteViz />,
+  constexpr: () => <ConstexprViz />,
 }
 
 export function VizSlot({ kind }: { kind: VizKind }) {

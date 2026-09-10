@@ -32,6 +32,8 @@ export type VizKind =
   | 'invalidation'
   | 'lambdas'
   | 'arrays'
+  | 'new-delete'
+  | 'constexpr'
 
 export interface Fact {
   label: string

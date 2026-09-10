@@ -738,6 +738,7 @@ void wrap(std::string&& s) {
     blurb: 'Bare allocation, and why to hide it',
     track: 'memory',
     keywords: ['new', 'delete', 'nothrow', 'placement new', 'allocator'],
+    viz: 'new-delete',
     summary:
       'new T allocates and constructs; delete p destroys and deallocates. new T[n] pairs with delete[]. You almost never write these in application code — unique_ptr, vector, and make_unique wrap them.',
     facts: [
@@ -964,6 +965,7 @@ f();`,
     blurb: 'Work the compiler can finish for you',
     track: 'functions',
     keywords: ['constexpr', 'const', 'compile time', 'C++14'],
+    viz: 'constexpr',
     summary:
       'constexpr means “can be evaluated at compile time if the inputs are constant.” C++14 relaxed constexpr functions: loops, locals, mutation of locals are allowed. It is not the same as const.',
     facts: [
