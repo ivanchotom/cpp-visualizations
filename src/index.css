@@ -1685,7 +1685,9 @@ pre {
 .viz-stage > .sf-flyer,
 .viz-stage > .fwd-flyer,
 .viz-stage > .inh-flyer,
-.viz-stage > .cat-flyer {
+.viz-stage > .cat-flyer,
+.viz-stage > .ty-flyer,
+.viz-stage > .lay-flyer {
   position: absolute;
   z-index: 6;
 }
@@ -3108,6 +3110,99 @@ pre {
     #0f141c;
 }
 
+.ty-stage,
+.lay-stage {
+  min-height: 240px;
+}
+
+.ty-stage--trap {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(224, 108, 117, 0.2), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(240, 136, 62, 0.12), transparent 50%),
+    #0f141c;
+}
+
+.ty-rank,
+.ty-trap,
+.lay-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  margin: 0 0 12px;
+}
+
+.ty-name {
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(62, 224, 255, 0.45);
+  background: rgba(0, 163, 255, 0.1);
+}
+
+.ty-bytes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.ty-cell {
+  width: 22px;
+  height: 28px;
+  border-radius: 4px;
+  animation: cell-pop 0.35s var(--ease-back);
+}
+
+.ty-width {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-left: 6px;
+}
+
+.ty-flyer,
+.lay-flyer {
+  position: absolute;
+  z-index: 6;
+  min-width: 36px;
+  height: 32px;
+  padding: 0 10px;
+  margin: -16px 0 0 -18px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-weight: 800;
+  font-size: 12px;
+  pointer-events: none;
+  box-shadow: 0 0 22px currentColor;
+  background: linear-gradient(160deg, #fff, #61afef);
+  color: #041018;
+}
+
+.ty-flyer--trap {
+  background: linear-gradient(160deg, #fff4d6, #ff8a7a);
+  color: #2a0606;
+}
+
+.lay-stage--pad {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(240, 136, 62, 0.16), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(0, 163, 255, 0.1), transparent 50%),
+    #0f141c;
+}
+
+.lay-stage--good {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(125, 206, 130, 0.16), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(0, 163, 255, 0.1), transparent 50%),
+    #0f141c;
+}
+
+.slot--pad-hot {
+  animation: cell-pop 0.4s var(--ease-back);
+}
+
 .ct-incoming {
   position: absolute;
   left: 16px;
@@ -3216,6 +3311,10 @@ pre {
   .inh-row,
   .inh-flyer,
   .cat-flyer,
+  .ty-flyer,
+  .ty-cell,
+  .lay-flyer,
+  .slot--pad-hot,
   .ct-flag,
   .inv-flag {
     animation: none;
@@ -3260,7 +3359,8 @@ pre {
   .own-grid,
   .own-stage--unique .own-grid,
   .pb-row,
-  .fwd-row {
+  .fwd-row,
+  .ty-trap {
     grid-template-columns: 1fr;
   }
   .ptr-objects,
