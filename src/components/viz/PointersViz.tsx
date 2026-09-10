@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { clamp01, curve, easeInOutCubic, edge, lerp, usePrefersReducedMotion } from './motion.ts'
+import { clamp01, curve, easeInOutCubic, edge, hop, lerp, usePrefersReducedMotion } from './motion.ts'
 
 type Target = 'a' | 'b'
 
@@ -7,8 +7,9 @@ interface Packet {
   id: number
   t: number
   born: number
-  color: string
   kind: 'p' | 'r'
+  from: { x: number; y: number }
+  to: { x: number; y: number }
 }
 
 export function PointersViz() {
@@ -25,8 +26,6 @@ export function PointersViz() {
   const bRef = useRef<HTMLButtonElement>(null)
   const pRef = useRef<HTMLDivElement>(null)
   const rRef = useRef<HTMLDivElement>(null)
-  const pathRef = useRef<SVGPathElement>(null)
-  const refPathRef = useRef<SVGPathElement>(null)
   const packetsRef = useRef<Packet[]>([])
   const rafRef = useRef(0)
   const packetId = useRef(0)
@@ -101,14 +100,26 @@ export function PointersViz() {
     return () => cancelAnimationFrame(raf)
   }, [pPath, reduced, tick])
 
-  function spawnPacket(kind: 'p' | 'r', color: string) {
-    const pkt: Packet = { id: ++packetId.current, t: 0, born: performance.now(), color, kind }
+  function spawnPacket(kind: 'p' | 'r') {
+    const stage = stageRef.current
+    const fromEl = kind === 'r' ? rRef.current : pRef.current
+    const toEl = kind === 'r' ? aRef.current : pointAt === 'a' ? aRef.current : bRef.current
+    if (!stage || !fromEl || !toEl) return
+    const origin = stage.getBoundingClientRect()
+    const pkt: Packet = {
+      id: ++packetId.current,
+      t: 0,
+      born: performance.now(),
+      kind,
+      from: edge(fromEl, origin, 'top'),
+      to: edge(toEl, origin, 'bottom'),
+    }
     packetsRef.current = [...packetsRef.current, pkt]
     setPackets(packetsRef.current)
     if (rafRef.current) return
     const loop = (now: number) => {
       const next = packetsRef.current
-        .map((p) => ({ ...p, t: clamp01((now - p.born) / 480) }))
+        .map((p) => ({ ...p, t: clamp01((now - p.born) / 720) }))
         .filter((p) => p.t < 1)
       packetsRef.current = next
       setPackets(next)
@@ -129,22 +140,15 @@ export function PointersViz() {
     if (pointAt === 'a') setA(next)
     else setB(next)
     setFlash(pointAt)
-    spawnPacket('p', '#3ee0ff')
-    window.setTimeout(() => setFlash(null), 420)
+    spawnPacket('p')
+    window.setTimeout(() => setFlash(null), 520)
   }
 
   function incRef() {
     setA(a + 1)
     setFlash('r')
-    spawnPacket('r', '#7dce82')
-    window.setTimeout(() => setFlash(null), 420)
-  }
-
-  function packetPos(pkt: Packet): { x: number; y: number } | null {
-    const el = pkt.kind === 'r' ? refPathRef.current : pathRef.current
-    if (!el || el.getTotalLength() === 0) return null
-    const p = el.getPointAtLength(pkt.t * el.getTotalLength())
-    return { x: p.x, y: p.y }
+    spawnPacket('r')
+    window.setTimeout(() => setFlash(null), 520)
   }
 
   return (
@@ -159,7 +163,7 @@ export function PointersViz() {
         <button className="chip chip--play" onClick={writeThroughP}>
           ++*p
         </button>
-        <button className="chip" onClick={incRef}>
+        <button className="chip chip--ref" onClick={incRef}>
           ++r
         </button>
         <button
@@ -247,43 +251,32 @@ export function PointersViz() {
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
-            <marker id="ptr-head" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
-              <path d="M0,0 L8,4 L0,8 z" fill="#3ee0ff" />
+            <marker id="ptr-head" markerWidth="10" markerHeight="10" refX="7" refY="5" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="#3ee0ff" />
             </marker>
-            <marker id="ref-head" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
-              <path d="M0,0 L8,4 L0,8 z" fill="#7dce82" />
+            <marker id="ref-head" markerWidth="10" markerHeight="10" refX="7" refY="5" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="#7dce82" />
             </marker>
           </defs>
+          <path d={rPath} className="ptr-arc ptr-arc--ref" fill="none" markerEnd="url(#ref-head)" />
           <path
-            ref={refPathRef}
-            d={rPath}
-            className="ptr-arc ptr-arc--ref"
-            fill="none"
-            markerEnd="url(#ref-head)"
-          />
-          <path
-            ref={pathRef}
             d={drawP}
             className="ptr-arc ptr-arc--ptr"
             fill="none"
             filter="url(#ptr-glow)"
             markerEnd="url(#ptr-head)"
           />
-          {packets.map((pkt) => {
-            const pos = packetPos(pkt)
-            if (!pos) return null
-            return (
-              <circle
-                key={pkt.id}
-                cx={pos.x}
-                cy={pos.y}
-                r={6}
-                fill={pkt.color}
-                filter="url(#ptr-glow)"
-              />
-            )
-          })}
         </svg>
+        {packets.map((pkt) => {
+          const pos = hop(pkt.from, pkt.to, pkt.t)
+          return (
+            <span
+              key={pkt.id}
+              className={`ptr-pulse ptr-pulse--${pkt.kind}`}
+              style={{ left: pos.x, top: pos.y }}
+            />
+          )
+        })}
       </div>
 
       <p className="layout-hint">

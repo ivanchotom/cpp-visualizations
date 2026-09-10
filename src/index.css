@@ -1623,6 +1623,11 @@ pre {
   z-index: 1;
 }
 
+.viz-stage > .cm-flyer,
+.viz-stage > .ptr-pulse {
+  z-index: 6;
+}
+
 @keyframes stage-spin {
   to {
     transform: rotate(360deg);
@@ -1905,9 +1910,43 @@ pre {
   overflow: visible;
 }
 
+.chip--ref {
+  background: linear-gradient(135deg, #b8f29b, #3d9a4a);
+  border-color: transparent;
+  color: #041208;
+  font-weight: 700;
+  box-shadow: 0 0 18px rgba(125, 206, 130, 0.35);
+}
+
+.chip--ref:hover {
+  color: #041208;
+  filter: brightness(1.08);
+}
+
 .ptr-arc {
-  stroke-width: 2.6;
+  stroke-width: 3.4;
   stroke-linecap: round;
+}
+
+.ptr-pulse {
+  position: absolute;
+  z-index: 5;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: 0 0 22px 6px currentColor;
+}
+
+.ptr-pulse--p {
+  background: radial-gradient(circle at 35% 30%, #fff, #3ee0ff 55%, #0077c2);
+  color: #3ee0ff;
+}
+
+.ptr-pulse--r {
+  background: radial-gradient(circle at 35% 30%, #fff, #b8f29b 55%, #3d9a4a);
+  color: #7dce82;
 }
 
 .ptr-arc--ptr {
