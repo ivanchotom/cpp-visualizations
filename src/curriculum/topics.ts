@@ -408,6 +408,7 @@ int counter() {
     blurb: 'Implicit vs named, and the four casts',
     track: 'foundations',
     keywords: ['static_cast', 'const_cast', 'reinterpret_cast', 'dynamic_cast', 'narrowing'],
+    viz: 'conversions',
     summary:
       'C++ converts more eagerly than you might like. Named casts document intent. C-style (T)x is a blunt instrument that can mix several cast kinds — avoid it.',
     facts: [
@@ -432,11 +433,15 @@ int counter() {
       {
         title: 'Name the conversion',
         snippet: `double d = 3.9;
-auto n = static_cast<int>(d);     // 3, explicit
+int n = d;                        // narrowing, silent
+int m{d};                         // C++11: ill-formed
+auto k = static_cast<int>(d);     // 3, named
 
-Base* b = new Derived;
-auto* p = dynamic_cast<Derived*>(b);
-if (p) p->derivedOnly();
+struct B { virtual ~B() {} };
+struct D : B {};
+B b;
+B* p = &b;
+D* q = dynamic_cast<D*>(p);       // nullptr
 
 // int* ip = (int*)dp;            // don't: C-style`,
       },
@@ -1069,6 +1074,7 @@ private:
     blurb: 'The five the compiler may write',
     track: 'classes',
     keywords: ['destructor', 'copy', 'move', 'rule of five', 'default'],
+    viz: 'special-members',
     summary:
       'Default ctor, destructor, copy ctor, copy assign, move ctor, move assign. The compiler generates them under specific rules. If you define one, look at all of them. =default and =delete make intent explicit.',
     facts: [

@@ -36,6 +36,8 @@ export type VizKind =
   | 'constexpr'
   | 'preprocessor'
   | 'cv-qualifiers'
+  | 'conversions'
+  | 'special-members'
 
 export interface Fact {
   label: string

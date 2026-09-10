@@ -27,6 +27,8 @@ import { NewDeleteViz } from './NewDeleteViz.tsx'
 import { ConstexprViz } from './ConstexprViz.tsx'
 import { PreprocessorViz } from './PreprocessorViz.tsx'
 import { CvQualViz } from './CvQualViz.tsx'
+import { ConversionsViz } from './ConversionsViz.tsx'
+import { SpecialMembersViz } from './SpecialMembersViz.tsx'
 
 const registry: Record<VizKind, () => ReactElement> = {
   types: () => <DataTypesView />,
@@ -56,6 +58,8 @@ const registry: Record<VizKind, () => ReactElement> = {
   constexpr: () => <ConstexprViz />,
   preprocessor: () => <PreprocessorViz />,
   'cv-qualifiers': () => <CvQualViz />,
+  conversions: () => <ConversionsViz />,
+  'special-members': () => <SpecialMembersViz />,
 }
 
 export function VizSlot({ kind }: { kind: VizKind }) {
