@@ -47,6 +47,8 @@ import { UbViz } from './UbViz.tsx'
 import { ConstCorrectViz } from './ConstCorrectViz.tsx'
 import { PitfallsViz } from './PitfallsViz.tsx'
 import { EnumsViz } from './EnumsViz.tsx'
+import { UnionViz } from './UnionViz.tsx'
+import { FnPtrViz } from './FnPtrViz.tsx'
 
 const registry: Record<VizKind, () => ReactElement> = {
   types: () => <DataTypesView />,
@@ -96,6 +98,8 @@ const registry: Record<VizKind, () => ReactElement> = {
   'const-correctness': () => <ConstCorrectViz />,
   pitfalls: () => <PitfallsViz />,
   enums: () => <EnumsViz />,
+  unions: () => <UnionViz />,
+  'function-pointers': () => <FnPtrViz />,
 }
 
 export function VizSlot({ kind }: { kind: VizKind }) {

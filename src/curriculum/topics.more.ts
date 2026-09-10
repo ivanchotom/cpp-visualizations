@@ -53,6 +53,7 @@ int x = FLAG_ON;               // implicit, and FLAG_ON is in this scope`,
     blurb: 'Overlay storage, pack bits',
     track: 'foundations',
     keywords: ['union', 'bit-field', 'active member', 'punning'],
+    viz: 'unions',
     summary:
       'A union stores one of its members at a time in the same bytes. Reading a member that is not the active one is usually undefined (type punning via union is not the portable C++ tool — memcpy / std::memcpy is). Bit-fields pack integer fields into a word; layout is implementation-defined.',
     facts: [
@@ -110,6 +111,7 @@ struct Bits {
     blurb: 'Callables as values',
     track: 'functions',
     keywords: ['function pointer', 'member pointer', 'std::function', 'mem_fn'],
+    viz: 'function-pointers',
     summary:
       'A function pointer stores the address of a function with a given signature. Pointers to members are a different, fat type — they need an object to apply to. std::function<Sig> type-erases any callable that matches Sig, at the cost of a possible heap allocation.',
     facts: [

@@ -56,6 +56,8 @@ export type VizKind =
   | 'const-correctness'
   | 'pitfalls'
   | 'enums'
+  | 'unions'
+  | 'function-pointers'
 
 export interface Fact {
   label: string
