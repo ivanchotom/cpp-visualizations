@@ -1264,6 +1264,7 @@ private:
     blurb: 'Make types feel built-in',
     track: 'classes',
     keywords: ['operator', '<<', '<=>', 'member vs free'],
+    viz: 'op-overload',
     summary:
       'Overload operators to match existing notation, not to be clever. Prefer non-member overloads when either operand should convert (operator+). Keep overloaded operators’ semantics unsurprising: + shouldn’t mutate, == should be an equivalence.',
     facts: [
@@ -1406,6 +1407,7 @@ twice(T x) {
     blurb: '<type_traits> as compile-time reflection',
     track: 'templates',
     keywords: ['type_traits', 'enable_if', 'decltype', 'declval'],
+    viz: 'type-traits',
     summary:
       'Traits are metafunctions: they map types (and sometimes values) to other types or bools. Combined with decltype, std::declval, and enable_if they let generic code branch at compile time in C++14.',
     facts: [

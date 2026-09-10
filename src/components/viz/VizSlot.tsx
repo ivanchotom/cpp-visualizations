@@ -35,6 +35,8 @@ import { ScopeViz } from './ScopeViz.tsx'
 import { FunctionsViz } from './FunctionsViz.tsx'
 import { OverloadViz } from './OverloadViz.tsx'
 import { ClassesViz } from './ClassesViz.tsx'
+import { OpOverloadViz } from './OpOverloadViz.tsx'
+import { TypeTraitsViz } from './TypeTraitsViz.tsx'
 
 const registry: Record<VizKind, () => ReactElement> = {
   types: () => <DataTypesView />,
@@ -72,6 +74,8 @@ const registry: Record<VizKind, () => ReactElement> = {
   functions: () => <FunctionsViz />,
   overloading: () => <OverloadViz />,
   classes: () => <ClassesViz />,
+  'op-overload': () => <OpOverloadViz />,
+  'type-traits': () => <TypeTraitsViz />,
 }
 
 export function VizSlot({ kind }: { kind: VizKind }) {
