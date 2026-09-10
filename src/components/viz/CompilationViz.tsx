@@ -43,18 +43,27 @@ export function CompilationViz() {
   const stageIndex = showExe ? 5 : Math.max(Math.round(math), Math.round(main))
 
   useLayoutEffect(() => {
-    const stage = stageRef.current
-    const track = trackRef.current
-    if (!stage || !track) return
-    const origin = stage.getBoundingClientRect()
-    const tr = track.getBoundingClientRect()
-    const xs = stationRefs.current.map((el) => {
-      if (!el) return 0
-      const r = el.getBoundingClientRect()
-      return r.left - origin.left + r.width / 2
-    })
-    setLayout({ xs, ty: tr.top - origin.top + tr.height / 2 })
-  }, [math, main, showExe, playing])
+    const measure = () => {
+      const stage = stageRef.current
+      const track = trackRef.current
+      if (!stage || !track) return
+      const origin = stage.getBoundingClientRect()
+      const tr = track.getBoundingClientRect()
+      const xs = stationRefs.current.map((el) => {
+        if (!el) return 0
+        const r = el.getBoundingClientRect()
+        return r.left - origin.left + r.width / 2
+      })
+      setLayout({ xs, ty: tr.top - origin.top + tr.height / 2 })
+    }
+    measure()
+    const id = window.requestAnimationFrame(measure)
+    window.addEventListener('resize', measure)
+    return () => {
+      window.cancelAnimationFrame(id)
+      window.removeEventListener('resize', measure)
+    }
+  }, [])
 
   function reset() {
     cancelAnimationFrame(rafRef.current)
@@ -86,12 +95,10 @@ export function CompilationViz() {
     const tickRaf = (now: number) => {
       const t = (now - t0) / 1000
       setMath(pathAt(t))
-      setMain(pathAt(t - 0.18))
-      if (t >= 3.15) setResolved(true)
-      if (t >= 3.55) setShowExe(true)
-      if (t >= 4.4) {
-        setMath(4)
-        setMain(4)
+      setMain(pathAt(t - 0.16))
+      if (t >= 4.35) setResolved(true)
+      if (t >= 5.2) setShowExe(true)
+      if (t >= 6.4) {
         setPlaying(false)
         return
       }
@@ -112,12 +119,15 @@ export function CompilationViz() {
     setMain(p)
   }
 
-  const packets: { id: PacketId; label: string; progress: number }[] = showExe
-    ? [{ id: 'exe', label: 'a.out', progress: 5 }]
-    : [
-        { id: 'math', label: labelFor('math', math, resolved), progress: math },
-        { id: 'main', label: labelFor('main', main, resolved), progress: main },
-      ]
+  const packets: { id: PacketId; label: string; progress: number }[] = [
+    ...(!showExe
+      ? [
+          { id: 'math' as const, label: labelFor('math', math, resolved), progress: math },
+          { id: 'main' as const, label: labelFor('main', main, resolved), progress: main },
+        ]
+      : []),
+    ...(showExe ? [{ id: 'exe' as const, label: 'a.out', progress: 5 }] : []),
+  ]
 
   return (
     <div className="viz viz--col">
@@ -183,10 +193,28 @@ function labelFor(id: 'math' | 'main', progress: number, resolved: boolean): str
 
 function pathAt(seconds: number): number {
   const t = Math.max(0, seconds)
-  if (t < 0.7) return lerp(0, 1, easeInOutCubic(clamp01(t / 0.7)))
-  if (t < 1.55) return lerp(1, 2, easeInOutCubic(clamp01((t - 0.7) / 0.85)))
-  if (t < 2.3) return lerp(2, 3, easeInOutCubic(clamp01((t - 1.55) / 0.75)))
-  if (t < 3.15) return lerp(3, 4, easeInOutCubic(clamp01((t - 2.3) / 0.85)))
+  const segs = [
+    { at: 0, pos: 0 },
+    { at: 0.75, pos: 1 },
+    { at: 1.25, pos: 1 },
+    { at: 2.05, pos: 2 },
+    { at: 2.55, pos: 2 },
+    { at: 3.35, pos: 3 },
+    { at: 3.9, pos: 3 },
+    { at: 4.7, pos: 4 },
+    { at: 6.4, pos: 4 },
+  ]
+  if (t <= segs[0].at) return 0
+  for (let i = 1; i < segs.length; i++) {
+    if (t <= segs[i].at) {
+      const a = segs[i - 1]
+      const b = segs[i]
+      const span = b.at - a.at
+      const u = span <= 0 ? 1 : clamp01((t - a.at) / span)
+      const eased = a.pos === b.pos ? 0 : easeInOutCubic(u)
+      return lerp(a.pos, b.pos, a.pos === b.pos ? 0 : eased)
+    }
+  }
   return 4
 }
 

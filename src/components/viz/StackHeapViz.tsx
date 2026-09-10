@@ -17,10 +17,11 @@ export function StackHeapViz() {
   const heapRef = useRef<HTMLDivElement>(null)
 
   const inFrame = beat === 1 || beat === 2
-  const hasHeap = mode === 'leak' ? beat >= 2 : beat === 2
+  const showX = mode === 'leak' && inFrame
+  const showPtr = mode === 'leak' ? beat === 2 : beat === 1 || beat === 2
+  const hasHeap = mode === 'leak' ? beat >= 2 : beat === 1 || beat === 2
   const leaked = mode === 'leak' && beat === 3
   const deleted = mode === 'raii' && beat === 3
-  const showPtr = beat === 2
 
   useEffect(() => {
     if (!playing) return
@@ -29,14 +30,15 @@ export function StackHeapViz() {
       setPlaying(false)
       return
     }
-    const delays = [0, 850, 1750, 2700]
-    const ids = delays.map((d, i) =>
-      window.setTimeout(() => {
-        setBeat(i)
-        if (i === BEATS - 1) setPlaying(false)
-      }, d),
-    )
-    return () => ids.forEach((id) => window.clearTimeout(id))
+    const tAlloc = window.setTimeout(() => setBeat(2), 1600)
+    const tReturn = window.setTimeout(() => {
+      setBeat(3)
+      setPlaying(false)
+    }, 4000)
+    return () => {
+      window.clearTimeout(tAlloc)
+      window.clearTimeout(tReturn)
+    }
   }, [playing, mode, reduced])
 
   useLayoutEffect(() => {
@@ -56,11 +58,9 @@ export function StackHeapViz() {
   }
 
   function play() {
-    setBeat(0)
+    setBeat(1)
     setPlaying(true)
   }
-
-  const showX = mode === 'leak' && inFrame
 
   const code =
     mode === 'leak'
@@ -83,7 +83,7 @@ export function StackHeapViz() {
       : beat === 1
         ? mode === 'leak'
           ? 'x is automatic. It will vanish when f returns — no delete, no leak.'
-          : 'The unique_ptr lives on the stack. It is the owner, not the int.'
+          : 'make_unique puts the unique_ptr on the stack and the int on the heap. The owner is automatic; the int is not.'
         : beat === 2
           ? mode === 'leak'
             ? 'p is just an address on the stack. The 42 is a separate heap object. They are not the same lifetime.'

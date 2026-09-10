@@ -2142,7 +2142,7 @@ pre {
 }
 
 .cc-stop:hover {
-  transform: translateY(-2px);
+  border-color: var(--accent);
 }
 
 .cc-stop--on {
