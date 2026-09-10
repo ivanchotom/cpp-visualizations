@@ -1721,7 +1721,9 @@ pre {
 .viz-stage > .td-flyer,
 .viz-stage > .va-flyer,
 .viz-stage > .pt-flyer,
-.viz-stage > .ao-flyer {
+.viz-stage > .ao-flyer,
+.viz-stage > .pi-flyer,
+.viz-stage > .pa-flyer {
   position: absolute;
   z-index: 6;
 }
@@ -3617,7 +3619,9 @@ pre {
 .td-flyer,
 .va-flyer,
 .pt-flyer,
-.ao-flyer {
+.ao-flyer,
+.pi-flyer,
+.pa-flyer {
   min-width: 64px;
   height: 28px;
   margin: -14px 0 0 -32px;
@@ -3986,7 +3990,9 @@ pre {
 .td-flyer--trap,
 .va-flyer--trap,
 .pt-flyer--trap,
-.ao-flyer--trap {
+.ao-flyer--trap,
+.pi-flyer--trap,
+.pa-flyer--trap {
   background: linear-gradient(160deg, #ffd6c8, #e06c75);
   color: #2a0808;
   box-shadow: 0 0 22px #e06c75;
@@ -4021,7 +4027,9 @@ pre {
 .td-stage,
 .va-stage,
 .pt-stage,
-.ao-stage {
+.ao-stage,
+.pi-stage,
+.pa-stage {
   min-height: 300px;
 }
 
@@ -4042,7 +4050,9 @@ pre {
 .td-row,
 .va-row,
 .pt-row,
-.ao-row {
+.ao-row,
+.pi-row,
+.pa-row {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 12px;
@@ -4066,7 +4076,9 @@ pre {
 .td-stage--win,
 .va-stage--win,
 .pt-stage--win,
-.ao-stage--win {
+.ao-stage--win,
+.pi-stage--win,
+.pa-stage--win {
   background:
     radial-gradient(120% 90% at 8% -10%, rgba(125, 206, 130, 0.16), transparent 52%),
     radial-gradient(90% 80% at 100% 120%, rgba(0, 163, 255, 0.1), transparent 50%),
@@ -4090,7 +4102,9 @@ pre {
 .td-stage--reject,
 .va-stage--reject,
 .pt-stage--reject,
-.ao-stage--reject {
+.ao-stage--reject,
+.pi-stage--reject,
+.pa-stage--reject {
   background:
     radial-gradient(120% 90% at 8% -10%, rgba(224, 108, 117, 0.18), transparent 52%),
     radial-gradient(90% 80% at 100% 120%, rgba(240, 136, 62, 0.12), transparent 50%),
@@ -4211,7 +4225,9 @@ pre {
   .td-flyer,
   .va-flyer,
   .pt-flyer,
-  .ao-flyer {
+  .ao-flyer,
+  .pi-flyer,
+  .pa-flyer {
     animation: none;
   }
 }
@@ -4291,7 +4307,9 @@ pre {
   .td-row,
   .va-row,
   .pt-row,
-  .ao-row {
+  .ao-row,
+  .pi-row,
+  .pa-row {
     grid-template-columns: 1fr;
   }
   .ptr-objects,

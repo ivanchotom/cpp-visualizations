@@ -55,11 +55,18 @@ import { DeductionViz } from './DeductionViz.tsx'
 import { VariadicViz } from './VariadicViz.tsx'
 import { PairViz } from './PairViz.tsx'
 import { AtomicsViz } from './AtomicsViz.tsx'
+import { PimplViz } from './PimplViz.tsx'
+import { PatternsViz } from './PatternsViz.tsx'
 
 const registry: Record<VizKind, () => ReactElement> = {
   types: () => <DataTypesView />,
   layout: () => <MemoryLayoutView />,
-  patterns: () => <PatternsView />,
+  patterns: () => (
+    <>
+      <PatternsViz />
+      <PatternsView />
+    </>
+  ),
   compilation: () => <CompilationViz />,
   operators: () => <OperatorsViz />,
   'stack-heap': () => <StackHeapViz />,
@@ -112,6 +119,7 @@ const registry: Record<VizKind, () => ReactElement> = {
   'variadic-templates': () => <VariadicViz />,
   'pair-tuple': () => <PairViz />,
   atomics: () => <AtomicsViz />,
+  pimpl: () => <PimplViz />,
 }
 
 export function VizSlot({ kind }: { kind: VizKind }) {

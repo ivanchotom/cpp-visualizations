@@ -526,6 +526,7 @@ if (ready.load(std::memory_order_acquire)) {
     blurb: 'Hide the implementation behind a unique_ptr',
     track: 'idioms',
     keywords: ['pimpl', 'opaque', 'compilation firewall', 'unique_ptr'],
+    viz: 'pimpl',
     summary:
       'Pointer to IMPLementation: the public class holds unique_ptr<Impl> where Impl is defined only in the .cpp. Clients recompile when the public header changes, not when private members change. You pay an allocation and a pointer hop; you gain a stable ABI and faster incremental builds.',
     facts: [

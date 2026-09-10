@@ -64,6 +64,7 @@ export type VizKind =
   | 'variadic-templates'
   | 'pair-tuple'
   | 'atomics'
+  | 'pimpl'
 
 export interface Fact {
   label: string
