@@ -90,6 +90,16 @@ export const foundationsLabs: Lab[] = [
               },
             },
             {
+              when: ['sqr('],
+              voice: 'SQR is still a paste. The argument is written twice in the expansion. Harmless if it is n plus one, deadly if it has a side effect.',
+              verdict: 'Macro expansion: ((arg)*(arg)). Prefer a function.',
+              stage: {
+                type: 'compare',
+                left: { title: 'You wrote', lines: ['SQR(arg)'] },
+                right: { title: 'Pasted as', lines: ['((arg)*(arg))'] },
+              },
+            },
+            {
               when: ['constexpr'],
               voice: 'A constexpr function has a type, evaluates the argument once, and can run at compile time.',
               verdict: 'Language > macro.',
@@ -104,11 +114,12 @@ export const foundationsLabs: Lab[] = [
             },
           ],
           fallback: {
-            voice: 'I do not recognize a SQR plus plus or a constexpr function yet. Add one of those.',
-            verdict: 'Try SQR(++i) or a constexpr helper.',
+            voice: 'This lab visualizes SQR macros and constexpr helpers. Put SQR of something, or a constexpr function, in the box.',
+            verdict: 'No matching teaching pattern in this snippet yet.',
             stage: {
-              type: 'flow',
-              steps: [{ label: 'preprocessor waiting', on: true }],
+              type: 'compare',
+              left: { title: 'Try', lines: ['SQR(++i)', 'SQR(n + 1)'] },
+              right: { title: 'Or', lines: ['constexpr int sqr(int x)'] },
             },
           },
         },
