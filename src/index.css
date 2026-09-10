@@ -1278,6 +1278,7 @@ pre {
   padding: 10px 12px;
   min-width: 180px;
   opacity: 0.45;
+  transition: opacity 0.45s var(--ease-out), border-color 0.4s ease, box-shadow 0.4s ease;
 }
 
 .tpl-card--recipe,
@@ -1285,6 +1286,15 @@ pre {
   opacity: 1;
   border-style: solid;
   border-color: rgba(0, 163, 255, 0.45);
+}
+
+.tpl-card--dbl {
+  border-color: rgba(198, 120, 221, 0.55);
+  box-shadow: 0 0 18px rgba(198, 120, 221, 0.18);
+}
+
+.tpl-card--fresh {
+  animation: cell-pop 0.5s var(--ease-back);
 }
 
 .tpl-card pre {
@@ -1624,7 +1634,10 @@ pre {
 }
 
 .viz-stage > .cm-flyer,
-.viz-stage > .ptr-pulse {
+.viz-stage > .ptr-pulse,
+.viz-stage > .algo-flyer,
+.viz-stage > .tpl-flyer {
+  position: absolute;
   z-index: 6;
 }
 
@@ -2728,8 +2741,94 @@ pre {
 }
 
 .ct-stage,
-.inv-stage {
+.inv-stage,
+.algo-stage,
+.tpl-stage {
   min-height: 280px;
+}
+
+.algo-stage--erased {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(240, 136, 62, 0.18), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(125, 206, 130, 0.12), transparent 50%),
+    #0f141c;
+}
+
+.algo-cell--kept {
+  animation: cell-pop 0.45s var(--ease-back);
+}
+
+.algo-flyer,
+.tpl-flyer {
+  position: absolute;
+  z-index: 6;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  margin: -18px 0 0 -18px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-weight: 800;
+  pointer-events: none;
+  box-shadow: 0 0 22px currentColor;
+}
+
+.algo-flyer {
+  background: linear-gradient(160deg, #fff, #b8f29b);
+  color: #06200a;
+}
+
+.tpl-flyer {
+  margin-left: -28px;
+  background: linear-gradient(160deg, #fff, #3ee0ff);
+  color: #00344d;
+  font-size: 12px;
+}
+
+.tpl-flyer--dbl {
+  background: linear-gradient(160deg, #fff, #e2b0ff);
+  color: #2a1038;
+}
+
+.tpl-stage--binary {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(0, 163, 255, 0.18), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(198, 120, 221, 0.16), transparent 50%),
+    #0f141c;
+}
+
+.tpl-calls {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 12px;
+  flex-wrap: wrap;
+}
+
+.tpl-call {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px dashed var(--border);
+  color: var(--text-dim);
+  opacity: 0.5;
+}
+
+.tpl-call--on {
+  opacity: 1;
+  border-style: solid;
+  border-color: rgba(62, 224, 255, 0.55);
+  color: var(--copy);
+  background: rgba(0, 163, 255, 0.12);
+  animation: cell-pop 0.4s var(--ease-back);
+}
+
+.tpl-call--dbl {
+  border-color: rgba(198, 120, 221, 0.55);
+  color: #e2b0ff;
+  background: rgba(198, 120, 221, 0.12);
 }
 
 .ct-incoming {
@@ -2827,6 +2926,11 @@ pre {
   .op-result,
   .op-op--on,
   .algo-cell--hot,
+  .algo-cell--kept,
+  .algo-flyer,
+  .tpl-flyer,
+  .tpl-card--fresh,
+  .tpl-call--on,
   .ct-flag,
   .inv-flag {
     animation: none;
