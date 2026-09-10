@@ -2727,6 +2727,82 @@ pre {
     #0f141c;
 }
 
+.ct-stage,
+.inv-stage {
+  min-height: 280px;
+}
+
+.ct-incoming {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(22, 27, 34, 0.9);
+  border: 1px solid var(--border);
+  font-family: var(--mono);
+  font-weight: 800;
+}
+
+.algo-cell--hot,
+.list-node--hot {
+  border-color: var(--copy) !important;
+  box-shadow: 0 0 16px rgba(62, 224, 255, 0.3);
+  animation: cell-pop 0.4s var(--ease-back);
+}
+
+.algo-cell--gone {
+  opacity: 0.35;
+  border-style: dashed;
+}
+
+.ct-buckets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
+}
+
+.ct-bucket {
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 8px;
+  min-height: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ct-bucket--on {
+  border-style: solid;
+  border-color: rgba(198, 120, 221, 0.5);
+  background: rgba(198, 120, 221, 0.1);
+}
+
+.ct-flag,
+.inv-flag {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: linear-gradient(160deg, #ffb36a, #f0883e);
+  color: #1a1000;
+  font-weight: 800;
+  animation: cell-pop 0.4s var(--ease-back);
+}
+
+.ct-flag--hash {
+  background: linear-gradient(160deg, #e2b0ff, #c678dd);
+}
+
+.ct-stage--grow,
+.inv-stage--dang {
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(240, 136, 62, 0.16), transparent 52%),
+    radial-gradient(90% 80% at 100% 120%, rgba(255, 122, 182, 0.12), transparent 50%),
+    #0f141c;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .viz-stage--live::before,
   .ptr-arc--ptr,
@@ -2749,7 +2825,10 @@ pre {
   .own-lock-fail,
   .op-group--on,
   .op-result,
-  .op-op--on {
+  .op-op--on,
+  .algo-cell--hot,
+  .ct-flag,
+  .inv-flag {
     animation: none;
   }
 }
