@@ -42,6 +42,8 @@ export type VizKind =
   | 'control-flow'
   | 'scope'
   | 'functions'
+  | 'overloading'
+  | 'classes'
 
 export interface Fact {
   label: string

@@ -837,6 +837,7 @@ auto add(int a, int b) -> int {
     blurb: 'Which f() did you mean?',
     track: 'functions',
     keywords: ['overload', 'ADL', 'viable', 'best match'],
+    viz: 'overloading',
     summary:
       'The compiler builds a set of viable functions, then ranks conversions. Identity beats promotion beats standard conversion beats user-defined conversion. If two winners tie, the program is ill-formed.',
     facts: [
@@ -1029,6 +1030,7 @@ int k = pow2(x);                      // run time if x is not const`,
     blurb: 'Members, access, construction',
     track: 'classes',
     keywords: ['class', 'struct', 'public', 'private', 'this'],
+    viz: 'classes',
     summary:
       'A class is a user-defined type: data + functions + invariants. struct and class are the same except default access (public vs private) and default inheritance. Keep data private and enforce invariants in constructors.',
     facts: [

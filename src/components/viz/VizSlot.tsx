@@ -33,6 +33,8 @@ import { LiteralsViz } from './LiteralsViz.tsx'
 import { ControlFlowViz } from './ControlFlowViz.tsx'
 import { ScopeViz } from './ScopeViz.tsx'
 import { FunctionsViz } from './FunctionsViz.tsx'
+import { OverloadViz } from './OverloadViz.tsx'
+import { ClassesViz } from './ClassesViz.tsx'
 
 const registry: Record<VizKind, () => ReactElement> = {
   types: () => <DataTypesView />,
@@ -68,6 +70,8 @@ const registry: Record<VizKind, () => ReactElement> = {
   'control-flow': () => <ControlFlowViz />,
   scope: () => <ScopeViz />,
   functions: () => <FunctionsViz />,
+  overloading: () => <OverloadViz />,
+  classes: () => <ClassesViz />,
 }
 
 export function VizSlot({ kind }: { kind: VizKind }) {
