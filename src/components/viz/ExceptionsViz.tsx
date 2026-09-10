@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { hop, type Point } from './motion.ts'
+import { hop, playBeats, type Point } from './motion.ts'
 
 const FRAMES = [
   { id: 'main', fn: 'main()', live: 'waiting' },
@@ -79,7 +79,7 @@ export function ExceptionsViz() {
   const stageRef = useRef<HTMLDivElement>(null)
   const frameRefs = useRef<(HTMLDivElement | null)[]>([])
 
-  const step = STEPS[i]
+  const step = STEPS[Math.min(i, STEPS.length - 1)]
   const dead = new Set(step.dead)
 
   useLayoutEffect(() => {
@@ -104,23 +104,18 @@ export function ExceptionsViz() {
 
   useEffect(() => {
     if (!playing) return
-    const t0 = performance.now()
-    let raf = 0
-    const loop = (now: number) => {
-      const elapsed = now - t0
-      const next = Math.min(STEPS.length - 1, Math.floor(elapsed / STEP_MS))
-      setI(next)
-      const local = elapsed - next * STEP_MS
-      setHopT(Math.min(1, local / HOP_MS))
-      if (next >= STEPS.length - 1 && local >= HOP_MS) {
+    return playBeats(
+      STEPS.length,
+      STEP_MS,
+      (index, local) => {
+        setI(index)
+        setHopT(Math.min(1, local / HOP_MS))
+      },
+      () => {
         setPlaying(false)
         setHopT(1)
-        return
-      }
-      raf = requestAnimationFrame(loop)
-    }
-    raf = requestAnimationFrame(loop)
-    return () => cancelAnimationFrame(raf)
+      },
+    )
   }, [playing])
 
   function play() {

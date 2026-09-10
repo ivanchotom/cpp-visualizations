@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { playBeats } from './motion.ts'
 
 const STEPS = [
   { t: 'Base()', label: 'construct Base subobject first', kind: 'ctor' as const, target: 'base' },
@@ -17,29 +18,23 @@ export function LifetimeViz() {
   const [i, setI] = useState(0)
   const [playing, setPlaying] = useState(false)
 
+  const step = STEPS[Math.min(i, STEPS.length - 1)]
   const base = i < 7
   const m1 = i >= 1 && i < 6
   const m2 = i >= 2 && i < 5
   const body = i === 3 || i === 4
   const constructing = i < 4
-  const target = STEPS[i].target
-  const kind = STEPS[i].kind
+  const target = step.target
+  const kind = step.kind
 
   useEffect(() => {
     if (!playing) return
-    const t0 = performance.now()
-    let raf = 0
-    const loop = (now: number) => {
-      const step = Math.min(STEPS.length - 1, Math.floor((now - t0) / STEP_MS))
-      setI(step)
-      if (step >= STEPS.length - 1) {
-        setPlaying(false)
-        return
-      }
-      raf = requestAnimationFrame(loop)
-    }
-    raf = requestAnimationFrame(loop)
-    return () => cancelAnimationFrame(raf)
+    return playBeats(
+      STEPS.length,
+      STEP_MS,
+      (index) => setI(index),
+      () => setPlaying(false),
+    )
   }, [playing])
 
   function play() {
@@ -84,7 +79,7 @@ export function LifetimeViz() {
 
       <div className={`viz-stage lf-stage viz-stage--live${kind === 'dtor' ? ' lf-stage--dtor' : ''}`}>
         <p className="ptr-hint-top">
-          Step {i + 1}/{STEPS.length} · <strong>{STEPS[i].t}</strong>
+          Step {i + 1}/{STEPS.length} · <strong>{step.t}</strong>
         </p>
         <div className={`lf-shell${base ? ' lf-on' : ' lf-dead'}${target === 'base' ? ` lf-now lf-now--${kind}` : ''}`}>
           <span className="lf-tag">Base subobject</span>
@@ -120,7 +115,7 @@ export function LifetimeViz() {
       <pre className="code-block sh-code">
         <code>{code}</code>
       </pre>
-      <p className="layout-hint">{STEPS[i].label}</p>
+      <p className="layout-hint">{step.label}</p>
     </div>
   )
 }

@@ -65,3 +65,33 @@ export function hop(from: Point, to: Point, t: number): Point {
     y: lerp(from.y, to.y, e) - Math.sin(Math.PI * t) * 52,
   }
 }
+
+/** One pedagogical beat at a time. Dropped frames wait — they do not skip. */
+export function playBeats(
+  count: number,
+  stepMs: number,
+  onBeat: (index: number, localMs: number) => void,
+  onDone: () => void,
+): () => void {
+  let i = 0
+  let born = performance.now()
+  let raf = 0
+  const loop = (now: number) => {
+    const local = now - born
+    onBeat(i, local)
+    if (local < stepMs) {
+      raf = requestAnimationFrame(loop)
+      return
+    }
+    if (i >= count - 1) {
+      onDone()
+      return
+    }
+    i += 1
+    born = now
+    onBeat(i, 0)
+    raf = requestAnimationFrame(loop)
+  }
+  raf = requestAnimationFrame(loop)
+  return () => cancelAnimationFrame(raf)
+}
