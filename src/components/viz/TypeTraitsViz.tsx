@@ -22,37 +22,36 @@ export function TypeTraitsViz() {
 
   const stepped = i >= 1
   const decided = i >= 2
-  const stripped = id === 'decay' && stepped
-  const decayed = id === 'decay' && decided
-  const intYes = id === 'query' && stepped
+  const recap = i >= 3
   const ptrNo = id === 'query' && decided
-  const nameTy = id === 'parens' && stepped
-  const exprTy = id === 'parens' && decided
-  const predOn = id === 'cond' && stepped
-  const picked = id === 'cond' && decided
-  const trap = exprTy
+  const exprRef = id === 'parens' && decided
+  const trap = ptrNo
+  const warn = exprRef
+  const ok = (id === 'decay' && recap) || (id === 'cond' && recap) || (id === 'query' && recap)
 
   const code =
     id === 'decay'
-      ? decided
+      ? recap
         ? `using U = std::decay_t<int&>;  // int
 // remove_reference, then array/fn decay`
         : `static_assert(
   std::is_same<std::decay_t<int&>, int>::value,
   "");`
       : id === 'query'
-        ? decided
+        ? recap
           ? `static_assert(!std::is_integral<int*>::value, "");
 // C++14: ::value, not std::is_integral_v`
-          : `static_assert(std::is_integral<int>::value, "");`
+          : `static_assert(std::is_integral<int>::value, "");
+static_assert(!std::is_integral<int*>::value, "");`
         : id === 'parens'
-          ? decided
+          ? recap
             ? `int x = 1;
 using A = decltype(x);     // int
 using B = decltype((x));  // int&`
             : `int x = 1;
-using A = decltype(x);     // int`
-          : decided
+using A = decltype(x);     // int
+using B = decltype((x));  // int&`
+          : recap
             ? `using W = std::conditional_t<
     sizeof(void*) == 8, long, int>;
 // W is long on LP64`
@@ -69,7 +68,7 @@ using A = decltype(x);     // int`
             ? 'Play decltype((x)). decltype(x) is the declared type. Extra parens make an lvalue expression, so you get a reference.'
             : 'Play conditional_t. It picks a type from a bool. C++14 adds the _t aliases so you can drop ::type.'
       : id === 'decay' && i === 1
-        ? 'int& goes into remove_reference_t. The reference is gone. decay does this first, then array-to-pointer and function-to-pointer.'
+        ? 'int& goes into remove_reference_t. The reference is gone. decay does this first, then array-to-pointer and function-to-pointer. Stations light in place.'
         : id === 'decay' && i === 2
           ? 'decay_t<int&> is int. static_assert(is_same<…, int>) holds. This is how you talk about “the value type” of a forwarding reference.'
           : id === 'decay'
@@ -79,7 +78,7 @@ using A = decltype(x);     // int`
               : id === 'query' && i === 2
                 ? 'int* is not an integral type. The same trait, a different answer — no runtime branch.'
                 : id === 'query'
-                  ? 'Incomplete types are often ill-formed here. Test the operation you will actually perform, not a nearby trait name.'
+                  ? 'Incomplete types are often ill-formed here. Test the operation you will actually perform, not a nearby trait name. C++14: ::value, not _v.'
                   : id === 'parens' && i === 1
                     ? 'decltype(x) names the type of the declaration: int. No extra reference.'
                     : id === 'parens' && i === 2
@@ -89,10 +88,10 @@ using A = decltype(x);     // int`
                         : i === 1
                           ? 'sizeof(void*) == 8 on LP64. The predicate is a compile-time bool, not an if.'
                           : i === 2
-                            ? 'conditional_t<true, long, int> is long. The unused branch must still be a valid type name.'
+                            ? 'conditional_t<true, long, int> is long. The unused branch must still be a valid type name. int is dropped, not ill-formed.'
                             : 'C++14: decay_t, enable_if_t, remove_reference_t, conditional_t. C++17 adds if constexpr for the body; this page is the type-level if.'
 
-  const tone = trap ? 'warn' : decayed || ptrNo || picked || (id === 'query' && intYes && !ptrNo) ? 'ok' : 'idle'
+  const tone = trap ? 'trap' : warn ? 'warn' : ok ? 'ok' : 'idle'
   const playLabel =
     id === 'decay'
       ? 'Play decay_t<int&>'
@@ -103,23 +102,31 @@ using A = decltype(x);     // int`
           : 'Play conditional_t'
 
   const verdict =
-    decayed
+    id === 'decay' && recap
       ? 'decay_t<int&> · int'
-      : stripped
-        ? 'remove_reference_t · int'
-        : ptrNo
-          ? 'is_integral<int*> · false'
-          : intYes
-            ? 'is_integral<int> · true'
-            : exprTy
-              ? 'decltype((x)) · int&'
-              : nameTy
-                ? 'decltype(x) · int'
-                : picked
-                  ? 'conditional_t · long'
-                  : predOn
-                    ? 'pred · true on LP64'
-                    : ''
+      : id === 'decay' && decided
+        ? 'strip & · int'
+        : id === 'decay' && stepped
+          ? 'in · int&'
+          : id === 'query' && recap
+            ? 'int* · not integral'
+            : ptrNo
+              ? 'is_integral<int*> · no'
+              : id === 'query' && stepped
+                ? 'is_integral<int> · yes'
+                : id === 'parens' && recap
+                  ? 'extra () · int&'
+                  : exprRef
+                    ? 'decltype((x)) · int&'
+                    : id === 'parens' && stepped
+                      ? 'decltype(x) · int'
+                      : id === 'cond' && recap
+                        ? 'W · long on LP64'
+                        : id === 'cond' && decided
+                          ? 'then · long'
+                          : id === 'cond' && stepped
+                            ? 'pred · yes'
+                            : ''
 
   return (
     <SceneShell
@@ -141,83 +148,64 @@ using A = decltype(x);     // int`
       tone={tone}
     >
       {id === 'decay' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${stripped && !decayed ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">int&</span>
-            <div className={`fx-slot${stripped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">in</span>
-              <span className="fx-value">{stripped ? 'int&' : '—'}</span>
-              <span className="fx-note">reference wrapper</span>
-            </div>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>in</code>
+            <span className="fx-note">int&</span>
+            <span className="fx-note">{stepped ? 'ref' : '—'}</span>
           </div>
-          <div className={`fx-link${decayed ? ' fx-link--weld' : stripped ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${decayed ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">decay_t</span>
-            <div className={`fx-slot${decayed ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">out</span>
-              <span className="fx-value">{decayed ? 'int' : stripped ? 'int' : '—'}</span>
-              <span className="fx-note">{decayed ? 'value type' : 'strip &, then decay'}</span>
-            </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>U</code>
+            <span className="fx-note">decay_t</span>
+            <span className="fx-note">{decided ? 'int' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'query' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${intYes ? ' fx-rank--on' : ''}${ptrNo ? ' fx-rank--done' : ''}`}>
-            <span className="fx-note">int</span>
-            <code>is_integral</code>
-            <span className="fx-note">{intYes ? 'true' : '—'}</span>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>int</code>
+            <span className="fx-note">is_integral</span>
+            <span className="fx-note">{stepped ? 'yes' : '—'}</span>
           </div>
-          <div className={`fx-rank${ptrNo ? ' fx-rank--on fx-rank--trap' : ''}`}>
-            <span className="fx-note">int*</span>
-            <code>is_integral</code>
-            <span className="fx-note">{ptrNo ? 'false' : '—'}</span>
+          <div className={`fx-rank${ptrNo ? ' fx-rank--trap' : ''}`}>
+            <code>ptr</code>
+            <span className="fx-note">is_integral</span>
+            <span className="fx-note">{ptrNo ? 'no' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'parens' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${nameTy ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">decltype(x)</span>
-            <div className={`fx-slot${nameTy ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">name</span>
-              <span className="fx-value">{nameTy ? 'int' : '—'}</span>
-              <span className="fx-note">declared type</span>
-            </div>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>x</code>
+            <span className="fx-note">decltype</span>
+            <span className="fx-note">{stepped ? 'int' : '—'}</span>
           </div>
-          <div className={`fx-link${exprTy ? ' fx-link--dead' : nameTy ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${exprTy ? ' fx-pane--focus' : ''}${trap ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">decltype((x))</span>
-            <div className={`fx-slot${exprTy ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">expr</span>
-              <span className="fx-value">{exprTy ? 'int&' : '—'}</span>
-              <span className="fx-note">{exprTy ? 'extra parens → lvalue' : 'waiting'}</span>
-            </div>
+          <div className={`fx-rank${exprRef ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>(x)</code>
+            <span className="fx-note">extra ()</span>
+            <span className="fx-note">{exprRef ? 'int&' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'cond' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${predOn ? ' fx-rank--on' : ''}${picked ? ' fx-rank--done' : ''}`}>
-            <span className="fx-note">pred</span>
-            <code>sizeof==8</code>
-            <span className="fx-note">{predOn ? 'true' : '—'}</span>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>pred</code>
+            <span className="fx-note">LP64</span>
+            <span className="fx-note">{stepped ? 'yes' : '—'}</span>
           </div>
-          <div className={`fx-rank${picked ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>W</code>
             <span className="fx-note">then</span>
-            <code>long</code>
-            <span className="fx-note">{picked ? 'W' : '—'}</span>
-          </div>
-          <div className={`fx-rank${picked ? ' fx-rank--done' : predOn ? ' fx-rank--on' : ''}`}>
-            <span className="fx-note">else</span>
-            <code>int</code>
-            <span className="fx-note">{picked ? 'drop' : '—'}</span>
+            <span className="fx-note">{decided ? 'long' : '—'}</span>
           </div>
         </div>
       )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
-          trap ? 'fx-verdict--warn' : verdict ? 'fx-verdict--ok' : ''
+          trap ? 'fx-verdict--trap' : warn ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
         {verdict}

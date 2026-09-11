@@ -20,56 +20,62 @@ export function AdlViz() {
     setId(next as Mode)
   }
 
-  const looked = i >= 1
-  const found = i >= 2
+  const stepped = i >= 1
+  const decided = i >= 2
   const recap = i >= 3
-  const won = (id === 'swap' || id === 'stream' || id === 'friend') && found
-  const killed = id === 'parens' && found
+  const killed = id === 'parens' && decided
+  const trap = killed
+  const ok = (id === 'swap' && recap) || (id === 'stream' && recap) || (id === 'friend' && recap)
 
   const code =
     id === 'swap'
-      ? i < 2
-        ? `namespace N {
+      ? recap
+        ? `swap(a, b);          // ADL may pick N::swap
+// std::swap(a, b);    // skips N::swap`
+        : `namespace N {
   struct Item {};
   void swap(Item&, Item&);
-}`
-        : `void f(N::Item a, N::Item b) {
-  using std::swap;
-  swap(a, b);          // ADL may pick N::swap
 }
-// std::swap(a, b);    // skips N::swap`
+void f(N::Item a, N::Item b) {
+  using std::swap;
+  swap(a, b);
+}`
       : id === 'stream'
-        ? `std::cout << x;
+        ? recap
+          ? `std::cout << x;  // ADL finds operator<<
+// your type's << lives next to your type`
+          : `std::cout << x;
 // unqualified operator<<
 // ADL searches namespace std
 // because cout's type lives there`
         : id === 'friend'
-          ? i < 2
-            ? `struct Item {
-  friend bool operator==(Item, Item) { return true; }
-};`
-            : `Item a, b;
-bool ok = a == b;     // ADL finds the friend
+          ? recap
+            ? `bool ok = a == b;     // ADL finds the friend
 // operator==(a, b) as a free name
 // in this scope? no — hidden`
-          : i < 2
-            ? `int a = 1, b = 2;
-int m = (std::min)(a, b);`
-            : `int m = (std::min)(a, b);  // no ADL
+            : `struct Item {
+  friend bool operator==(Item, Item) { return true; }
+};
+Item a, b;
+bool ok = a == b;`
+          : recap
+            ? `int m = (std::min)(a, b);  // no ADL
 std::min<int>(a, b);        // no ADL
 // also dodges Windows.h min/max`
+            : `int a = 1, b = 2;
+int m = (std::min)(a, b);`
 
   const caption =
     i === 0
       ? id === 'swap'
-        ? 'Play swap. using std::swap; then swap(a, b); lets ADL pick a better N::swap for Item. Qualifying std::swap(a, b) skips it.'
+        ? 'Play swap(a, b). using std::swap; then swap(a, b); lets ADL pick a better N::swap for Item. Qualifying std::swap(a, b) skips it.'
         : id === 'stream'
-          ? 'Play stream. std::cout << x finds operator<< in namespace std because ADL searches the namespaces of the argument types. That is Koenig lookup.'
+          ? 'Play cout << x. std::cout << x finds operator<< in namespace std because ADL searches the namespaces of the argument types. That is Koenig lookup.'
           : id === 'friend'
-            ? 'Play friend. friend operator== defined inside the class is not visible to ordinary lookup. ADL finds it when you compare two objects of that type.'
-            : 'Play parens. (std::min)(a, b) or std::min<int>(a, b) suppress ADL. Useful around Windows min/max macros too.'
+            ? 'Play a == b. friend operator== defined inside the class is not visible to ordinary lookup. ADL finds it when you compare two objects of that type.'
+            : 'Play (std::min). (std::min)(a, b) or std::min<int>(a, b) suppress ADL. Useful around Windows min/max macros too.'
       : id === 'swap' && i === 1
-        ? 'using std::swap enters the overload set. Ordinary lookup now sees std::swap. That is not the whole set.'
+        ? 'using std::swap enters the overload set. Ordinary lookup now sees std::swap. That is not the whole set. Stations light in place.'
         : id === 'swap' && i === 2
           ? 'swap(a, b) picks N::swap. Item’s associated namespace is N. ADL adds N::swap. The two-step idiom is how you write a generic swap.'
           : id === 'swap'
@@ -92,7 +98,7 @@ std::min<int>(a, b);        // no ADL
                             ? 'N::min is skipped. If a macro named min exists, the parens also stop expansion. std::min<int> is the other ADL kill-switch.'
                             : 'Unqualified begin/end on a mix of arrays and containers is another ADL footgun — std::begin is the portable one.'
 
-  const tone = killed ? 'warn' : won ? 'ok' : 'idle'
+  const tone = trap ? 'warn' : ok ? 'ok' : 'idle'
   const playLabel =
     id === 'swap'
       ? 'Play swap(a, b)'
@@ -103,25 +109,31 @@ std::min<int>(a, b);        // no ADL
           : 'Play (std::min)'
 
   const verdict =
-    id === 'swap' && found
-      ? recap
-        ? 'qualify std::swap and you skip N'
-        : 'ADL · N::swap wins'
-      : id === 'stream' && found
-        ? 'ADL · operator<< in std'
-        : id === 'friend' && found
-          ? 'hidden friend · ADL only'
-          : killed
-            ? 'parens · ADL off'
-            : id === 'swap' && looked
-              ? 'using std::swap · not the whole set'
-              : id === 'stream' && looked
-                ? 'associated ns · std'
-                : id === 'friend' && looked
-                  ? 'ordinary lookup · empty'
-                  : id === 'parens' && looked
-                    ? 'parenthesized id · no ADL'
-                    : ''
+    id === 'swap' && recap
+      ? 'qualify · skip N'
+      : id === 'swap' && decided
+        ? 'ADL · N::swap'
+        : id === 'swap' && stepped
+          ? 'using std::swap · set'
+          : id === 'stream' && recap
+            ? '<< lives next to the type'
+            : id === 'stream' && decided
+              ? 'ADL · operator<<'
+              : id === 'stream' && stepped
+                ? 'cout · ns std'
+                : id === 'friend' && recap
+                  ? 'hidden friend · ADL only'
+                  : id === 'friend' && decided
+                    ? 'ADL · friend =='
+                    : id === 'friend' && stepped
+                      ? 'ordinary · no'
+                      : killed && recap
+                        ? 'parens · ADL off'
+                        : killed
+                          ? 'N::min · skipped'
+                          : id === 'parens' && stepped
+                            ? 'id-expr · no ADL'
+                            : ''
 
   return (
     <SceneShell
@@ -144,70 +156,63 @@ std::min<int>(a, b);        // no ADL
     >
       {id === 'swap' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${looked ? ' fx-rank--on' : ''}${found ? ' fx-rank--done' : ''}`}>
-            <span className="fx-note">ordinary</span>
-            <code>std::swap</code>
-            <span className="fx-note">{looked ? 'in set' : '—'}</span>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>std</code>
+            <span className="fx-note">using swap</span>
+            <span className="fx-note">{stepped ? 'set' : '—'}</span>
           </div>
-          <div className={`fx-rank${found ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>N</code>
             <span className="fx-note">ADL</span>
-            <code>N::swap</code>
-            <span className="fx-note">{found ? 'wins' : '—'}</span>
+            <span className="fx-note">{decided ? 'win' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'stream' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${looked ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">cout</span>
-            <div className={`fx-slot${looked ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">ostream</span>
-              <span className="fx-value">{looked ? 'std' : '—'}</span>
-              <span className="fx-note">associated namespace</span>
-            </div>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>cout</code>
+            <span className="fx-note">ostream</span>
+            <span className="fx-note">{stepped ? 'std' : '—'}</span>
           </div>
-          <div className={`fx-link${won ? ' fx-link--weld' : looked ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${found ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">unqualified</span>
-            <div className={`fx-slot${won ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">operator</span>
-              <span className="fx-value">{found ? '<<' : '—'}</span>
-              <span className="fx-note">{found ? 'found in std' : 'waiting'}</span>
-            </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>op</code>
+            <span className="fx-note">unqual &lt;&lt;</span>
+            <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'friend' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${looked ? ' fx-rank--on' : ''}${found ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+            <code>name</code>
             <span className="fx-note">ordinary</span>
-            <code>operator==</code>
-            <span className="fx-note">{looked ? 'hidden' : '—'}</span>
+            <span className="fx-note">{stepped ? 'no' : '—'}</span>
           </div>
-          <div className={`fx-rank${found ? ' fx-rank--on' : ''}`}>
-            <span className="fx-note">ADL</span>
-            <code>friend ==</code>
-            <span className="fx-note">{found ? 'found' : '—'}</span>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>==</code>
+            <span className="fx-note">friend</span>
+            <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'parens' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${looked ? ' fx-rank--on' : ''}${killed ? ' fx-rank--done' : ''}`}>
-            <span className="fx-note">id-expr</span>
-            <code>(std::min)</code>
-            <span className="fx-note">{looked ? 'no ADL' : '—'}</span>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${killed ? ' fx-rank--done' : ''}`}>
+            <code>id</code>
+            <span className="fx-note">(std::min)</span>
+            <span className="fx-note">{stepped ? 'no' : '—'}</span>
           </div>
-          <div className={`fx-rank${killed ? ' fx-rank--on fx-rank--trap' : ''}`}>
+          <div className={`fx-rank${killed ? ' fx-rank--trap' : ''}`}>
+            <code>N</code>
             <span className="fx-note">N::min</span>
-            <code>skipped</code>
             <span className="fx-note">{killed ? 'off' : '—'}</span>
           </div>
         </div>
       )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
-          killed ? 'fx-verdict--warn' : won ? 'fx-verdict--ok' : ''
+          trap ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
         {verdict}
