@@ -20,15 +20,27 @@ export function ScopeViz() {
     setId(next as Mode)
   }
 
-  const innerAlive = (id === 'block' && i >= 1 && i < 3) || (id === 'dangle' && i === 1)
-  const innerDead = (id === 'block' && i >= 3) || (id === 'dangle' && i >= 2)
-  const nVal =
-    id === 'stat' ? (i >= 3 ? 2 : i >= 2 ? 1 : i >= 1 ? 0 : '—') : id === 'block' && innerAlive ? '1' : id === 'dangle' && i === 1 ? '7' : '—'
-  const polluted = id === 'using' && i >= 2
+  const stepped = i >= 1
+  const decided = i >= 2
+  const recap = i >= 3
+
+  const nOn = id === 'block' && stepped && !recap
+  const nGone = id === 'block' && recap
+  const initOn = id === 'stat' && stepped
+  const nOne = id === 'stat' && decided
+  const nTwo = id === 'stat' && recap
+  const localOn = id === 'dangle' && i === 1
+  const localGone = id === 'dangle' && decided
+  const leaked = id === 'using' && decided
+  const trap = localGone
+  const warn = leaked
+  const ok = nGone || nTwo
 
   const code =
     id === 'block'
-      ? `{\n  int n = 1;   // automatic\n}  // n destroyed here`
+      ? recap
+        ? `{\n  int n = 1;   // automatic\n}  // n destroyed here`
+        : `{\n  int n = 1;   // automatic\n}`
       : id === 'stat'
         ? `int counter() {\n  static int n = 0;\n  return ++n;\n}`
         : id === 'dangle'
@@ -38,11 +50,11 @@ export function ScopeViz() {
   const caption =
     i === 0
       ? id === 'block'
-        ? 'Play the block. Scope is who can see the name. Lifetime is how long the object exists. For a local they end together.'
+        ? 'Play int n. Scope is who can see the name. Lifetime is how long the object exists. For a local they end together.'
         : id === 'stat'
-          ? 'Play static local. Initialized the first time control passes the declaration. Destroyed at program end — one n for the program.'
+          ? 'Play ++n. A static local is initialized the first time control passes the declaration. Destroyed at program end — one n for the program.'
           : id === 'dangle'
-            ? 'Play a returned reference. The name r is in scope in the caller. The object it bound died with the callee’s block.'
+            ? 'Play int& leak. The name r is in scope in the caller. The object it bound died with the callee’s block.'
             : 'Play using namespace. A using-directive dumps names into the enclosing scope. In a header that is every TU.'
       : id === 'block' && i === 1
         ? 'n is constructed in the inner frame. The name n is only visible here. Outer code cannot say n.'
@@ -68,7 +80,24 @@ export function ScopeViz() {
                             ? 'cout is now in the surrounding soup. Every include of this header injects that lookup into another TU.'
                             : 'Prefer using std::cout; at function scope, or just std::. Named namespaces beat static at namespace scope.'
 
-  const tone = innerDead && id === 'dangle' ? 'trap' : polluted ? 'warn' : innerDead && id === 'block' ? 'ok' : 'idle'
+  const tone = trap ? 'trap' : warn ? 'warn' : ok ? 'ok' : 'idle'
+  const playLabel =
+    id === 'block' ? 'Play int n' : id === 'stat' ? 'Play ++n' : id === 'dangle' ? 'Play int& leak' : 'Play using namespace'
+
+  const verdict =
+    nGone
+      ? 'n destroyed with the brace'
+      : nTwo
+        ? 'same n · 2 · not re-initialized'
+        : localGone && recap
+          ? 'r is in scope · local is dead · UB'
+          : localGone
+            ? 'local gone · r still names it'
+            : leaked && recap
+              ? 'header pollution · every TU sees cout'
+              : leaked
+                ? 'cout dumped into this scope'
+                : ''
 
   return (
     <SceneShell
@@ -81,7 +110,7 @@ export function ScopeViz() {
         reset()
         setId(id)
       }}
-      playLabel="Play scope"
+      playLabel={playLabel}
       step={i}
       stepCount={4}
       sig={MODES.find((m) => m.id === id)?.title}
@@ -89,58 +118,72 @@ export function ScopeViz() {
       code={code}
       tone={tone}
     >
-      {id === 'using' ? (
-        <div className="fx-split">
-          <div className={`fx-ns${i >= 1 ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">namespace std</span>
-            <div className="fx-ns-item">cout</div>
-            <div className="fx-ns-item">vector</div>
+      {id === 'block' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${nOn ? ' fx-rank--on' : ''}${nGone ? ' fx-rank--done' : ''}`}>
+            <code>n</code>
+            <span className="fx-note">automatic</span>
+            <span className="fx-note">{nOn ? '1' : nGone ? 'gone' : '—'}</span>
           </div>
-          <div className="fx-gutter">using</div>
-          <div className={`fx-ns${polluted ? ' fx-ns--leak' : ''}`}>
-            <span className="fx-kicker">enclosing scope</span>
-            <div className={`fx-ns-item${polluted ? ' fx-ns-item--out' : ''}`}>{polluted ? 'cout  (leaked)' : '—'}</div>
+          <div className={`fx-rank${nGone ? ' fx-rank--on' : ''}`}>
+            <code>outer</code>
+            <span className="fx-note">cannot see n</span>
+            <span className="fx-note">{nGone ? 'ok' : '—'}</span>
           </div>
         </div>
-      ) : (
-        <div className="fx-frames">
-          <div className="fx-frame">
-            <span className="fx-kicker">{id === 'stat' ? 'function counter()' : id === 'dangle' ? 'caller' : 'function'}</span>
-            {id === 'dangle' && i >= 1 && (
-              <div className="fx-var">
-                int& r {i >= 2 ? '· dangling' : '= local'}
-              </div>
-            )}
-            {id === 'stat' && i >= 1 && (
-              <div className="fx-var">
-                static int n = {nVal} · lives until exit
-              </div>
-            )}
-            {(id === 'block' || id === 'dangle') && (
-              <div className={`fx-frame fx-frame--inner${innerDead ? ' fx-frame--dead' : ''}${innerAlive ? '' : i === 0 ? ' fx-slot--dim' : ''}`}>
-                <span className="fx-kicker">{innerDead ? 'block ended' : 'block'}</span>
-                {(innerAlive || innerDead) && (
-                  <div className="fx-var">{id === 'block' ? `int n = ${innerAlive ? nVal : 'gone'}` : `int local = ${innerAlive ? '7' : 'destroyed'}`}</div>
-                )}
-              </div>
-            )}
+      )}
+      {id === 'stat' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${initOn ? ' fx-rank--on' : ''}${nTwo ? ' fx-rank--done' : ''}`}>
+            <code>init</code>
+            <span className="fx-note">first pass only</span>
+            <span className="fx-note">{initOn ? '0' : '—'}</span>
+          </div>
+          <div className={`fx-rank${nOne ? ' fx-rank--on' : ''}`}>
+            <code>++n</code>
+            <span className="fx-note">same object</span>
+            <span className="fx-note">{nTwo ? '2' : nOne ? '1' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'dangle' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${localOn ? ' fx-rank--on' : ''}${localGone ? ' fx-rank--done' : ''}`}>
+            <code>local</code>
+            <span className="fx-note">callee block</span>
+            <span className="fx-note">{localOn ? '7' : localGone ? 'gone' : '—'}</span>
+          </div>
+          <div className={`fx-rank${localOn ? ' fx-rank--on' : ''}${localGone ? ' fx-rank--trap' : ''}`}>
+            <code>r</code>
+            <span className="fx-note">
+              <code>{'int&'}</code>
+            </span>
+            <span className="fx-note">{localGone ? 'ub' : localOn ? 'ok' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'using' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${leaked ? ' fx-rank--done' : ''}`}>
+            <code>std</code>
+            <span className="fx-note">
+              <code>cout</code>
+            </span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${leaked ? ' fx-rank--trap' : ''}`}>
+            <code>hdr</code>
+            <span className="fx-note">using-directive</span>
+            <span className="fx-note">{leaked ? 'leak' : '—'}</span>
           </div>
         </div>
       )}
       <div
-        className={`fx-verdict${i >= 3 ? ' fx-verdict--show' : ''} ${
-          id === 'dangle' ? 'fx-verdict--trap' : polluted ? 'fx-verdict--warn' : 'fx-verdict--ok'
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          trap ? 'fx-verdict--trap' : warn ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
-        {id === 'block' && i >= 3
-          ? 'n destroyed with the brace'
-          : id === 'stat' && i >= 3
-            ? 'same n · 2 · not re-initialized'
-            : id === 'dangle' && i >= 3
-              ? 'r is in scope · local is dead · UB'
-              : id === 'using' && i >= 3
-                ? 'header pollution · every TU sees cout'
-                : ''}
+        {verdict}
       </div>
     </SceneShell>
   )

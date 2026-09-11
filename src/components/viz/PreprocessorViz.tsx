@@ -20,53 +20,61 @@ export function PreprocessorViz() {
     setId(next as Mode)
   }
 
-  const before =
-    id === 'include'
-      ? `#include "math.hpp"\nint main();`
-      : id === 'sqr'
-        ? `#define SQR(x) ((x)*(x))\nint i = 2;\nSQR(++i);`
-        : id === 'parens'
-          ? `#define DOUBLE(x) x+x\n2 * DOUBLE(3)`
-          : `// math.hpp\n#pragma once\nint add(int, int);`
+  const stepped = i >= 1
+  const decided = i >= 2
+  const recap = i >= 3
+
+  const pasted = id === 'include' && stepped
+  const seen = id === 'include' && decided
+  const x1 = id === 'sqr' && stepped
+  const x2 = id === 'sqr' && decided
+  const looks = id === 'parens' && stepped
+  const real = id === 'parens' && decided
+  const first = id === 'guard' && stepped
+  const skip = id === 'guard' && decided
+  const trap = (id === 'sqr' && recap) || (id === 'parens' && recap)
+  const ok = (id === 'include' && recap) || (id === 'guard' && recap)
 
   const after =
     id === 'include'
-      ? i === 0
-        ? `#include "math.hpp"\nint main();`
-        : `int add(int, int);\nint main();`
+      ? recap
+        ? `int add(int, int);\nint main();`
+        : pasted
+          ? `int add(int, int);\nint main();`
+          : `#include "math.hpp"\nint main();`
       : id === 'sqr'
-        ? i === 0
-          ? `SQR(++i)`
-          : i === 1
-            ? `((++i)*(x))`
-            : i === 2
-              ? `((++i)*(++i))`
-              : `((++i)*(++i))  // 3*4`
+        ? recap
+          ? `((++i)*(++i))  // 3*4`
+          : x2
+            ? `((++i)*(++i))`
+            : x1
+              ? `((++i)*(x))`
+              : `SQR(++i)`
         : id === 'parens'
-          ? i === 0
-            ? `2 * DOUBLE(3)`
-            : i === 1
-              ? `2 * x+x`
-              : i === 2
-                ? `2 * 3 + 3`
-                : `9`
-          : i === 0
-            ? `#include "math.hpp"  // first`
-            : i === 1
-              ? `int add(int, int);`
-              : i === 2
-                ? `#include "math.hpp"  // second`
-                : `// skipped — already seen`
+          ? recap
+            ? `2 * 3 + 3  // 9`
+            : real
+              ? `2 * 3 + 3`
+              : looks
+                ? `2 * x+x`
+                : `2 * DOUBLE(3)`
+          : recap
+            ? `// skipped — already seen`
+            : skip
+              ? `#include "math.hpp"  // second`
+              : first
+                ? `int add(int, int);`
+                : `#include "math.hpp"  // first`
 
   const caption =
     i === 0
       ? id === 'include'
-        ? 'Play include. The left pane is what you wrote. The right pane is what the compiler actually sees — still text.'
+        ? 'Play #include. The directive is not a compiler feature. It is paste. Stations light in place — the tokens do not fly.'
         : id === 'sqr'
           ? 'Play SQR(++i). A macro is copy-paste. Each x is replaced, so ++i runs twice.'
           : id === 'parens'
             ? 'Play DOUBLE without parens in the replacement list. Precedence after expansion is not the same as the call site looks.'
-            : 'Play include guards. The second include of the same header is a no-op if the guard already fired.'
+            : 'Play guard. The second include of the same header is a no-op if the guard already fired.'
       : id === 'include' && i === 1
         ? 'The #include line is gone. The header body is pasted in its place. Still one translation unit, still text.'
         : id === 'include' && i === 2
@@ -91,9 +99,32 @@ export function PreprocessorViz() {
                             ? 'Second include of the same header in this TU. The guard is already set.'
                             : 'Paste skipped. Without a guard, the second paste would duplicate declarations — or definitions, if you put them in the header.'
 
-  const iVal = id === 'sqr' ? (i === 0 ? 2 : i === 1 ? 3 : 4) : null
-  const trap = (id === 'sqr' && i >= 3) || (id === 'parens' && i >= 3)
-  const tone = trap ? 'warn' : id === 'guard' && i >= 3 ? 'ok' : 'idle'
+  const tone = trap ? 'warn' : ok ? 'ok' : 'idle'
+  const playLabel =
+    id === 'include' ? 'Play #include' : id === 'sqr' ? 'Play SQR(++i)' : id === 'parens' ? 'Play DOUBLE' : 'Play guard'
+
+  const verdict =
+    id === 'include' && recap
+      ? 'directive erased · compiler sees declarations'
+      : id === 'include' && seen
+        ? 'compiler sees add, not #include'
+        : id === 'sqr' && recap
+          ? '++i twice · 3 × 4 = 12'
+          : x2
+            ? 'second ++i · i is 4'
+            : x1
+              ? 'first ++i · i is 3'
+              : id === 'parens' && recap
+                ? '2*3+3 = 9, not 12'
+                : real
+                  ? '* binds first'
+                  : skip && recap
+                    ? 'second include skipped'
+                    : skip
+                      ? 'guard already set'
+                      : first
+                        ? 'first paste · recorded'
+                        : ''
 
   return (
     <SceneShell
@@ -106,52 +137,86 @@ export function PreprocessorViz() {
         reset()
         setId(id)
       }}
-      playLabel="Play preprocess"
+      playLabel={playLabel}
       step={i}
       stepCount={4}
       sig={MODES.find((m) => m.id === id)?.title}
       caption={caption}
-      code={id === 'sqr' ? `int i = ${iVal};\n${after}` : after}
+      code={after}
       tone={tone}
     >
-      <div className="fx-split">
-        <div className={`fx-pane${i === 0 ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">source</span>
-          <pre>
-            <code>{before}</code>
-          </pre>
-        </div>
-        <div className="fx-gutter">→</div>
-        <div className={`fx-pane fx-pane--focus${trap ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">after preprocess</span>
-          <pre>
-            <code className={trap ? 'fx-line--trap' : i >= 1 ? 'fx-line--hot' : ''}>{after}</code>
-          </pre>
-          {id === 'sqr' && iVal !== null && (
+      {id === 'include' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${seen ? ' fx-rank--done' : ''}`}>
+            <code>#inc</code>
             <span className="fx-note">
-              register i = <strong>{iVal}</strong>
+              <code>math.hpp</code>
             </span>
-          )}
+            <span className="fx-note">{seen ? 'gone' : stepped ? 'paste' : '—'}</span>
+          </div>
+          <div className={`fx-rank${seen ? ' fx-rank--on' : ''}`}>
+            <code>add</code>
+            <span className="fx-note">declaration</span>
+            <span className="fx-note">{seen ? 'ok' : '—'}</span>
+          </div>
         </div>
-      </div>
+      )}
+      {id === 'sqr' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${x1 ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>x1</code>
+            <span className="fx-note">
+              <code>++i</code>
+            </span>
+            <span className="fx-note">{x1 ? '3' : '—'}</span>
+          </div>
+          <div className={`fx-rank${x2 ? ' fx-rank--on' : ''}${recap ? ' fx-rank--trap' : ''}`}>
+            <code>x2</code>
+            <span className="fx-note">
+              <code>++i</code>
+            </span>
+            <span className="fx-note">{x2 ? '4' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'parens' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${looks ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>look</code>
+            <span className="fx-note">
+              <code>{'2*(3+3)'}</code>
+            </span>
+            <span className="fx-note">{looks ? '12' : '—'}</span>
+          </div>
+          <div className={`fx-rank${real ? ' fx-rank--on' : ''}${recap ? ' fx-rank--trap' : ''}`}>
+            <code>exp</code>
+            <span className="fx-note">
+              <code>{'2*3+3'}</code>
+            </span>
+            <span className="fx-note">{recap || real ? '9' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'guard' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${first ? ' fx-rank--on' : ''}${skip ? ' fx-rank--done' : ''}`}>
+            <code>1st</code>
+            <span className="fx-note">paste header</span>
+            <span className="fx-note">{first ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${skip ? ' fx-rank--on' : ''}`}>
+            <code>2nd</code>
+            <span className="fx-note">same header</span>
+            <span className="fx-note">{skip ? 'skip' : '—'}</span>
+          </div>
+        </div>
+      )}
       <div
-        className={`fx-verdict${i >= 3 ? ' fx-verdict--show' : ''} ${
-          id === 'include'
-            ? 'fx-verdict--ok'
-            : id === 'guard'
-              ? 'fx-verdict--ok'
-              : 'fx-verdict--warn'
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          trap ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
-        {id === 'include' && i >= 3
-          ? 'directive erased · compiler sees declarations'
-          : id === 'sqr' && i >= 3
-            ? '++i twice · 3 × 4 = 12'
-            : id === 'parens' && i >= 3
-              ? '2*3+3 = 9, not 12'
-              : id === 'guard' && i >= 3
-                ? 'second include skipped'
-                : ''}
+        {verdict}
       </div>
     </SceneShell>
   )
