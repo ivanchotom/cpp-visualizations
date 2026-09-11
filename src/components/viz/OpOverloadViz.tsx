@@ -170,31 +170,18 @@ if (a && b) { }`
         </>
       )}
       {id === 'implicit' && (
-        <div className="fx-own">
-          <div className={`fx-pane${boolOn ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">Flag v</span>
-            <div className={`fx-slot${boolOn ? ' fx-slot--weld' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">object</span>
-              <span className="fx-value">true</span>
-              <span className="fx-note">if (v) is intended</span>
-            </div>
+        <div className="fx-ladder">
+          <div className={`fx-rank${boolOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>if (v)</code>
+            <span className="fx-note">operator bool</span>
+            <span className="fx-note">{boolOn ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-link${boolOn ? ' fx-link--weld' : ''}`} />
-          <div className={`fx-pane${boolOn ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">conversion</span>
-            <div className={`fx-slot${boolOn ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">operator bool</span>
-              <span className="fx-note">{recap ? 'explicit · contextual only' : 'contextual conversion'}</span>
-            </div>
-          </div>
-          <div className={`fx-link${arithTrap && !recap ? ' fx-link--dead' : ''}`} />
-          <div className={`fx-pane${arithTrap && !recap ? ' fx-pane--trap' : recap ? ' fx-pane--gone' : ''}`}>
-            <span className="fx-kicker">v + 1</span>
-            <div className={`fx-slot${arithTrap && !recap ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">int</span>
-              <span className="fx-value">{arithTrap && !recap ? '2' : '—'}</span>
-              <span className="fx-note">{recap ? 'refused' : arithTrap ? 'bool → int' : 'accidental arithmetic'}</span>
-            </div>
+          <div
+            className={`fx-rank${arithTrap && !recap ? ' fx-rank--trap' : recap ? ' fx-rank--on' : ''}`}
+          >
+            <code>v + 1</code>
+            <span className="fx-note">{recap ? 'explicit' : 'bool → int'}</span>
+            <span className="fx-note">{recap ? 'ill' : arithTrap ? '2' : '—'}</span>
           </div>
         </div>
       )}

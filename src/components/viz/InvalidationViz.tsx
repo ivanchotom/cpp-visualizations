@@ -185,7 +185,7 @@ auto last = v.end();  // one-past-last
           : 'names b'
 
   const linkKind = dangling ? 'dead' : itValid ? 'weld' : kind === 'end' && atEnd ? 'on' : mapFix ? 'weld' : ''
-  const itAtOld = kind === 'vector' && i < 2 ? 1 : undefined
+  const itAtOld = kind === 'vector' ? 1 : undefined
   const itAtList = kind === 'list' ? 1 : undefined
   const itAtMap = kind === 'map' ? (mapFix ? 2 : 1) : undefined
   const itAtEnd = kind === 'end' ? (i === 1 ? 0 : i >= 2 ? 3 : undefined) : undefined
@@ -251,26 +251,17 @@ auto last = v.end();  // one-past-last
       tone={tone}
     >
       {kind === 'vector' ? (
-        <div className="fx-own">
+        <div className="fx-sh">
           <div className={`fx-pane${stepped && !vectorDangle ? ' fx-pane--focus' : ''}${vectorDangle ? ' fx-pane--gone' : ''}`}>
             <span className="fx-kicker">buffer · cap 4</span>
-            <Letters chars={vOld} itAt={itAtOld} dangling={false} />
-            <span className="fx-note">{vectorDangle ? 'freed' : 'contiguous'}</span>
+            <Letters chars={vOld} itAt={itAtOld} dangling={vectorDangle} />
+            <span className="fx-note">{vectorDangle ? 'freed · it not here' : 'contiguous'}</span>
           </div>
           <div className={`fx-link${vectorDangle ? ' fx-link--dead' : itValid ? ' fx-link--weld' : ''}`} />
-          <div className={`fx-pane${vectorDangle ? ' fx-pane--focus' : ''}`}>
+          <div className={`fx-pane${vectorDangle ? ' fx-pane--focus' : ''}${vectorDangle ? ' fx-pane--trap' : ''}`}>
             <span className="fx-kicker">buffer · cap 8</span>
             <Letters chars={vNew} />
-            <span className="fx-note">{vectorDangle ? 'new storage · it not here' : 'not yet'}</span>
-          </div>
-          <div className={`fx-link${vectorDangle ? ' fx-link--dead' : itValid ? ' fx-link--weld' : ''}`} />
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${dangling ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">iterator</span>
-            <div className={`fx-slot${dangling ? ' fx-slot--trap' : itValid ? ' fx-slot--weld' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">it</span>
-              <span className="fx-value">{itVal}</span>
-              <span className="fx-note">{itNote}</span>
-            </div>
+            <span className="fx-note">{vectorDangle ? 'new storage · it dangling' : 'not yet'}</span>
           </div>
         </div>
       ) : (
