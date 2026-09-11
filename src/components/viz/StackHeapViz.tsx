@@ -1,176 +1,144 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { curve, edge } from './motion.ts'
+import { useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'leak' | 'raii'
 
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'leak', title: 'bare new' },
+  { id: 'raii', title: 'unique_ptr' },
+]
+
 export function StackHeapViz() {
   const [mode, setMode] = useState<Mode>('leak')
-  const [beat, setBeat] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [arrow, setArrow] = useState('')
+  const { i, playing, play, reset } = useBeats(4)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const pRef = useRef<HTMLDivElement>(null)
-  const heapRef = useRef<HTMLDivElement>(null)
+  function select(next: string) {
+    reset()
+    setMode(next as Mode)
+  }
 
-  const inFrame = beat === 1 || beat === 2
+  const inFrame = i === 1 || i === 2
   const showX = mode === 'leak' && inFrame
-  const showPtr = mode === 'leak' ? beat === 2 : beat === 1 || beat === 2
-  const hasHeap = mode === 'leak' ? beat >= 2 : beat === 1 || beat === 2
-  const leaked = mode === 'leak' && beat === 3
-  const deleted = mode === 'raii' && beat === 3
-
-  useEffect(() => {
-    if (!playing) return
-    const tAlloc = window.setTimeout(() => setBeat(2), 2200)
-    const tReturn = window.setTimeout(() => {
-      setBeat(3)
-      setPlaying(false)
-    }, 5200)
-    return () => {
-      window.clearTimeout(tAlloc)
-      window.clearTimeout(tReturn)
-    }
-  }, [playing, mode])
-
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    if (!stage || !pRef.current || !heapRef.current || !showPtr) {
-      setArrow('')
-      return
-    }
-    const origin = stage.getBoundingClientRect()
-    setArrow(curve(edge(pRef.current, origin, 'right'), edge(heapRef.current, origin, 'left'), 22))
-  }, [showPtr, beat, mode, hasHeap])
-
-  function reset(next: Mode = mode) {
-    setPlaying(false)
-    setBeat(0)
-    setMode(next)
-  }
-
-  function play() {
-    setBeat(1)
-    setPlaying(true)
-  }
+  const showPtr = mode === 'leak' ? i === 2 : i >= 1 && i < 3
+  const hasHeap = mode === 'leak' ? i >= 2 : i === 1 || i === 2
+  const leaked = mode === 'leak' && i === 3
+  const deleted = mode === 'raii' && i === 3
+  const weld = (mode === 'leak' && i === 2) || (mode === 'raii' && i === 2)
+  const linkKind = leaked ? 'dead' : mode === 'raii' && weld ? 'weld' : showPtr && hasHeap ? 'on' : ''
 
   const code =
     mode === 'leak'
-      ? beat === 0
+      ? i === 0
         ? `void f() {\n  // not yet entered\n}`
-        : beat === 1
-          ? `void f() {\n  int x = 7;          // live\n}`
-          : beat === 2
+        : i === 1
+          ? `void f() {\n  int x = 7;          // automatic\n}`
+          : i === 2
             ? `void f() {\n  int x = 7;\n  int* p = new int{42}; // p on stack, 42 on heap\n}`
             : `void f() {\n  int* p = new int{42};\n} // p dies, *p does not  ← leak`
-      : beat === 0
+      : i === 0
         ? `void f() {\n  // not yet entered\n}`
-        : beat === 1 || beat === 2
+        : i === 1 || i === 2
           ? `void f() {\n  auto p = std::make_unique<int>(42);\n}`
           : `void f() {\n  auto p = std::make_unique<int>(42);\n} // ~unique_ptr deletes`
 
   const caption =
-    beat === 0
-      ? 'Play a call to f(). The stack frame does not exist until the function is entered.'
-      : beat === 1
+    i === 0
+      ? 'Play a call to f(). The stack frame does not exist until the function is entered. Heap is a separate region.'
+      : i === 1
         ? mode === 'leak'
-          ? 'x is automatic. It will vanish when f returns — no delete, no leak.'
+          ? 'x is automatic. It will vanish when f returns — no delete, no leak. Still no heap object.'
           : 'make_unique puts the unique_ptr on the stack and the int on the heap. The owner is automatic; the int is not.'
-        : beat === 2
+        : i === 2
           ? mode === 'leak'
-            ? 'p is just an address on the stack. The 42 is a separate heap object. They are not the same lifetime.'
+            ? 'p is just an address on the stack. The 42 is a separate heap object. The cyan bar is not ownership.'
             : 'Green weld: the stack owner is bound to the heap int. Returning will run the destructor.'
           : mode === 'leak'
-            ? 'The frame is gone. The heap object has no pointer left. That is a leak — still allocated, reachable from nowhere.'
+            ? 'The frame is gone. The heap object has no pointer left. Still allocated, reachable from nowhere — a leak.'
             : 'Destructor ran. Heap int is gone. RAII made the cleanup the same path as the return — even if f threw.'
 
+  const tone = leaked ? 'trap' : deleted ? 'ok' : 'idle'
+
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        <button className={`chip${mode === 'leak' ? ' chip--active' : ''}`} onClick={() => reset('leak')}>
-          bare new
-        </button>
-        <button className={`chip${mode === 'raii' ? ' chip--active' : ''}`} onClick={() => reset('raii')}>
-          unique_ptr
-        </button>
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play f()
-        </button>
-        <button className="chip chip--ghost" onClick={() => reset(mode)}>
-          reset
-        </button>
-      </div>
-
-      <div
-        ref={stageRef}
-        className={`viz-stage sh-stage viz-stage--live${leaked ? ' sh-stage--leak' : ''}${mode === 'raii' ? ' sh-stage--raii' : ''}`}
-      >
-        <div className="sh-grid">
-          <div className="sh-col">
-            <span className="sh-kicker">stack · automatic</span>
-            <div className={`sh-frame${inFrame ? ' sh-frame--on' : ''}${beat === 3 ? ' sh-frame--gone' : ''}`}>
-              <span className="sh-frame-label">f()</span>
-              {showX && (
-                <div className="sh-cell sh-cell--stack sh-cell--in">
-                  <span className="mem-name">int x</span>
-                  <span className="mem-val">7</span>
-                </div>
-              )}
-              {showPtr && (
-                <div ref={pRef} className="sh-cell sh-cell--ptr sh-cell--in">
-                  <span className="mem-name">{mode === 'leak' ? 'int* p' : 'unique_ptr p'}</span>
-                  <span className="mem-val">{mode === 'leak' ? '0xH0' : 'owns →'}</span>
-                </div>
-              )}
-              {!inFrame && (
-                <p className="mem-empty">{beat === 3 ? 'frame destroyed' : 'no frame yet'}</p>
-              )}
+    <SceneShell
+      modes={MODES}
+      mode={mode}
+      onSelect={select}
+      playing={playing}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setMode(mode)
+      }}
+      playLabel="Play f()"
+      step={i}
+      stepCount={4}
+      sig={mode === 'leak' ? 'bare new' : 'unique_ptr'}
+      caption={caption}
+      code={code}
+      tone={tone}
+    >
+      <div className="fx-sh">
+        <div className={`fx-pane${inFrame ? ' fx-pane--focus' : ''}${i === 3 ? ' fx-pane--gone' : ''}`}>
+          <span className="fx-kicker">stack · automatic</span>
+          <span className="fx-note">{inFrame ? 'f()' : i === 3 ? 'frame destroyed' : 'no frame yet'}</span>
+          {showX && (
+            <div className="fx-slot fx-slot--ok">
+              <span className="fx-kicker">int x</span>
+              <span className="fx-value">7</span>
             </div>
-          </div>
-
-          <div className="sh-col">
-            <span className="sh-kicker">heap · free store</span>
-            {hasHeap && (
-              <div
-                ref={heapRef}
-                className={`sh-cell sh-cell--heap sh-cell--in${leaked ? ' sh-cell--leaked' : ''}${mode === 'raii' && beat === 2 ? ' sh-cell--owned' : ''}`}
-              >
-                <span className="mem-name">int</span>
-                <span className="sh-heap-val">42</span>
-                <span className="mem-note">{leaked ? 'orphaned — leaked' : 'new int{42}'}</span>
-              </div>
-            )}
-            {deleted && (
-              <div className="sh-cell sh-cell--deleted sh-cell--in">
-                <span className="mem-name">deleted</span>
-                <span className="mem-val">~unique_ptr</span>
-                <span className="mem-note">destructor ran delete</span>
-              </div>
-            )}
-            {!hasHeap && !deleted && <p className="mem-empty">no allocations</p>}
-          </div>
-        </div>
-
-        <svg className="ptr-svg" aria-hidden>
-          <defs>
-            <linearGradient id="sh-grad" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor={mode === 'raii' ? '#7dce82' : '#3ee0ff'} />
-              <stop offset="100%" stopColor="#c678dd" />
-            </linearGradient>
-            <marker id="sh-head" markerWidth="10" markerHeight="10" refX="7" refY="5" orient="auto">
-              <path d="M0,0 L10,5 L0,10 z" fill={mode === 'raii' ? '#7dce82' : '#3ee0ff'} />
-            </marker>
-          </defs>
-          {arrow && (
-            <path d={arrow} className={`sh-arc${mode === 'raii' ? ' sh-arc--own' : ''}`} fill="none" markerEnd="url(#sh-head)" />
           )}
-        </svg>
+          {showPtr && (
+            <div className={`fx-slot${weld ? (mode === 'raii' ? ' fx-slot--weld' : ' fx-slot--focus') : ''}`}>
+              <span className="fx-kicker">{mode === 'leak' ? 'int* p' : 'unique_ptr p'}</span>
+              <span className="fx-value">{mode === 'leak' ? '0xH0' : 'owns'}</span>
+              {mode === 'raii' && <span className="fx-badge fx-badge--open">dtor will delete</span>}
+            </div>
+          )}
+        </div>
+        <div
+          className={`fx-link${linkKind === 'on' ? ' fx-link--on' : ''}${linkKind === 'weld' ? ' fx-link--weld' : ''}${
+            linkKind === 'dead' ? ' fx-link--dead' : ''
+          }`}
+        />
+        <div
+          className={`fx-pane${hasHeap ? ' fx-pane--focus' : ''}${leaked ? ' fx-pane--trap' : ''}${
+            deleted ? ' fx-pane--gone' : ''
+          }`}
+        >
+          <span className="fx-kicker">heap · free store</span>
+          {hasHeap && (
+            <div className={`fx-slot${leaked ? ' fx-slot--trap' : ''}${mode === 'raii' && i === 2 ? ' fx-slot--weld' : ''}`}>
+              <span className="fx-kicker">int</span>
+              <span className="fx-value">42</span>
+              <span className="fx-note">{leaked ? 'orphaned — leaked' : 'new int{42}'}</span>
+            </div>
+          )}
+          {deleted && (
+            <div className="fx-slot fx-slot--ok">
+              <span className="fx-kicker">deleted</span>
+              <span className="fx-value">~p</span>
+              <span className="fx-note">destructor ran delete</span>
+            </div>
+          )}
+          {!hasHeap && !deleted && <p className="fx-note">no allocations</p>}
+        </div>
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{code}</code>
-      </pre>
-      <p className="layout-hint">{caption}</p>
-    </div>
+      <div
+        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
+          leaked ? 'fx-verdict--trap' : deleted ? 'fx-verdict--ok' : weld && mode === 'raii' ? 'fx-verdict--ok' : ''
+        }`}
+      >
+        {leaked
+          ? 'p gone · 42 still allocated · leak'
+          : deleted
+            ? '~unique_ptr ran delete · heap empty'
+            : mode === 'raii' && i === 2
+              ? 'owner on the stack · int on the heap'
+              : mode === 'leak' && i === 2
+                ? 'p stores an address · not an owner'
+                : ''}
+      </div>
+    </SceneShell>
   )
 }
