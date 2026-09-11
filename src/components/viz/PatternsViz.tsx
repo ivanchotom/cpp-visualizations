@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { cppPatterns } from '../../data/patterns.ts'
 import { SceneShell } from './scene/SceneShell.tsx'
 import { useBeats } from './scene/useBeats.ts'
 
@@ -24,13 +23,11 @@ export function PatternsViz() {
   const stepped = i >= 1
   const decided = i >= 2
   const recap = i >= 3
-  const opened = id === 'raii' && stepped && !decided
-  const closed = id === 'raii' && decided
-  const pOwns = id === 'own' && stepped && !decided
-  const qOwns = id === 'own' && decided
-  const copied = id === 'auto' && decided
-  const retOk = id === 'ret' && decided && !recap
+  const copyTrap = id === 'auto' && decided
   const moveInhibit = id === 'ret' && recap
+  const trap = copyTrap || moveInhibit
+  const ok =
+    (id === 'raii' && recap) || (id === 'own' && recap) || (id === 'ret' && decided && !recap)
 
   const code =
     id === 'raii'
@@ -54,9 +51,9 @@ take(std::move(p));                  // steal
 // p is empty; callee owns`
           : `std::unique_ptr<T> make();          // transfer
 void peek(const T&);                 // borrow
-void maybe(T*);                      // nullable borrow`
+void maybe(T*);                    // nullable borrow`
         : id === 'auto'
-          ? decided
+          ? recap
             ? `auto x = v[i];         // string copy — often a bug
 const auto& y = v[i];  // still write the type
                        // when it documents a contract`
@@ -76,14 +73,14 @@ const auto& y = v[i];  // borrow`
   const caption =
     i === 0
       ? id === 'raii'
-        ? 'Play RAII. Lifetime of a resource = lifetime of an object. Destructors run on throw. That is how C++14 holds a file, a lock, a socket.'
+        ? 'Play ~File(). Lifetime of a resource equals lifetime of an object. Destructors run on throw. That is how C++14 holds a file, a lock, a socket.'
         : id === 'own'
-          ? 'Play own. unique_ptr<T> in a signature means transfer. T const& means borrow. T* often means nullable borrow. The type is the contract.'
+          ? 'Play take(move). unique_ptr<T> in a signature means transfer. T const& means borrow. T* often means nullable borrow. The type is the contract.'
           : id === 'auto'
-            ? 'Play auto. Deduce from the initializer. auto x = v[i] copies an element. const auto& borrows. Write the type when it documents a contract.'
-            : 'Play return. Return locals by value; let the compiler move or elide. std::move on a returned local can inhibit NRVO.'
+            ? 'Play auto x. Deduce from the initializer. auto x = v[i] copies an element. const auto& borrows. Write the type when it documents a contract.'
+            : 'Play return s. Return locals by value; let the compiler move or elide. std::move on a returned local can inhibit NRVO.'
       : id === 'raii' && i === 1
-        ? 'fopen is inside File. The FILE* is not a public handle. Copies are deleted so two Files cannot fclose the same pointer. The weld is ownership.'
+        ? 'fopen is inside File. Copies are deleted so two Files cannot fclose the same pointer. Stations light in place.'
         : id === 'raii' && i === 2
           ? '~File runs fclose. Scope exit, return, and throw all go through the destructor. Do not throw from that destructor.'
           : id === 'raii'
@@ -91,13 +88,13 @@ const auto& y = v[i];  // borrow`
             : id === 'own' && i === 1
               ? 'unique_ptr is the return type of make. The caller receives ownership. peek(const T&) would not steal.'
               : id === 'own' && i === 2
-                ? 'std::move is the spelling of “I am done with this unique_ptr.” The source is empty afterwards. The magenta is a steal, not a copy.'
+                ? 'std::move is the spelling of “I am done with this unique_ptr.” The source is empty afterwards. That is a steal, not a copy.'
                 : id === 'own'
                   ? 'T* in a signature is the fuzzy one: nullable, no ownership, or an array. Prefer a comment or a not_null policy in C++14.'
                   : id === 'auto' && i === 1
-                    ? 'v[i] is a string. auto decays like T by value. That is a copy of a potentially fat object. Cells light in x — they do not hop.'
+                    ? 'v[i] is a string. auto decays like T by value. That is a copy of a potentially fat object. Stations light in place.'
                     : id === 'auto' && i === 2
-                      ? 'The copy lands. Often a bug in a loop. const auto& y = v[i] would weld, not clone. Still write the type when the type is the point.'
+                      ? 'The copy lands. Often a bug in a loop. const auto& y = v[i] would borrow, not clone. Still write the type when the type is the point.'
                       : id === 'auto'
                         ? 'auto that hides an expensive copy is the usual complaint. auto that hides int is fine. Use auto when the right-hand side already says the type.'
                         : i === 1
@@ -106,30 +103,36 @@ const auto& y = v[i];  // borrow`
                             ? 'return s. Named Return Value Optimization may construct s directly in the caller. std::move is not required.'
                             : 'std::move(s) on the return. The compiler is no longer allowed to elide. You made it slower. Write return s;'
 
-  const tone = copied || moveInhibit ? 'warn' : closed || qOwns || retOk ? 'ok' : 'idle'
+  const tone = trap ? 'warn' : ok ? 'ok' : 'idle'
   const playLabel =
-    id === 'raii' ? 'Play ~File()' : id === 'own' ? 'Play unique_ptr' : id === 'auto' ? 'Play auto x = v[i]' : 'Play return s'
+    id === 'raii' ? 'Play ~File()' : id === 'own' ? 'Play take(move)' : id === 'auto' ? 'Play auto x' : 'Play return s'
 
   const verdict =
-    opened
-      ? 'File owns FILE*'
-      : closed
-        ? '~File · fclose on every path'
-        : pOwns
-          ? 'unique_ptr · transfer'
-          : qOwns
+    id === 'raii' && recap
+      ? '~File · fclose on every path'
+      : id === 'raii' && decided
+        ? '~File · fclose'
+        : id === 'raii' && stepped
+          ? 'File owns FILE*'
+          : id === 'own' && recap
             ? 'std::move · callee owns'
-            : id === 'auto' && stepped && !copied
-              ? 'auto x · by-value copy'
-              : copied
-                ? 'copy · often a loop bug'
-                : id === 'ret' && stepped && !decided
-                  ? 'local · return by value'
-                  : retOk
-                    ? 'NRVO or move'
-                    : moveInhibit
-                      ? 'std::move(s) · inhibits NRVO'
-                      : ''
+            : id === 'own' && decided
+              ? 'p empty · q owns'
+              : id === 'own' && stepped
+                ? 'unique_ptr · transfer'
+                : copyTrap && recap
+                  ? 'copy · often a loop bug'
+                  : copyTrap
+                    ? 'auto x · by-value copy'
+                    : id === 'auto' && stepped
+                      ? 'v[i] · string'
+                      : moveInhibit
+                        ? 'std::move(s) · inhibits NRVO'
+                        : id === 'ret' && decided
+                          ? 'NRVO or move'
+                          : id === 'ret' && stepped
+                            ? 'local · return by value'
+                            : ''
 
   return (
     <SceneShell
@@ -149,112 +152,66 @@ const auto& y = v[i];  // borrow`
       caption={caption}
       code={code}
       tone={tone}
-      footer={
-        <div className="fx-pane fx-footer-gap">
-          <span className="fx-kicker">idioms on this sheet</span>
-          {cppPatterns.map((p) => (
-            <div key={p.title} className="fx-struct-line">
-              <code>{p.title}</code>
-              <span className="fx-note">{p.tagline}</span>
-            </div>
-          ))}
-        </div>
-      }
     >
       {id === 'raii' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${opened ? ' fx-pane--focus' : ''}${closed ? ' fx-pane--gone' : ''}`}>
-            <span className="fx-kicker">File f</span>
-            <div className="fx-buf-row">
-              <span className={`fx-letter${opened ? ' fx-letter--on' : ' fx-letter--empty'}`}>h</span>
-            </div>
-            <span className="fx-note">{opened ? 'owns FILE*' : closed ? 'dtor ran' : 'idle'}</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>f</code>
+            <span className="fx-note">File</span>
+            <span className="fx-note">{recap ? 'gone' : stepped ? 'own' : '—'}</span>
           </div>
-          <div className={`fx-link${opened ? ' fx-link--weld' : closed ? ' fx-link--dead' : ''}`} />
-          <div className={`fx-pane${closed ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">resource</span>
-            <div className={`fx-slot${opened ? ' fx-slot--weld' : closed ? ' fx-slot--dim' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">FILE*</span>
-              <span className="fx-value">{opened ? 'open' : closed ? 'closed' : '—'}</span>
-              <span className="fx-note">{closed ? 'fclose on every path' : 'tied to File'}</span>
-            </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>h</code>
+            <span className="fx-note">FILE*</span>
+            <span className="fx-note">{recap ? 'ok' : decided ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'own' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${pOwns ? ' fx-pane--focus' : ''}${qOwns ? ' fx-pane--gone' : ''}`}>
-            <span className="fx-kicker">caller</span>
-            <div
-              className={`fx-slot${pOwns ? ' fx-slot--weld' : ' fx-slot--dim'}${qOwns ? ' fx-pane--gone' : ''}`}
-            >
-              <span className="fx-kicker">unique_ptr</span>
-              <span className="fx-value">
-                <code>p</code>
-              </span>
-              <span className="fx-note">{pOwns ? 'exclusive' : qOwns ? 'empty after move' : 'idle'}</span>
-              {pOwns && <span className="fx-badge fx-badge--owner">owner</span>}
-            </div>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${decided ? ' fx-rank--trap' : ''}`}>
+            <code>p</code>
+            <span className="fx-note">unique</span>
+            <span className="fx-note">{decided ? 'gone' : stepped ? 'own' : '—'}</span>
           </div>
-          <div className={`fx-link${pOwns ? ' fx-link--weld' : qOwns ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${qOwns ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">callee</span>
-            <div className={`fx-slot${qOwns ? ' fx-slot--weld' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">take</span>
-              <span className="fx-value">
-                <code>q</code>
-              </span>
-              <span className="fx-note">{qOwns ? 'stole T' : 'waiting'}</span>
-              {qOwns && <span className="fx-badge fx-badge--owner">owner</span>}
-            </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>q</code>
+            <span className="fx-note">take</span>
+            <span className="fx-note">{decided ? 'own' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'auto' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">v[i]</span>
-            <div className="fx-buf-row">
-              <span className={`fx-letter${stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>h</span>
-              <span className={`fx-letter${stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>i</span>
-            </div>
-            <span className="fx-note">source still owns</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${copyTrap ? ' fx-rank--trap' : ''}`}>
+            <code>x</code>
+            <span className="fx-note">copy</span>
+            <span className="fx-note">{copyTrap ? 'copy' : '—'}</span>
           </div>
-          <div className={`fx-link${copied ? ' fx-link--dead' : stepped ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${copied ? ' fx-pane--focus' : ''}${copied ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">auto x</span>
-            <div className="fx-buf-row">
-              <span className={`fx-letter${copied ? ' fx-letter--on' : ' fx-letter--empty'}`}>h</span>
-              <span className={`fx-letter${copied ? ' fx-letter--on' : ' fx-letter--empty'}`}>i</span>
-            </div>
-            <span className="fx-note">{copied ? 'by-value copy' : 'waiting'}</span>
+          <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : ''}`}>
+            <code>y</code>
+            <span className="fx-note">ref</span>
+            <span className="fx-note">{recap ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'ret' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${moveInhibit ? ' fx-pane--gone' : ''}`}>
-            <span className="fx-kicker">local s</span>
-            <div className="fx-buf-row">
-              <span className={`fx-letter${stepped && !moveInhibit ? ' fx-letter--on' : ' fx-letter--empty'}`}>o</span>
-              <span className={`fx-letter${stepped && !moveInhibit ? ' fx-letter--on' : ' fx-letter--empty'}`}>k</span>
-            </div>
-            <span className="fx-note">{moveInhibit ? 'std::move(s)' : 'named automatic'}</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${decided ? ' fx-rank--done' : ''}`}>
+            <code>s</code>
+            <span className="fx-note">return</span>
+            <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-link${retOk ? ' fx-link--weld' : moveInhibit ? ' fx-link--dead' : stepped ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}${moveInhibit ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">caller</span>
-            <div className="fx-buf-row">
-              <span className={`fx-letter${decided ? ' fx-letter--on' : ' fx-letter--empty'}`}>o</span>
-              <span className={`fx-letter${decided ? ' fx-letter--on' : ' fx-letter--empty'}`}>k</span>
-            </div>
-            <span className="fx-note">{moveInhibit ? 'NRVO inhibited' : retOk ? 'moved or elided' : 'waiting'}</span>
+          <div className={`fx-rank${moveInhibit ? ' fx-rank--trap' : ''}`}>
+            <code>mv</code>
+            <span className="fx-note">move(s)</span>
+            <span className="fx-note">{moveInhibit ? 'no' : '—'}</span>
           </div>
         </div>
       )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
-          copied || moveInhibit ? 'fx-verdict--warn' : verdict ? 'fx-verdict--ok' : ''
+          trap ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
         {verdict}

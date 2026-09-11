@@ -1,11 +1,4 @@
-import { useMemo, useState } from 'react'
-import {
-  computeLayout,
-  makeMember,
-  memberTypes,
-  type MemberType,
-  type StructMember,
-} from '../data/layout.ts'
+import { useState } from 'react'
 import { SceneShell } from './viz/scene/SceneShell.tsx'
 import { useBeats } from './viz/scene/useBeats.ts'
 
@@ -18,80 +11,30 @@ const MODES: { id: Mode; title: string }[] = [
   { id: 'wire', title: 'memcpy pad' },
 ]
 
-const CHAR = memberTypes[0]
-const INT = memberTypes[3]
-
-const BAD: { type: MemberType; name: string }[] = [
-  { type: CHAR, name: 'flag' },
-  { type: INT, name: 'id' },
-  { type: CHAR, name: 'ready' },
-]
-
-const GOOD: { type: MemberType; name: string }[] = [
-  { type: INT, name: 'id' },
-  { type: CHAR, name: 'flag' },
-  { type: CHAR, name: 'ready' },
-]
-
-function membersFor(mode: Mode, step: number): StructMember[] {
-  const src = mode === 'good' ? GOOD : BAD
-  if (mode === 'ebo' || mode === 'wire') return BAD.map((m) => makeMember(m.type, m.name))
-  if (step <= 0) return [makeMember(src[0].type, src[0].name)]
-  if (step === 1) return [makeMember(src[0].type, src[0].name), makeMember(src[1].type, src[1].name)]
-  return src.map((m) => makeMember(m.type, m.name))
-}
-
 export function MemoryLayoutView() {
   const [id, setId] = useState<Mode>('bad')
   const { i, playing, play, reset } = useBeats(4)
-  const [custom, setCustom] = useState<StructMember[] | null>(null)
 
   function select(next: string) {
     reset()
-    setCustom(null)
     setId(next as Mode)
   }
 
   const stepped = i >= 1
   const decided = i >= 2
   const recap = i >= 3
-  const members = custom && !playing ? custom : membersFor(id, i)
-  const layout = useMemo(() => computeLayout(members), [members])
-  const naiveSize = useMemo(() => members.reduce((sum, m) => sum + m.type.size, 0), [members])
-  const waste = id === 'bad' && decided && !custom
-  const packed = id === 'good' && decided && !custom
+  const waste = id === 'bad' && decided
+  const packed = id === 'good' && recap
   const eboWin = id === 'ebo' && recap
   const wireTrap = id === 'wire' && decided
-
-  function addMember(type: MemberType) {
-    if (playing) return
-    const count = members.filter((m) => m.type.name === type.name).length
-    const base = type.name.replace(/[^a-z0-9]/gi, '') || 'field'
-    setCustom([...members, makeMember(type, `${base}${count > 0 ? count : ''}`)])
-  }
-
-  function removeMember(mid: string) {
-    if (playing) return
-    setCustom(members.filter((m) => m.id !== mid))
-  }
-
-  function onPlay() {
-    setCustom(null)
-    play()
-  }
-
-  function onReset() {
-    setCustom(null)
-    reset()
-  }
+  const trap = waste || wireTrap
+  const ok = packed || eboWin
 
   const code =
     id === 'bad'
       ? recap
         ? `sizeof(Bad);  // 12, packed 6`
-        : decided
-          ? `struct Bad { char flag; int id; char ready; };`
-          : `struct Bad { char flag; int id; };`
+        : `struct Bad { char flag; int id; char ready; };`
       : id === 'good'
         ? recap
           ? `struct Good { int id; char flag; char ready; };
@@ -113,14 +56,14 @@ std::memcpy(buf, &bad, sizeof(bad));  // pad bytes too`
   const caption =
     i === 0
       ? id === 'bad'
-        ? 'Play Bad. Members are laid out in order. Each one starts at an offset that is a multiple of its alignment. Padding hatches in place.'
+        ? 'Play sizeof 12. Members are laid out in order. Each one starts at an offset that is a multiple of its alignment. Padding is waste, not a hop.'
         : id === 'good'
-          ? 'Play Good. Largest-to-smallest often packs tighter. Same members, different order, smaller sizeof.'
+          ? 'Play sizeof 8. Largest-to-smallest often packs tighter. Same members, different order, smaller sizeof.'
           : id === 'ebo'
-            ? 'Play empty base. Empty base optimization can make a base take zero extra size. An empty member still takes at least 1 byte.'
-            : 'Play memcpy. Padding is not part of your protocol. Sending a struct by memcpy copies the hatched bytes too.'
+            ? 'Play EBO. Empty base optimization can make a base take zero extra size. An empty member still takes at least 1 byte.'
+            : 'Play memcpy. Padding is not part of your protocol. Sending a struct by memcpy copies the pad bytes too.'
       : id === 'bad' && i === 1
-        ? 'int wants offset 0 mod 4. Three padding bytes appear so id can sit at 4. Nothing hops — the hatch is the pad.'
+        ? 'int wants offset 0 mod 4. Three padding bytes sit so id can sit at 4. Stations light in place.'
         : id === 'bad' && i === 2
           ? 'char ready sits at 8, then the struct rounds up to alignof = 4. Trailing padding. sizeof is 12.'
           : id === 'bad'
@@ -143,23 +86,20 @@ std::memcpy(buf, &bad, sizeof(bad));  // pad bytes too`
                             ? 'Those pad bytes are not flag, id, or ready. They are not a stable protocol field.'
                             : 'Write the fields you mean, or pack a wire format on purpose. #pragma pack has its own ABI cost.'
 
-  const tone = wireTrap || waste ? 'warn' : packed || eboWin ? 'ok' : 'idle'
+  const tone = trap ? 'warn' : ok ? 'ok' : 'idle'
   const playLabel =
-    id === 'bad' ? 'Play Bad' : id === 'good' ? 'Play Good' : id === 'ebo' ? 'Play EBO' : 'Play memcpy'
+    id === 'bad' ? 'Play sizeof 12' : id === 'good' ? 'Play sizeof 8' : id === 'ebo' ? 'Play EBO' : 'Play memcpy'
 
-  const verdict = custom
-    ? layout.paddingBytes > 0
-      ? `${layout.paddingBytes} pad · hatched, not flying`
-      : `sizeof ${layout.totalSize}`
-    : id === 'bad' && recap
+  const verdict =
+    id === 'bad' && recap
       ? 'sizeof 12 · packed 6 · order wasted 6'
-      : id === 'bad' && decided
-        ? `${layout.paddingBytes} pad bytes · hatched`
+      : waste
+        ? '12 · 6 pad bytes'
         : id === 'bad' && stepped
           ? 'int at 4 · 3 pad before id'
-          : packed && recap
+          : packed
             ? 'int first · sizeof 8 · tail pad only'
-            : packed
+            : id === 'good' && decided
               ? 'sizeof 8'
               : id === 'good' && stepped
                 ? 'int at 0 · no lead pad'
@@ -174,7 +114,7 @@ std::memcpy(buf, &bad, sizeof(bad));  // pad bytes too`
                         : wireTrap
                           ? 'memcpy copies pad'
                           : id === 'wire' && stepped
-                            ? 'sizeof 12 includes hatch'
+                            ? 'sizeof 12 includes pad'
                             : ''
 
   return (
@@ -183,108 +123,78 @@ std::memcpy(buf, &bad, sizeof(bad));  // pad bytes too`
       mode={id}
       onSelect={select}
       playing={playing}
-      onPlay={onPlay}
-      onReset={onReset}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setId(id)
+      }}
       playLabel={playLabel}
       step={i}
       stepCount={4}
-      sig={id === 'ebo' ? (eboWin ? 'EBO 4' : 'member 8') : `sizeof ${layout.totalSize}`}
-      caption={
-        custom
-          ? 'Builder mode. Padding hatches in place when alignment demands it. Play to walk the selected scene.'
-          : caption
-      }
-      code={custom ? members.map((m) => `${m.type.name} ${m.fieldName};`).join('\n') : code}
+      sig={MODES.find((m) => m.id === id)?.title}
+      caption={caption}
+      code={code}
       tone={tone}
-      footer={
-        <>
-          <div className="stepper">
-            {memberTypes.map((t) => (
-              <button key={t.name} className="chip" onClick={() => addMember(t)} disabled={playing}>
-                + <code>{t.name}</code>
-              </button>
-            ))}
-          </div>
-          <div className="fx-pane fx-footer-gap">
-            <span className="fx-kicker">struct Example {'{'}</span>
-            {members.length === 0 && <span className="fx-note">add members above…</span>}
-            {members.map((m) => (
-              <div key={m.id} className="fx-struct-line">
-                <code>
-                  {m.type.name} {m.fieldName};
-                </code>
-                <button className="chip chip--ghost" onClick={() => removeMember(m.id)} disabled={playing} type="button">
-                  ×
-                </button>
-              </div>
-            ))}
-            <span className="fx-kicker">{'}'};</span>
-          </div>
-        </>
-      }
     >
-      {id === 'ebo' ? (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped && !eboWin ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">Has · member</span>
-            <div className="fx-buf-row">
-              <span className={`fx-letter${stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>e</span>
-              <span className={`fx-letter${stepped ? ' fx-letter--pad' : ' fx-letter--empty'}`}>·</span>
-              <span className={`fx-letter${stepped ? ' fx-letter--pad' : ' fx-letter--empty'}`}>·</span>
-              <span className={`fx-letter${stepped ? ' fx-letter--pad' : ' fx-letter--empty'}`}>·</span>
-              <span className={`fx-letter${decided ? ' fx-letter--on' : ' fx-letter--empty'}`}>n</span>
-              <span className={`fx-letter${decided ? ' fx-letter--on' : ' fx-letter--empty'}`}>n</span>
-              <span className={`fx-letter${decided ? ' fx-letter--on' : ' fx-letter--empty'}`}>n</span>
-              <span className={`fx-letter${decided ? ' fx-letter--on' : ' fx-letter--empty'}`}>n</span>
-            </div>
-            <span className="fx-note">sizeof 8 · e is 1 + pad</span>
+      {id === 'bad' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${waste ? ' fx-rank--trap' : ''}`}>
+            <code>sz</code>
+            <span className="fx-note">sizeof</span>
+            <span className="fx-note">{waste ? '12' : '—'}</span>
           </div>
-          <div className={`fx-link${eboWin ? ' fx-link--weld' : stepped ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${eboWin ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">D : Empty</span>
-            <div className="fx-buf-row">
-              <span className={`fx-letter${eboWin ? ' fx-letter--on' : ' fx-letter--empty'}`}>n</span>
-              <span className={`fx-letter${eboWin ? ' fx-letter--on' : ' fx-letter--empty'}`}>n</span>
-              <span className={`fx-letter${eboWin ? ' fx-letter--on' : ' fx-letter--empty'}`}>n</span>
-              <span className={`fx-letter${eboWin ? ' fx-letter--on' : ' fx-letter--empty'}`}>n</span>
-            </div>
-            <span className="fx-note">{eboWin ? 'base takes 0 extra' : 'EBO waiting'}</span>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${waste ? ' fx-rank--trap' : ''}`}>
+            <code>pad</code>
+            <span className="fx-note">waste</span>
+            <span className="fx-note">{waste ? '6' : '—'}</span>
           </div>
         </div>
-      ) : (
-        <>
-          <div className="fx-stats">
-            <div className="fx-stat">
-              <span className="fx-value">{layout.totalSize}</span>
-              <span className="fx-kicker">sizeof</span>
-            </div>
-            <div className="fx-stat">
-              <span className={`fx-value${layout.paddingBytes > 0 ? ' fx-stat--warn' : ''}`}>{layout.paddingBytes}</span>
-              <span className="fx-kicker">padding</span>
-            </div>
-            <div className="fx-stat">
-              <span className="fx-value">{naiveSize}</span>
-              <span className="fx-kicker">packed</span>
-            </div>
+      )}
+      {id === 'good' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>sz</code>
+            <span className="fx-note">sizeof</span>
+            <span className="fx-note">{decided ? '8' : '—'}</span>
           </div>
-          <div className="fx-buf-row">
-            {layout.slots.flatMap((slot) =>
-              Array.from({ length: slot.size }, (_, n) => (
-                <span
-                  key={`${slot.kind}-${slot.offset}-${n}`}
-                  className={`fx-letter${slot.kind === 'padding' ? (wireTrap ? ' fx-letter--dead' : ' fx-letter--pad') : ' fx-letter--on'}`}
-                  title={`${slot.kind} @ ${slot.offset + n}`}
-                >
-                  {slot.kind === 'padding' ? '·' : (slot.label ?? 'x').slice(0, 1)}
-                </span>
-              )),
-            )}
+          <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : ''}`}>
+            <code>pad</code>
+            <span className="fx-note">tail</span>
+            <span className="fx-note">{recap ? '2' : '—'}</span>
           </div>
-        </>
+        </div>
+      )}
+      {id === 'ebo' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${decided ? ' fx-rank--trap' : ''}`}>
+            <code>Has</code>
+            <span className="fx-note">member</span>
+            <span className="fx-note">{decided ? '8' : '—'}</span>
+          </div>
+          <div className={`fx-rank${eboWin ? ' fx-rank--on fx-rank--done' : ''}`}>
+            <code>D</code>
+            <span className="fx-note">EBO</span>
+            <span className="fx-note">{eboWin ? '4' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'wire' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+            <code>sz</code>
+            <span className="fx-note">sizeof</span>
+            <span className="fx-note">{stepped ? '12' : '—'}</span>
+          </div>
+          <div className={`fx-rank${wireTrap ? ' fx-rank--trap' : ''}`}>
+            <code>cp</code>
+            <span className="fx-note">memcpy</span>
+            <span className="fx-note">{wireTrap ? 'no' : '—'}</span>
+          </div>
+        </div>
       )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
-          wireTrap || waste ? 'fx-verdict--warn' : packed || eboWin ? 'fx-verdict--ok' : layout.paddingBytes > 0 ? 'fx-verdict--warn' : ''
+          trap ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
         {verdict}
