@@ -91,11 +91,8 @@ export function InvalidationViz() {
       ? i < 2
         ? `auto it = v.begin() + 1;  // → b
 v.push_back('d');  // fits, it still → b`
-        : grew && !recap
-          ? `v.push_back('e');  // realloc
+        : `v.push_back('e');  // realloc
 // it is dangling`
-          : `v.erase(v.begin() + 1);
-// iterators at/after the erase die too`
       : kind === 'list'
         ? recap
           ? `L.erase(it);  // only that iterator dies
@@ -135,7 +132,7 @@ auto last = v.end();  // one-past-last
         : kind === 'vector' && i === 2
           ? 'Growth allocated a new buffer and released the old one. The weld dies. Every iterator into the old storage is dangling.'
           : kind === 'vector'
-            ? 'erase shifts the tail. Iterators at and after the erase point are invalid even without realloc. a would still be fine; it is not.'
+            ? 'Old storage is gone. Every iterator into it is dangling. erase is a different rule — list and map show that.'
             : kind === 'list' && i === 1
               ? 'push_back allocates a new node. it still names b. Only an erased element’s iterators die.'
               : kind === 'list' && i === 2
