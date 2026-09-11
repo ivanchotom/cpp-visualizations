@@ -159,7 +159,7 @@ Bag a, b = a;
 
   const inName = id === 'zero' ? 'members' : id === 'quiet' ? '~Person()' : id === 'raw' ? 'heap' : 'Base'
   const inVal =
-    id === 'zero' ? (decided ? 'string + unique_ptr' : stepped ? 'string' : '—') : id === 'quiet' ? '{}' : id === 'raw' ? (stepped ? 'new int{7}' : 'unset') : 'polymorphic'
+    id === 'zero' ? (decided ? 'string + ptr' : stepped ? 'string' : '—') : id === 'quiet' ? '{}' : id === 'raw' ? (stepped ? 'new int{7}' : 'unset') : 'polymorphic'
   const midName = id === 'zero' ? 'Person' : id === 'quiet' ? 'implicit moves' : id === 'raw' ? 'Bag' : '~Base()'
   const midVal =
     id === 'zero' && decided
@@ -262,29 +262,6 @@ Bag a, b = a;
             <span className="fx-value">{inVal}</span>
             <span className="fx-note">resource</span>
           </div>
-          {id === 'zero' && stepped ? (
-            <div className="fx-obj-row" style={{ marginTop: 8 }}>
-              {['I', 'v', 'a', 'n'].map((ch, n) => (
-                <span key={n} className={`fx-letter${stolen ? ' fx-letter--empty' : ' fx-letter--on'}`}>
-                  {stolen ? '·' : ch}
-                </span>
-              ))}
-            </div>
-          ) : null}
-          {id === 'quiet' && stepped ? (
-            <div className="fx-obj-row" style={{ marginTop: 8 }}>
-              {['A', 'd', 'a'].map((ch, n) => (
-                <span key={n} className="fx-letter fx-letter--on">
-                  {ch}
-                </span>
-              ))}
-            </div>
-          ) : null}
-          {id === 'raw' && stepped ? (
-            <div className="fx-obj-row" style={{ marginTop: 8 }}>
-              <span className={`fx-letter${doubleFree ? ' fx-letter--dead' : ' fx-letter--on'}`}>7</span>
-            </div>
-          ) : null}
         </div>
         <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
         <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${trap && decided ? ' fx-pane--trap' : ''}`}>
@@ -339,17 +316,55 @@ Bag a, b = a;
             {stolen && <span className="fx-badge fx-badge--owner">owner</span>}
             {copied && <span className="fx-badge fx-badge--open">copy</span>}
           </div>
-          {(stolen || copied) && nameB ? (
-            <div className="fx-obj-row" style={{ marginTop: 8 }}>
-              {nameB.split('').map((ch, n) => (
-                <span key={n} className={`fx-letter${stolen ? ' fx-letter--move' : ' fx-letter--on'}`}>
-                  {ch}
-                </span>
-              ))}
-            </div>
-          ) : null}
         </div>
       </div>
+      {id !== 'virt' && stepped ? (
+        <div className="fx-sh">
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${stolen ? ' fx-pane--gone' : ''}`}>
+            <span className="fx-kicker">a</span>
+            <div className="fx-obj-row" style={{ flexWrap: 'nowrap' }}>
+              {id === 'raw' ? (
+                <span className={`fx-letter${doubleFree ? ' fx-letter--dead' : ' fx-letter--on'}`}>7</span>
+              ) : (
+                (id === 'zero' ? ['I', 'v', 'a', 'n'] : ['A', 'd', 'a']).map((ch, n) => (
+                  <span key={n} className={`fx-letter${stolen ? ' fx-letter--empty' : ' fx-letter--on'}`}>
+                    {stolen ? '·' : ch}
+                  </span>
+                ))
+              )}
+            </div>
+            <span className="fx-note">{stolen ? 'moved-from' : leak || doubleFree ? 'owns p' : 'source'}</span>
+          </div>
+          <div className={`fx-link${stolen ? ' fx-link--weld' : copied || leak ? ' fx-link--on' : doubleFree ? ' fx-link--dead' : ''}`} />
+          <div className={`fx-pane${stolen || copied || leak || doubleFree ? ' fx-pane--focus' : ''}${doubleFree ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">b</span>
+            <div className="fx-obj-row" style={{ flexWrap: 'nowrap' }}>
+              {id === 'raw' ? (
+                leak || doubleFree ? (
+                  <span className={`fx-letter${doubleFree ? ' fx-letter--dead' : ' fx-letter--on'}`}>7</span>
+                ) : (
+                  <span className="fx-letter fx-letter--empty">·</span>
+                )
+              ) : stolen || copied ? (
+                (nameB || '').split('').map((ch, n) => (
+                  <span key={n} className={`fx-letter${stolen ? ' fx-letter--move' : ' fx-letter--on'}`}>
+                    {ch}
+                  </span>
+                ))
+              ) : (
+                (id === 'zero' ? ['I', 'v', 'a', 'n'] : ['A', 'd', 'a']).map((_, n) => (
+                  <span key={n} className="fx-letter fx-letter--empty">
+                    ·
+                  </span>
+                ))
+              )}
+            </div>
+            <span className="fx-note">
+              {stolen ? 'stole' : copied ? 'copy of a' : leak ? 'same p' : doubleFree ? 'double free' : 'not yet'}
+            </span>
+          </div>
+        </div>
+      ) : null}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
           doubleFree ? 'fx-verdict--trap' : trap ? 'fx-verdict--warn' : stolen || virtOk ? 'fx-verdict--ok' : ''
