@@ -5,13 +5,11 @@ import { useBeats } from './scene/useBeats.ts'
 type Mode = 'sum' | 'sizeof' | 'index' | 'nobase'
 
 const MODES: { id: Mode; title: string }[] = [
-  { id: 'sum', title: 'sum' },
+  { id: 'sum', title: 'sum pack' },
   { id: 'sizeof', title: 'sizeof...' },
-  { id: 'index', title: 'index' },
+  { id: 'index', title: 'index_seq' },
   { id: 'nobase', title: 'no base' },
 ]
-
-const PACK = ['1', '2', '3'] as const
 
 export function VariadicViz() {
   const [id, setId] = useState<Mode>('sum')
@@ -22,100 +20,96 @@ export function VariadicViz() {
     setId(next as Mode)
   }
 
-  const packed = i >= 1
-  const expanded = i >= 2
+  const stepped = i >= 1
+  const decided = i >= 2
   const recap = i >= 3
-  const sizeofOk = id === 'sizeof' && i === 2
-  const sizeofTrap = id === 'sizeof' && i >= 3
-  const noStop = id === 'nobase' && expanded
-  const won = (id === 'sum' && expanded) || (id === 'index' && expanded) || sizeofOk
+  const sizeTrap = id === 'sizeof' && decided
+  const peelTrap = id === 'nobase' && decided
+  const trap = sizeTrap || peelTrap
+  const ok = (id === 'sum' && recap) || (id === 'index' && recap)
 
-  const filled = packed ? (id === 'sizeof' ? 2 : 3) : 0
-  const peeled = id === 'nobase' ? (i === 0 ? 3 : i === 1 ? 2 : i === 2 ? 1 : 0) : filled
+  const restN = i === 1 ? '3' : i === 2 ? '2' : recap ? '0' : '—'
 
   const code =
     id === 'sum'
-      ? i < 2
-        ? `template <typename... Ts>
+      ? recap
+        ? `int t = sum(1, 2, 3);  // 6
+// C++14 — no (xs + ...)`
+        : `template <class... Ts>
 int sum(Ts... xs) {
   int t = 0;
-  int _[] = {0, (t += static_cast<int>(xs), 0)...};
-  (void)_;
+  (void)std::initializer_list<int>{
+      0, ((t += xs), 0)...};
   return t;
 }`
-        : `int n = sum(1, 2, 3);   // t = 6
-// comma-in-braces is the C++14 pack foreach
-// C++17: (xs + … + 0)`
       : id === 'sizeof'
-        ? i < 3
-          ? `template <typename... Ts>
-constexpr std::size_t n() {
-  return sizeof...(Ts);   // length of the pack
-}
-
-n<int, char>();           // 2`
-          : `template <typename... Ts>
-void f(Ts... xs) {
-  // sizeof(xs);          // ill-formed: xs is a pack
-  sizeof...(xs);          // ok:  the length
+        ? recap
+          ? `constexpr std::size_t n = sizeof...(xs);  // 2
+// sizeof(xs);  // ill-formed`
+          : `template <class... Ts>
+void print(Ts... xs) {
+  constexpr std::size_t n =
+      sizeof...(xs);  // 2
+  // sizeof(xs);      // ill-formed
+  (void)n;
 }`
         : id === 'index'
-          ? i < 2
-            ? `template <typename Tuple, std::size_t... I>
-void each_impl(Tuple& t, std::index_sequence<I...>) {
-  int _[] = {0, ((void)std::get<I>(t), 0)...};
-  (void)_;
+          ? recap
+            ? `return f(std::get<0>(t),
+         std::get<1>(t),
+         std::get<2>(t));`
+            : `template <class F, class Tuple, std::size_t... I>
+decltype(auto) apply_impl(
+    F&& f, Tuple&& t,
+    std::index_sequence<I...>) {
+  return std::forward<F>(f)(
+      std::get<I>(std::forward<Tuple>(t))...);
 }`
-            : `auto t = std::make_tuple(1, 2, 3);
-each_impl(t, std::make_index_sequence<3>{});
-// expands get<0>, get<1>, get<2>
-// C++14: make_index_sequence`
-          : i < 2
-            ? `template <typename T, typename... Rest>
-void print(T head, Rest... rest) {
-  // use head
-  print(rest...);          // recurse
+          : recap
+            ? `void print() {}  // base — required
+print(3);  // peels to print() — needs the base`
+            : `void print() {}  // base — required
+
+template <class T, class... Rest>
+void print(const T& first, Rest... rest) {
+  std::cout << first << ' ';
+  print(rest...);  // peel
 }`
-            : `print(1, 2, 3);
-print(2, 3);
-print(3);
-print();                  // no matching function
-// need: void print() {}  // empty-pack base`
 
   const caption =
     i === 0
       ? id === 'sum'
-        ? 'Play sum. A pack expands with Pattern... in a context that allows it. The C++14 foreach is a dummy initializer list of comma expressions. No fold expressions.'
+        ? 'Play sum(1, 2, 3). C++14 has no fold expressions. Walk a pack with a dummy initializer list: {0, (expr, 0)...}.'
         : id === 'sizeof'
-          ? 'Play sizeof.... sizeof...(Ts) is a compile-time size_t — the length of the pack, not the size of an object. sizeof(xs) on a pack is ill-formed.'
+          ? 'Play sizeof...(Ts). sizeof...(Ts) is the pack length. sizeof(xs) is ill-formed — a pack is not a type or object.'
           : id === 'index'
-            ? 'Play index. std::make_index_sequence<N> plus a helper that takes index_sequence<I...> lets you expand 0..N-1. That is how you walk a tuple in C++14.'
-            : 'Play no base. A recursive variadic without a non-template (or empty-pack) overload never terminates instantiation.'
+            ? 'Play index_sequence. std::make_index_sequence<N> is C++14. It expands to index_sequence<0, 1, ..., N-1>.'
+            : 'Play print(rest...). Recursive print(first, rest...) needs a base case. Without void print() {}, the last call never terminates.'
       : id === 'sum' && i === 1
-        ? 'The pack is a list of types and a matching list of values. Empty is valid: sum() is 0. The dummy array is the expand context.'
+        ? 'sum(1, 2, 3) — the pack xs... is three ints, not one object you can sizeof. Stations light in place.'
         : id === 'sum' && i === 2
-          ? '(t += xs, 0)... expands into the braces. Each element adds, then yields 0 so the array type is int. (void)_ silences unused.'
+          ? '(void)t += xs expands once per argument. t becomes 0+1+2+3 = 6. The dummy ints are discarded.'
           : id === 'sum'
-            ? 'g(h(xs)...) applies h to each, then calls g. Expanding in a context that forbids expansion dumps a wall of substitution notes.'
+            ? 'C++17 fold (xs + ...) is shorter. Until then, dummy {0, (expr, 0)...} is the pack foreach. Side effects in the comma expressions still run.'
             : id === 'sizeof' && i === 1
-              ? 'Two types in the pack. The length is a property of the pack, not of any one object.'
+              ? 'sizeof...(xs) is 2 for print(1, 2). The ellipsis is required. len is a compile-time size_t.'
               : id === 'sizeof' && i === 2
-                ? 'sizeof...(Ts) is 2. Compile-time. There is no object whose sizeof is “the pack.”'
+                ? 'sizeof(xs) does not mean “size of the pack”. There is no object named xs. The call is ill-formed.'
                 : id === 'sizeof'
-                  ? 'sizeof(xs) is ill-formed — xs is a pack, not an expression. Write sizeof...(xs).'
+                  ? 'Use sizeof... for length. sizeof without the dots is a different operator. You can static_assert the length.'
                   : id === 'index' && i === 1
-                    ? 'make_index_sequence<3> is index_sequence<0, 1, 2>. The helper receives that pack as I....'
+                    ? 'apply(f, t) peels the tuple with get<I>(t)... for I in 0..N-1. The index pack is the expansion engine.'
                     : id === 'index' && i === 2
-                      ? 'I... expands as get<0>(t), get<1>(t), get<2>(t). Same dummy-array foreach as sum. C++17 folds replace most of this.'
+                      ? 'f(get<0>(t), get<1>(t), get<2>(t)) — the pack of indices becomes the pack of arguments.'
                       : id === 'index'
-                        ? 'You cannot write get<0, 1, 2> as a pack in the tuple itself. The index pack is the adapter.'
+                        ? 'Without index_sequence you cannot name get<0>, get<1>, get<2> in one expansion. C++17 std::apply does this for you.'
                         : i === 1
-                          ? 'head peels off. rest... is the remaining pack. Recursion peels one argument per instantiation.'
+                          ? 'print(1, 2, 3) peels first=1, rest = 2, 3. Recurse on rest... The pack shrinks by one each call.'
                           : i === 2
-                            ? 'print() with an empty pack has no overload. Instantiation does not stop. Add void print() {} as the base case.'
-                            : 'An empty pack is a valid call if a matching overload exists. Watch the base: the recursive case must not also match zero args.'
+                            ? 'print(2, 3) peels first=2, rest = 3. One argument left is still a pack of size 1. Next peel is print(3).'
+                            : 'print(3) peels first=3, rest is empty. The next call is print() — no matching function unless you add void print() {}.'
 
-  const tone = sizeofTrap || noStop ? 'trap' : won ? 'ok' : 'idle'
+  const tone = trap ? 'trap' : ok ? 'ok' : 'idle'
   const playLabel =
     id === 'sum'
       ? 'Play sum(1, 2, 3)'
@@ -124,6 +118,33 @@ print();                  // no matching function
         : id === 'index'
           ? 'Play index_sequence'
           : 'Play print(rest...)'
+
+  const verdict =
+    id === 'sum' && recap
+      ? 't = 6 · dummy foreach'
+      : id === 'sum' && decided
+        ? 't += xs... · 6'
+        : id === 'sum' && stepped
+          ? 'xs... · three ints'
+          : id === 'sizeof' && recap
+            ? 'sizeof... · not sizeof'
+            : sizeTrap
+              ? 'sizeof(xs) · ill-formed'
+              : id === 'sizeof' && stepped
+                ? 'sizeof...(xs) = 2'
+                : id === 'index' && recap
+                  ? 'get<I>(t)... · expand'
+                  : id === 'index' && decided
+                    ? 'I... · 0, 1, 2'
+                    : id === 'index' && stepped
+                      ? 'index_sequence · ok'
+                      : peelTrap && recap
+                        ? 'print() · no base'
+                        : peelTrap
+                          ? 'rest empty · no match'
+                          : id === 'nobase' && stepped
+                            ? `peel · rest = ${restN}`
+                            : ''
 
   return (
     <SceneShell
@@ -146,90 +167,66 @@ print();                  // no matching function
     >
       {id === 'sum' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${packed ? ' fx-rank--on' : ''}${expanded ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>xs</code>
             <span className="fx-note">pack</span>
-            <code>xs...</code>
-            <span className="fx-note">{packed ? '1 2 3' : '—'}</span>
+            <span className="fx-note">{stepped ? '3' : '—'}</span>
           </div>
-          <div className={`fx-rank${expanded ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>t</code>
             <span className="fx-note">foreach</span>
-            <code>{'(t += xs, 0)...'}</code>
-            <span className="fx-note">{expanded ? '6' : '—'}</span>
-          </div>
-          <div className="fx-buf-row">
-            {PACK.map((g, n) => (
-              <span key={g} className={`fx-letter${n < peeled ? ' fx-letter--on' : ' fx-letter--empty'}`}>
-                {n < peeled ? g : '·'}
-              </span>
-            ))}
+            <span className="fx-note">{decided ? '6' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'sizeof' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${packed ? ' fx-rank--on' : ''}${sizeofTrap ? ' fx-rank--done' : ''}`}>
-            <span className="fx-note">pack</span>
-            <code>sizeof...(Ts)</code>
-            <span className="fx-note">{sizeofOk || sizeofTrap ? '2' : packed ? 'len' : '—'}</span>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>len</code>
+            <span className="fx-note">sizeof...</span>
+            <span className="fx-note">{stepped ? '2' : '—'}</span>
           </div>
-          <div className={`fx-rank${sizeofTrap ? ' fx-rank--on fx-rank--trap' : sizeofOk ? ' fx-rank--on' : ''}`}>
-            <span className="fx-note">object</span>
-            <code>sizeof(xs)</code>
-            <span className="fx-note">{sizeofTrap ? 'ill' : '—'}</span>
+          <div className={`fx-rank${sizeTrap ? ' fx-rank--trap' : decided ? ' fx-rank--on' : ''}`}>
+            <code>xs</code>
+            <span className="fx-note">sizeof(xs)</span>
+            <span className="fx-note">{sizeTrap ? 'ill' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'index' && (
         <div className="fx-ladder">
-          {(['0', '1', '2'] as const).map((n, k) => (
-            <div key={n} className={`fx-rank${expanded && k <= 2 ? ' fx-rank--on' : packed ? ' fx-rank--done' : ''}`}>
-              <span className="fx-note">{`I=${n}`}</span>
-              <code>{`get<${n}>`}</code>
-              <span className="fx-note">{expanded ? n : packed ? n : '—'}</span>
-            </div>
-          ))}
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>I</code>
+            <span className="fx-note">index_seq</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>get</code>
+            <span className="fx-note">expand</span>
+            <span className="fx-note">{decided ? 'ok' : '—'}</span>
+          </div>
         </div>
       )}
       {id === 'nobase' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${packed ? ' fx-pane--focus' : ''}${noStop && recap ? ' fx-pane--gone' : ''}`}>
-            <span className="fx-kicker">rest</span>
-            <div className="fx-buf-row">
-              {PACK.map((g, n) => (
-                <span key={g} className={`fx-letter${n < peeled ? ' fx-letter--on' : ' fx-letter--empty'}`}>
-                  {n < peeled ? g : '·'}
-                </span>
-              ))}
-            </div>
-            <span className="fx-note">{noStop ? 'empty pack' : 'peel head, recurse'}</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${peelTrap ? ' fx-rank--trap' : ''}`}>
+            <code>rest</code>
+            <span className="fx-note">peel</span>
+            <span className="fx-note">{stepped ? restN : '—'}</span>
           </div>
-          <div className={`fx-link${noStop ? ' fx-link--dead' : packed ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${expanded ? ' fx-pane--focus' : ''}${noStop ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">print()</span>
-            <div className={`fx-slot${noStop ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">base</span>
-              <span className="fx-value">{noStop ? 'none' : '—'}</span>
-              <span className="fx-note">{noStop ? 'no matching function' : 'need void print() {}'}</span>
-            </div>
+          <div className={`fx-rank${peelTrap ? ' fx-rank--trap' : ''}`}>
+            <code>print</code>
+            <span className="fx-note">base</span>
+            <span className="fx-note">{peelTrap ? 'ill' : '—'}</span>
           </div>
         </div>
       )}
       <div
-        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
-          sizeofTrap || noStop ? 'fx-verdict--trap' : won ? 'fx-verdict--ok' : ''
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          trap ? 'fx-verdict--trap' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
-        {id === 'sum' && expanded
-          ? 'sum(1, 2, 3) · t = 6'
-          : sizeofOk
-            ? 'sizeof...(Ts) · 2'
-            : sizeofTrap
-              ? 'sizeof(xs) · ill-formed'
-              : id === 'index' && expanded
-                ? 'get<0>, get<1>, get<2>'
-                : noStop
-                  ? 'print() · no matching function'
-                  : ''}
+        {verdict}
       </div>
     </SceneShell>
   )
