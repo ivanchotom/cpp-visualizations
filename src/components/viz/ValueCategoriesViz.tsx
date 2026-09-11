@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { centerOf, hop, waitNextBeat, type Point } from './motion.ts'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 type Cat = 'lvalue' | 'xvalue' | 'prvalue'
 
@@ -8,6 +8,7 @@ interface Frame {
   cat: Cat
   hint: string
   code: string
+  sig: string
 }
 
 const FRAMES: Frame[] = [
@@ -15,170 +16,121 @@ const FRAMES: Frame[] = [
     expr: 'x',
     cat: 'lvalue',
     hint: 'A named variable has identity. You can take &x. You do not steal from it — you copy.',
-    code: `int x = 1;
-x;          // lvalue`,
+    code: `int x = 1;\nx;          // lvalue`,
+    sig: 'x',
   },
   {
     expr: '++x',
     cat: 'lvalue',
     hint: 'Prefix increment returns the object itself. Still an lvalue — identity, no steal.',
     code: `++x;        // lvalue, the object x`,
+    sig: '++x',
   },
   {
     expr: '42',
     cat: 'prvalue',
     hint: 'A literal has no identity. It is a pure incoming value (prvalue). In C++14 it initializes or is moved from.',
     code: `42;         // prvalue`,
+    sig: '42',
   },
   {
     expr: 'x++',
     cat: 'prvalue',
     hint: 'Postfix yields a temporary copy of the old value. That copy is a prvalue.',
     code: `x++;        // prvalue (old value)`,
+    sig: 'x++',
   },
   {
     expr: 'std::move(x)',
     cat: 'xvalue',
     hint: 'std::move is static_cast<T&&>(x). Same object, now expiring — you may steal. It does not move by itself.',
     code: `std::move(x);  // xvalue`,
+    sig: 'std::move(x)',
   },
   {
     expr: 't',
     cat: 'lvalue',
-    hint: 'A named T&& is still an lvalue. That is why wrap must call std::move (or std::forward) — the name killed the xvalue.',
-    code: `void wrap(std::string&& t) {
-  // take(t);          // error: t is an lvalue
-  take(std::move(t));  // xvalue
-}`,
+    hint: 'A named T&& is still an lvalue. wrap must call std::move (or std::forward) — the name killed the xvalue.',
+    code: `void wrap(std::string&& t) {\n  // take(t);          // error: t is an lvalue\n  take(std::move(t));  // xvalue\n}`,
+    sig: 'named T&&',
   },
 ]
 
-const STEP_MS = 1300
-const HOP_MS = 680
+const TAXONOMY: { cat: Cat; aka: string; steal: string; identity: string }[] = [
+  { cat: 'lvalue', aka: 'glvalue', steal: 'no (copy)', identity: 'yes' },
+  { cat: 'xvalue', aka: 'glvalue + rvalue', steal: 'yes (move)', identity: 'yes (expiring)' },
+  { cat: 'prvalue', aka: 'rvalue', steal: 'yes (init / move)', identity: 'no' },
+]
 
 export function ValueCategoriesViz() {
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [from, setFrom] = useState<Point>({ x: 80, y: 40 })
-  const [to, setTo] = useState<Point>({ x: 200, y: 120 })
+  const { i, playing, play, reset, jump } = useBeats(FRAMES.length)
+  const f = FRAMES[i]
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const exprRef = useRef<HTMLDivElement>(null)
-  const cellRefs = useRef<Record<Cat, HTMLDivElement | null>>({ lvalue: null, xvalue: null, prvalue: null })
-
-  const f = FRAMES[Math.min(i, FRAMES.length - 1)]
-
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    const dst = cellRefs.current[f.cat]
-    if (!stage || !exprRef.current || !dst) return
-    const origin = stage.getBoundingClientRect()
-    setFrom(centerOf(exprRef.current, origin))
-    setTo(centerOf(dst, origin))
-  }, [i, f.cat])
-
-  useEffect(() => {
-    if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
-    }
-    raf = requestAnimationFrame(hopLoop)
-    const stop = waitNextBeat(STEP_MS, () => {
-      if (i >= FRAMES.length - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stop()
-    }
-  }, [playing, i])
-
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
-  }
-
-  const pos = hopT < 1 ? hop(from, to, hopT) : null
-  const taxonomy: { cat: Cat; aka: string; steal: string; identity: string }[] = [
-    { cat: 'lvalue', aka: 'glvalue', steal: 'no (copy)', identity: 'yes' },
-    { cat: 'xvalue', aka: 'glvalue + rvalue', steal: 'yes (move)', identity: 'yes (expiring)' },
-    { cat: 'prvalue', aka: 'rvalue', steal: 'yes (init / move)', identity: 'no' },
-  ]
+  const tone = f.cat === 'xvalue' ? 'warn' : f.cat === 'prvalue' ? 'ok' : 'idle'
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play x then 42 then move(x)
-        </button>
-        <button className="chip" onClick={() => setI((n) => Math.max(0, n - 1))} disabled={playing || i === 0}>
-          ◂ prev
-        </button>
-        <button className="chip" onClick={() => setI((n) => Math.min(FRAMES.length - 1, n + 1))} disabled={playing || i === FRAMES.length - 1}>
-          next ▸
-        </button>
-        <button
-          className="chip chip--ghost"
-          onClick={() => {
-            setPlaying(false)
-            setI(0)
-            setHopT(1)
-          }}
-        >
-          reset
-        </button>
+    <SceneShell
+      playing={playing}
+      onPlay={play}
+      onReset={reset}
+      playLabel="Play x then 42 then move(x)"
+      step={i}
+      stepCount={FRAMES.length}
+      sig={f.sig}
+      caption={f.hint}
+      code={f.code}
+      tone={tone}
+      footer={
+        <div className="stepper">
+          <button className="chip" onClick={() => jump(i - 1)} disabled={playing || i === 0}>
+            ◂ prev
+          </button>
+          <button
+            className="chip"
+            onClick={() => jump(i + 1)}
+            disabled={playing || i === FRAMES.length - 1}
+          >
+            next ▸
+          </button>
+        </div>
+      }
+    >
+      <div className={`fx-tok fx-tok--hot fx-cat-expr`}>
+        <span className="fx-kicker">expression</span>
+        <code>{f.expr}</code>
       </div>
-
-      <div ref={stageRef} className={`viz-stage cat-stage viz-stage--live cat-stage--${f.cat}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{FRAMES.length} · {f.cat}
-        </p>
-        <div className="lf-beats" aria-hidden>
-          {FRAMES.map((_, n) => (
-            <span key={n} className={`lf-beat${n === i ? ' lf-beat--on' : ''}${n < i ? ' lf-beat--done' : ''}`} />
-          ))}
-        </div>
-        <div ref={exprRef} className={`cat-expr cat-expr--${f.cat}`}>
-          <span className="tpl-kicker">expression</span>
-          <code>{f.expr}</code>
-        </div>
-        <div className="cat-diagram">
-          {taxonomy.map((t) => (
-            <div
-              key={t.cat}
-              ref={(el) => {
-                cellRefs.current[t.cat] = el
-              }}
-              className={`cat-cell cat-cell--${t.cat}${f.cat === t.cat ? ' cat-cell--on' : ''}`}
-            >
-              <strong>{t.cat}</strong>
-              <span>{t.aka}</span>
-              <span>identity: {t.identity}</span>
-              <span>move from: {t.steal}</span>
-            </div>
-          ))}
-        </div>
-        {pos && (
-          <span className={`cat-flyer cat-flyer--${f.cat}`} style={{ left: pos.x, top: pos.y }}>
-            {f.expr}
-          </span>
-        )}
+      <div className="fx-cat-row">
+        {TAXONOMY.map((t) => (
+          <button
+            key={t.cat}
+            type="button"
+            className={`fx-slot${f.cat === t.cat ? ' fx-slot--focus' : ' fx-slot--dim'}${
+              f.cat === t.cat && t.cat === 'prvalue' ? ' fx-slot--ok' : ''
+            }${f.cat === t.cat && t.cat === 'xvalue' ? ' fx-slot--weld' : ''}`}
+            onClick={() => {
+              const n = FRAMES.findIndex((fr) => fr.cat === t.cat)
+              if (n >= 0) jump(n)
+            }}
+            disabled={playing}
+          >
+            <span className="fx-kicker">{t.cat}</span>
+            <span className="fx-note">{t.aka}</span>
+            <span className="fx-note">identity: {t.identity}</span>
+            <span className="fx-note">move from: {t.steal}</span>
+          </button>
+        ))}
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{f.code}</code>
-      </pre>
-      <p className="layout-hint">{f.hint}</p>
-    </div>
+      <div
+        className={`fx-verdict fx-verdict--show ${
+          f.cat === 'xvalue' ? 'fx-verdict--warn' : f.cat === 'prvalue' ? 'fx-verdict--ok' : 'fx-verdict--ok'
+        }`}
+      >
+        {f.cat === 'lvalue'
+          ? `${f.expr} · has identity · copy, do not steal`
+          : f.cat === 'xvalue'
+            ? `${f.expr} · identity, expiring · may steal`
+            : `${f.expr} · no identity · initializes`}
+      </div>
+    </SceneShell>
   )
 }

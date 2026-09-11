@@ -5177,6 +5177,44 @@ pre {
   gap: 10px;
 }
 
+.fx-cat-expr {
+  align-self: center;
+}
+
+button.fx-slot {
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+
+.fx-stats {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.fx-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fx-stat--warn {
+  color: var(--warn);
+}
+
+.fx-footer-gap {
+  margin-top: 10px;
+}
+
+.fx-struct-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
 .fx-obj-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
