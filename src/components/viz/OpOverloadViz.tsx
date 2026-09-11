@@ -20,22 +20,26 @@ export function OpOverloadViz() {
     setId(next as Mode)
   }
 
-  const bounce = id === 'plus' && i === 2
-  const trapped = (id === 'implicit' && i >= 2) || (id === 'andop' && i >= 2)
-  const won = (id === 'plus' && i >= 3) || (id === 'postfix' && i >= 3)
-  const memberMiss = id === 'plus' && i >= 1 && i < 3
-  const freeOn = id === 'plus' && i >= 3
-  const boolOn = id === 'implicit' && i >= 1
-  const arithTrap = id === 'implicit' && i >= 2
-  const oldOn = id === 'postfix' && i >= 1
-  const incOn = id === 'postfix' && i >= 2
-  const bRan = id === 'andop' && i >= 2
-  const iVal = id === 'postfix' && i >= 2 ? '4' : '3'
+  const stepped = i >= 1
+  const decided = i >= 2
+  const recap = i >= 3
+
+  const memberMiss = id === 'plus' && stepped && !recap
+  const freeWin = id === 'plus' && recap
+  const boolOn = id === 'implicit' && stepped
+  const arithTrap = id === 'implicit' && decided && !recap
+  const oldOn = id === 'postfix' && stepped
+  const incOn = id === 'postfix' && decided
+  const bRan = id === 'andop' && decided
+  const ok = freeWin || (id === 'postfix' && recap) || (id === 'implicit' && recap)
+  const iVal = incOn ? '4' : '3'
 
   const code =
     id === 'plus'
-      ? i < 3
-        ? `class Vec {
+      ? recap
+        ? `2 + v;  // Vec(2) then free operator+
+// v.operator+(2) is not this call`
+        : `class Vec {
 public:
   Vec(int n);
   Vec& operator+=(const Vec& o);
@@ -44,17 +48,18 @@ inline Vec operator+(Vec a, const Vec& b) {
   a += b;
   return a;
 }`
-        : `2 + v;   // Vec(2) then free operator+
-// v.operator+(2) is not this call`
       : id === 'implicit'
-        ? i < 2
+        ? recap
           ? `struct Flag {
+  explicit operator bool() const { return on_; }
+};
+if (v) { }      // ok
+// int n = v + 1;  // ill-formed`
+          : `struct Flag {
   operator bool() const { return on_; }
 };
-if (v) { }     // ok
-int n = v + 1; // bool → int`
-          : `int n = v + 1;  // 1 + 1
-// explicit operator bool() would refuse`
+if (v) { }      // ok
+int n = v + 1;  // bool → int`
         : id === 'postfix'
           ? `T operator++(int) {  // dummy int
   T old = *this;
@@ -62,11 +67,11 @@ int n = v + 1; // bool → int`
   return old;
 }
 i++;  // copy 3, then i is 4`
-          : i < 2
-            ? `bool operator&&(const Flag&, const Flag&);
-if (a && b) { }`
-            : `a && b;  // both evaluated
+          : recap
+            ? `a && b;  // both evaluated
 // built-in && would skip b when a is false`
+            : `bool operator&&(const Flag&, const Flag&);
+if (a && b) { }`
 
   const caption =
     i === 0
@@ -90,7 +95,7 @@ if (a && b) { }`
                 : id === 'implicit'
                   ? 'Mark it explicit operator bool() (C++11). if (v) still works; v + 1 does not. That is the whole point of explicit.'
                   : id === 'postfix' && i === 1
-                    ? 'Copy the current value. The result of i++ is that snapshot, not the incremented object. The copy sits in its own slot.'
+                    ? 'Copy the current value. The result of i++ is that snapshot, not the incremented object. The copy sits in its own cell.'
                     : id === 'postfix' && i === 2
                       ? '++*this. Implement postfix in terms of prefix so there is one increment to maintain. i is 4; old is still 3.'
                       : id === 'postfix'
@@ -101,10 +106,28 @@ if (a && b) { }`
                             ? 'b runs anyway. Side effects, throws, work — all happen. That is why overloading && is a footgun.'
                             : 'Write a named all() / both(). Keep && for bool. Same story for operator, (comma) and overloaded ||.'
 
-  const tone = trapped || bounce ? 'trap' : won ? 'ok' : 'idle'
-
+  const tone = arithTrap || bRan ? 'trap' : memberMiss ? 'warn' : ok ? 'ok' : 'idle'
   const playLabel =
     id === 'plus' ? 'Play 2 + v' : id === 'implicit' ? 'Play v + 1' : id === 'postfix' ? 'Play i++' : 'Play a && b'
+
+  const verdict =
+    id === 'plus' && memberMiss && !recap
+      ? 'member + cannot convert lhs'
+      : freeWin
+        ? 'free + · Vec(2) then +='
+        : arithTrap && !recap
+          ? 'v + 1 → 2 · bool promotes'
+          : id === 'implicit' && recap
+            ? 'explicit operator bool · if (v) still works'
+            : id === 'postfix' && recap
+              ? 'old is 3 · i is 4'
+              : id === 'postfix' && incOn
+                ? '++*this · snapshot stays 3'
+                : bRan && !recap
+                  ? 'b evaluated · no short-circuit'
+                  : id === 'andop' && recap
+                    ? 'overload && is a function call'
+                    : ''
 
   return (
     <SceneShell
@@ -126,103 +149,101 @@ if (a && b) { }`
       tone={tone}
     >
       {id === 'plus' && (
-        <div className="fx-compare">
-          <div className={`fx-slot${i >= 1 ? ' fx-slot--focus' : ''}`}>
-            <span className="fx-kicker">lhs</span>
+        <>
+          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ''}`}>
+            <span className="fx-kicker">call site</span>
             <span className="fx-value">
-              <code>2</code>
+              <code>2 + v</code>
             </span>
-            <span className="fx-note">int at the call site</span>
+            <span className="fx-note">int on the left</span>
           </div>
-          <span className={`fx-op${memberMiss ? ' fx-op--on' : ''}`}>+</span>
-          <div className={`fx-slot${memberMiss ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">member</span>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${memberMiss ? ' fx-rank--trap' : recap ? ' fx-rank--done' : ''}`}>
+            <code>member +</code>
             <span className="fx-note">Vec::operator+</span>
-            <span className="fx-note">{memberMiss ? 'left is not Vec' : 'needs *this on the left'}</span>
+            <span className="fx-note">{memberMiss ? 'lhs not Vec' : recap ? 'not this call' : 'needs *this'}</span>
           </div>
-          <span className={`fx-op${freeOn ? ' fx-op--on' : ''}`}>{freeOn ? '→' : ' '}</span>
-          <div className={`fx-slot${freeOn ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">free</span>
+          <div className={`fx-rank${freeWin ? ' fx-rank--on' : stepped ? ' fx-rank--on' : ''}`}>
+            <code>free +</code>
             <span className="fx-note">operator+(Vec, Vec)</span>
-            <span className="fx-note">{freeOn ? 'Vec(2) then +=' : 'either side may convert'}</span>
+            <span className="fx-note">{freeWin ? 'Vec(2) then +=' : 'either side converts'}</span>
           </div>
-        </div>
+        </>
       )}
       {id === 'implicit' && (
-        <div className="fx-compare">
-          <div className={`fx-slot${boolOn ? ' fx-slot--weld' : ''}`}>
+        <div className="fx-own">
+          <div className={`fx-pane${boolOn ? ' fx-pane--focus' : ''}`}>
             <span className="fx-kicker">Flag v</span>
-            <span className="fx-value">true</span>
-            <span className="fx-note">if (v) is the intended use</span>
+            <div className={`fx-slot${boolOn ? ' fx-slot--weld' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">object</span>
+              <span className="fx-value">true</span>
+              <span className="fx-note">if (v) is intended</span>
+            </div>
           </div>
-          <span className={`fx-op${boolOn ? ' fx-op--on' : ''}`}>→</span>
-          <div className={`fx-slot${boolOn ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">operator bool</span>
-            <span className="fx-note">contextual conversion</span>
+          <div className={`fx-link${boolOn ? ' fx-link--weld' : ''}`} />
+          <div className={`fx-pane${boolOn ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">conversion</span>
+            <div className={`fx-slot${boolOn ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">operator bool</span>
+              <span className="fx-note">{recap ? 'explicit · contextual only' : 'contextual conversion'}</span>
+            </div>
           </div>
-          <span className={`fx-op${arithTrap ? ' fx-op--on' : ''}`}>+</span>
-          <div className={`fx-slot${arithTrap ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
+          <div className={`fx-link${arithTrap && !recap ? ' fx-link--dead' : ''}`} />
+          <div className={`fx-pane${arithTrap && !recap ? ' fx-pane--trap' : recap ? ' fx-pane--gone' : ''}`}>
             <span className="fx-kicker">v + 1</span>
-            <span className="fx-value">{arithTrap ? '2' : '—'}</span>
-            <span className="fx-note">{arithTrap ? 'bool → int  (oops)' : 'accidental arithmetic'}</span>
+            <div className={`fx-slot${arithTrap && !recap ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">int</span>
+              <span className="fx-value">{arithTrap && !recap ? '2' : '—'}</span>
+              <span className="fx-note">{recap ? 'refused' : arithTrap ? 'bool → int' : 'accidental arithmetic'}</span>
+            </div>
           </div>
         </div>
       )}
       {id === 'postfix' && (
-        <div className="fx-compare">
-          <div className={`fx-slot${incOn ? ' fx-slot--focus' : ''}`}>
-            <span className="fx-kicker">i</span>
-            <span className="fx-value">{iVal}</span>
-            <span className="fx-note">{incOn ? '++*this' : 'current'}</span>
+        <>
+          <div className="fx-sh">
+            <div className={`fx-slot${incOn ? ' fx-slot--focus' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">i</span>
+              <span className="fx-note">{incOn ? '++*this' : 'current'}</span>
+            </div>
+            <div className={`fx-link${oldOn ? ' fx-link--on' : ''}`} />
+            <div className={`fx-slot${oldOn ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">old</span>
+              <span className="fx-note">snapshot · by value</span>
+            </div>
           </div>
-          <span className={`fx-op${oldOn ? ' fx-op--on' : ''}`}>i++</span>
-          <div className={`fx-slot${oldOn ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">old</span>
-            <span className="fx-value">{oldOn ? '3' : '—'}</span>
-            <span className="fx-note">the result · by value</span>
+          <div className="fx-buf-row" style={{ justifyContent: 'center' }}>
+            <span className={`fx-letter${stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>{stepped ? iVal : '·'}</span>
+            <span className={`fx-letter${oldOn ? ' fx-letter--on' : ' fx-letter--empty'}`}>{oldOn ? '3' : '·'}</span>
           </div>
-          <span className="fx-op"> </span>
-          <div className={`fx-slot${won ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">return</span>
-            <span className="fx-note">{won ? 'return old · not a ref to local' : 'postfix returns the snapshot'}</span>
-          </div>
-        </div>
+        </>
       )}
       {id === 'andop' && (
-        <div className="fx-compare">
-          <div className={`fx-slot${i >= 1 ? ' fx-slot--focus' : ''}`}>
-            <span className="fx-kicker">a</span>
-            <span className="fx-value">false</span>
-            <span className="fx-note">built-in && would stop</span>
+        <>
+          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ''}`}>
+            <span className="fx-kicker">call site</span>
+            <span className="fx-value">
+              <code>a && b</code>
+            </span>
+            <span className="fx-note">overloaded · not built-in</span>
           </div>
-          <span className={`fx-op${i >= 1 ? ' fx-op--on' : ''}`}>&&</span>
-          <div className={`fx-slot${i >= 1 ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">operator&&</span>
-            <span className="fx-note">ordinary function call</span>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+            <code>a</code>
+            <span className="fx-note">false</span>
+            <span className="fx-note">{stepped ? 'evaluated' : 'lhs'}</span>
           </div>
-          <span className={`fx-op${bRan ? ' fx-op--on' : ''}`}>b</span>
-          <div className={`fx-slot${bRan ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">b</span>
-            <span className="fx-note">{bRan ? 'evaluated anyway' : 'would skip if built-in'}</span>
+          <div className={`fx-rank${bRan ? ' fx-rank--trap' : stepped ? ' fx-rank--on' : ''}`}>
+            <code>b</code>
+            <span className="fx-note">would skip</span>
+            <span className="fx-note">{bRan ? 'ran anyway' : 'built-in would stop'}</span>
           </div>
-        </div>
+        </>
       )}
       <div
-        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
-          trapped || bounce ? 'fx-verdict--trap' : won ? 'fx-verdict--ok' : ''
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          arithTrap || bRan ? 'fx-verdict--trap' : memberMiss ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
-        {id === 'plus' && bounce
-          ? 'member + cannot convert lhs'
-          : freeOn
-            ? 'free + · Vec(2) then +='
-            : arithTrap
-              ? 'v + 1 → 2 · use explicit bool'
-              : won && id === 'postfix'
-                ? 'old is 3 · i is 4'
-                : bRan
-                  ? 'no short-circuit · b ran'
-                  : ''}
+        {verdict}
       </div>
     </SceneShell>
   )
