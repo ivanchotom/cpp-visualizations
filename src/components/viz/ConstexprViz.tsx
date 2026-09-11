@@ -1,84 +1,30 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { hop, waitNextBeat, type Point } from './motion.ts'
+import { useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'fold' | 'runtime'
 
-const MODES: { id: Mode; title: string; sig: string }[] = [
-  { id: 'fold', title: 'constexpr call', sig: 'pow2(3) → 8' },
-  { id: 'runtime', title: 'runtime x', sig: 'pow2(x)' },
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'fold', title: 'constexpr call' },
+  { id: 'runtime', title: 'runtime x' },
 ]
 
-const STEP_MS = 1200
-const HOP_MS = 700
 const DOUBLES = [1, 2, 4, 8] as const
 
 export function ConstexprViz() {
   const [id, setId] = useState<Mode>('fold')
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [from, setFrom] = useState<Point>({ x: 80, y: 90 })
-  const [to, setTo] = useState<Point>({ x: 360, y: 90 })
+  const { i, playing, play, reset } = useBeats(5)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const srcRef = useRef<HTMLDivElement>(null)
-  const dstRef = useRef<HTMLDivElement>(null)
+  function select(next: string) {
+    reset()
+    setId(next as Mode)
+  }
 
-  const stepCount = 5
-  const looping = i >= 1 && i <= 3
   const r = i === 0 ? null : DOUBLES[Math.min(i - 1, DOUBLES.length - 1)]
+  const looping = i >= 1 && i <= 3
   const baked = id === 'fold' && i >= 4
   const ran = id === 'runtime' && i >= 4
-
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    if (!stage || !srcRef.current || !dstRef.current) return
-    const origin = stage.getBoundingClientRect()
-    const a = srcRef.current.getBoundingClientRect()
-    const b = dstRef.current.getBoundingClientRect()
-    setFrom({ x: a.left - origin.left + a.width / 2, y: a.top - origin.top + a.height / 2 })
-    setTo({ x: b.left - origin.left + b.width / 2, y: b.top - origin.top + b.height / 2 })
-  }, [id, i])
-
-  useEffect(() => {
-    if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
-    }
-    raf = requestAnimationFrame(hopLoop)
-    const stopBeat = waitNextBeat(STEP_MS, () => {
-      if (i >= stepCount - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stopBeat()
-    }
-  }, [playing, i, stepCount])
-
-  function select(next: Mode) {
-    setPlaying(false)
-    setId(next)
-    setI(0)
-    setHopT(1)
-  }
-
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
-  }
-
-  const pos = hopT < 1 && i >= 1 ? hop(from, to, hopT) : null
-  const flyerText = i === 0 ? '' : i === 1 ? 'r = 1' : i < 4 ? `×2 → ${DOUBLES[i - 1]}` : '8'
+  const filled = r === null ? 0 : DOUBLES.filter((n) => n <= r).length
 
   const code =
     id === 'fold'
@@ -99,7 +45,8 @@ int a[table_size];  // bound is a constant`
 int x = /* runtime */;`
         : i < 4
           ? `int k = pow2(x);  // x is not a constant
-// the loop actually runs`
+// the loop actually runs
+// r = ${r}`
           : `int k = pow2(x);  // 8, at run time
 // not usable as an array bound`
 
@@ -116,74 +63,73 @@ int x = /* runtime */;`
             ? `Runtime loop: r is ${r}. The compiler could not fold it because x is not a constant expression.`
             : 'k holds 8 after the call. You cannot write int a[k] unless k itself is a constant. Marking pow2 constexpr does not force compile time.'
 
-  const m = MODES.find((x) => x.id === id) ?? MODES[0]
-  const filled = r === null ? 0 : DOUBLES.filter((n) => n <= r).length
+  const tone = baked ? 'ok' : ran ? 'warn' : 'idle'
+  const linkCls = baked ? 'fx-link--weld' : looping || ran ? 'fx-link--on' : ''
+  const playLabel = id === 'fold' ? 'Play pow2(3)' : 'Play pow2(x)'
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        {MODES.map((x) => (
-          <button
-            key={x.id}
-            className={`chip${id === x.id ? ' chip--active' : ''}`}
-            onClick={() => select(x.id)}
-            disabled={playing}
-          >
-            {x.title}
-          </button>
-        ))}
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play pow2
-        </button>
-        <button className="chip chip--ghost" onClick={() => select(id)}>
-          reset
-        </button>
-      </div>
-
-      <div
-        ref={stageRef}
-        className={`viz-stage cx-stage viz-stage--live${id === 'fold' ? ' cx-stage--fold' : ' cx-stage--run'}${baked ? ' cx-stage--baked' : ''}`}
-      >
-        <p className="ptr-hint-top">
-          Step {i + 1}/{stepCount} · <code>{m.sig}</code>
-        </p>
-        <div className="cx-row">
-          <div ref={srcRef} className={`own-card${i >= 1 ? (id === 'fold' ? ' cx-card--gold' : ' own-card--shared') : ''}`}>
-            <span className="lf-tag">{id === 'fold' ? 'compiler' : 'CPU'}</span>
-            <span className="own-name">pow2(3)</span>
-            <span className="mem-val">{r === null ? 'idle' : `r = ${r}`}</span>
-            <div className="cx-track">
+    <SceneShell
+      modes={MODES}
+      mode={id}
+      onSelect={select}
+      playing={playing}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setId(id)
+      }}
+      playLabel={playLabel}
+      step={i}
+      stepCount={5}
+      sig={id === 'fold' ? 'pow2(3) → 8' : 'pow2(x)'}
+      caption={caption}
+      code={code}
+      tone={tone}
+    >
+      <div className="fx-sh">
+        <div className={`fx-pane${i >= 1 ? ' fx-pane--focus' : ''}`}>
+          <span className="fx-kicker">{id === 'fold' ? 'compiler' : 'CPU'}</span>
+          <div className={`fx-slot${i >= 1 ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+            <span className="fx-kicker">{id === 'fold' ? 'pow2(3)' : 'pow2(x)'}</span>
+            <span className="fx-value">{r === null ? 'idle' : `r = ${r}`}</span>
+            <span className="fx-note">{id === 'fold' ? 'constant expression' : 'x is not const'}</span>
+            <div className="fx-buf-row">
               {DOUBLES.map((n, idx) => (
-                <span key={n} className={`cx-dot${idx < filled ? (id === 'fold' ? ' cx-dot--gold' : ' cx-dot--run') : ''}`}>
+                <span
+                  key={n}
+                  className={`fx-letter${idx < filled ? (id === 'fold' ? ' fx-letter--on' : ' fx-letter--move') : ' fx-letter--empty'}`}
+                >
                   {n}
                 </span>
               ))}
             </div>
-            <span className="mem-note">{id === 'fold' ? 'constant expression' : 'x is not const'}</span>
-          </div>
-          <div
-            ref={dstRef}
-            className={`own-card${baked ? ' cx-card--gold' : ran ? ' own-card--unique' : ''}`}
-          >
-            <span className="lf-tag">{id === 'fold' ? 'constexpr slot' : 'stack'}</span>
-            <span className="own-name">{id === 'fold' ? 'table_size' : 'k'}</span>
-            <span className="mem-val">{baked || ran ? '8' : '—'}</span>
-            <span className="mem-note">
-              {baked ? 'array bound OK' : ran ? 'not a constant' : id === 'fold' ? 'needs a constant' : 'waiting'}
-            </span>
           </div>
         </div>
-        {pos && i >= 1 && (
-          <span className={`ptr-pulse cx-flyer${id === 'fold' ? ' cx-flyer--gold' : ''}`} style={{ left: pos.x, top: pos.y }}>
-            {flyerText}
-          </span>
-        )}
+        <div className={`fx-link${linkCls ? ` ${linkCls}` : ''}`} />
+        <div className={`fx-pane${baked || ran ? ' fx-pane--focus' : ''}`}>
+          <span className="fx-kicker">{id === 'fold' ? 'constexpr slot' : 'stack'}</span>
+          <div
+            className={`fx-slot${
+              baked ? ' fx-slot--ok' : ran ? ' fx-slot--focus' : ' fx-slot--dim'
+            }`}
+          >
+            <span className="fx-kicker">{id === 'fold' ? 'table_size' : 'k'}</span>
+            <span className="fx-value">{baked || ran ? '8' : '—'}</span>
+            <span className="fx-note">
+              {baked ? 'array bound OK' : ran ? 'not a constant' : id === 'fold' ? 'needs a constant' : 'waiting'}
+            </span>
+            {baked && <span className="fx-badge fx-badge--open">int a[8]</span>}
+            {ran && <span className="fx-badge fx-badge--lock">not a bound</span>}
+          </div>
+        </div>
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{code}</code>
-      </pre>
-      <p className="layout-hint">{caption}</p>
-    </div>
+      <div
+        className={`fx-verdict${i >= 4 ? ' fx-verdict--show' : ''} ${
+          baked ? 'fx-verdict--ok' : ran ? 'fx-verdict--warn' : ''
+        }`}
+      >
+        {baked ? 'baked · array bound OK' : ran ? 'runtime 8 · not a constant' : looping ? `loop · r = ${r}` : ''}
+      </div>
+    </SceneShell>
   )
 }

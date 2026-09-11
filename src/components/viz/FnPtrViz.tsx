@@ -1,158 +1,35 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { hop, waitNextBeat, type Point } from './motion.ts'
+import { useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'fp' | 'mem' | 'fun' | 'cap'
 
-const MODES: { id: Mode; title: string; sig: string }[] = [
-  { id: 'fp', title: 'fp', sig: 'int (*fp)(int,int)' },
-  { id: 'mem', title: 'member', sig: 'int (W::*pm)()' },
-  { id: 'fun', title: 'function', sig: 'std::function' },
-  { id: 'cap', title: 'capture', sig: '[&] into function' },
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'fp', title: 'function ptr' },
+  { id: 'mem', title: 'member ptr' },
+  { id: 'fun', title: 'std::function' },
+  { id: 'cap', title: 'stored [&]' },
 ]
-
-const STEP_MS = 1300
-const HOP_MS = 700
 
 export function FnPtrViz() {
   const [id, setId] = useState<Mode>('fp')
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [from, setFrom] = useState<Point>({ x: 80, y: 90 })
-  const [to, setTo] = useState<Point>({ x: 360, y: 90 })
+  const { i, playing, play, reset } = useBeats(4)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const srcRef = useRef<HTMLDivElement>(null)
-  const midRef = useRef<HTMLDivElement>(null)
-  const rightRef = useRef<HTMLDivElement>(null)
-
-  const stepCount = 4
-  const bounce = id === 'mem' && i >= 2
-  const trapped = (id === 'fun' && i >= 2) || (id === 'cap' && i >= 2) || bounce
-  const won = id === 'fp' && i >= 2
-
-  const useRight = i >= 2
-
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    const srcEl = srcRef.current
-    const dstEl = useRight ? rightRef.current : midRef.current
-    if (!stage || !srcEl || !dstEl) return
-    const origin = stage.getBoundingClientRect()
-    const a = srcEl.getBoundingClientRect()
-    const b = dstEl.getBoundingClientRect()
-    const src = { x: a.left - origin.left + a.width / 2, y: a.top - origin.top + a.height / 2 }
-    const dst = { x: b.left - origin.left + b.width / 2, y: b.top - origin.top + b.height / 2 }
-    if (bounce) {
-      setFrom(dst)
-      setTo(src)
-    } else {
-      setFrom(src)
-      setTo(dst)
-    }
-  }, [id, i, bounce, useRight])
-
-  useEffect(() => {
-    if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
-    }
-    raf = requestAnimationFrame(hopLoop)
-    const stopBeat = waitNextBeat(STEP_MS, () => {
-      if (i >= stepCount - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stopBeat()
-    }
-  }, [playing, i, stepCount])
-
-  function select(next: Mode) {
-    setPlaying(false)
-    setId(next)
-    setI(0)
-    setHopT(1)
+  function select(next: string) {
+    reset()
+    setId(next as Mode)
   }
 
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
-  }
-
-  const pos = hopT < 1 && i >= 1 ? hop(from, to, hopT) : null
-  const flyerText =
-    id === 'fp'
-      ? i === 1
-        ? 'add'
-        : 'fp(1,2)'
-      : id === 'mem'
-        ? i === 1
-          ? '&W::get'
-          : 'pm()'
-        : id === 'fun'
-          ? i === 1
-            ? 'empty'
-            : 'f()'
-          : i === 1
-            ? '[&]n'
-            : 'call'
-
-  const leftName =
-    id === 'fp' ? 'int add' : id === 'mem' ? 'W::get' : id === 'fun' ? 'std::function' : 'local n'
-  const leftVal =
-    id === 'fp' ? '(int,int)' : id === 'mem' ? 'needs W' : id === 'fun' ? 'no target' : 'stack'
-  const midName =
-    id === 'fp' ? 'fp' : id === 'mem' ? 'int (W::*pm)()' : id === 'fun' ? 'f' : 'std::function'
-  const midVal =
-    id === 'fp' && i >= 1
-      ? '&add'
-      : id === 'mem' && i >= 1
-        ? 'offset / thunk'
-        : id === 'fun' && i >= 1
-          ? 'empty'
-          : id === 'cap' && i >= 1
-            ? 'holds [&]'
-            : '—'
-  const midNote =
-    id === 'fp' ? '& optional' : id === 'mem' ? 'not a fp' : id === 'fun' ? 'type erasure' : 'outlives n?'
-  const rightName =
-    id === 'fp' ? 'call' : id === 'mem' ? 'without W' : id === 'fun' ? 'operator()' : 'n after return'
-  const rightVal =
-    id === 'fp' && i >= 2
-      ? '3'
-      : id === 'mem' && i >= 2
-        ? 'ill-formed'
-        : id === 'fun' && i >= 2
-          ? 'throw'
-          : id === 'cap' && i >= 2
-            ? 'dangle'
-            : '—'
-  const rightNote =
-    id === 'fp' && won
-      ? 'fp(1, 2)'
-      : id === 'fp'
-        ? 'functions decay'
-        : bounce
-          ? '(w.*pm)()'
-          : id === 'mem'
-            ? 'needs an object'
-            : id === 'fun' && trapped
-              ? 'bad_function_call'
-              : id === 'fun'
-                ? 'assign first'
-                : trapped
-                  ? 'capture by value'
-                  : 'or don’t store it'
+  const stored = i >= 1
+  const called = i >= 2
+  const recovered = i >= 3
+  const bounce = id === 'mem' && i === 2
+  const emptyThrow = id === 'fun' && i === 2
+  const dangled = id === 'cap' && i >= 2
+  const frameGone = id === 'cap' && i >= 2
+  const won = id === 'fp' && called
+  const memOk = id === 'mem' && recovered
+  const funOk = id === 'fun' && recovered
 
   const code =
     id === 'fp'
@@ -166,17 +43,21 @@ int (*fp)(int, int) = add;   // & optional`
         ? i < 2
           ? `struct W { int n; int get() const { return n; } };
 int (W::*pm)() const = &W::get;`
-          : `pm();                 // ill-formed
-W w{7};
+          : i === 2
+            ? `pm();                 // ill-formed
+// there is no this`
+            : `W w{7};
 int g = (w.*pm)();    // 7
 int h = ((&w)->*pm)();`
         : id === 'fun'
           ? i < 2
             ? `std::function<int(int, int)> f;
 // empty — no target`
-            : `f();   // throws std::bad_function_call
-f = add;
-int s = f(1, 2);`
+            : i === 2
+              ? `f();   // throws std::bad_function_call`
+              : `f = add;
+int s = f(1, 2);  // 3
+if (f) { /* has a target */ }`
           : i < 2
             ? `std::function<int()> f;
 {
@@ -194,97 +75,210 @@ int s = f(1, 2);`
         : id === 'mem'
           ? 'Play member. Pointers to members are a different, fat type. They need an object: (obj.*pm)() or (ptr->*pm)(). They do not convert to free function pointers.'
           : id === 'fun'
-            ? 'Play function. std::function<Sig> type-erases any callable matching Sig. Empty function throws std::bad_function_call. Prefer a template parameter when you can inline.'
-            : 'Play capture. Storing a lambda that captured locals into a std::function that outlives them is a dangling reference. Same class of bug as returning [&] from a function.'
+            ? 'Play empty f(). std::function<Sig> type-erases any callable matching Sig. Empty function throws std::bad_function_call. Prefer a template parameter when you can inline.'
+            : 'Play stored [&]. Storing a lambda that captured locals into a std::function that outlives them is a dangling reference. Same class of bug as returning [&] from a function.'
       : id === 'fp' && i === 1
-        ? 'add hops into fp. The pointer is just an address. No object, no captures. The call is an indirect jump.'
+        ? 'fp holds &add. The pointer is just an address. No object, no captures. The call is an indirect jump. C++14 has no std::invoke — the syntax is fp(1, 2).'
         : id === 'fp' && i === 2
-          ? 'fp(1, 2) hops to 3. C++14 has no std::invoke; the call syntax is fp(1, 2). A template Callable parameter would have inlined add.'
+          ? 'fp(1, 2) returns 3. A captureless lambda converts to this same pointer type. Mixed lambdas with state need std::function (or a hand-rolled vtable).'
           : id === 'fp'
-            ? 'Use a function pointer when the set of targets is known and you must store one type. Mixed lambdas with state need std::function (or a hand-rolled vtable).'
+            ? 'Use a function pointer when the set of targets is known and you must store one type. A template Callable parameter would have inlined add.'
             : id === 'mem' && i === 1
-              ? '&W::get hops into pm. This is not a void*. It encodes which member, and it still needs a W to apply to.'
+              ? 'pm holds &W::get. This is not a void* and not a free function pointer. It still needs a W to apply to.'
               : id === 'mem' && i === 2
-                ? 'pm() bounces. There is no this. (w.*pm)() is the call. std::mem_fn(pm) makes a callable that takes W& as the first argument.'
+                ? 'pm() is ill-formed. There is no this. (w.*pm)() is the call. std::mem_fn(pm) makes a callable that takes W& as the first argument.'
                 : id === 'mem'
-                  ? 'A pointer-to-member cannot be assigned to a free function pointer. The types do not convert. That is not a cast you should force.'
+                  ? '(w.*pm)() is 7. A pointer-to-member cannot be assigned to a free function pointer. The types do not convert.'
                   : id === 'fun' && i === 1
                     ? 'std::function f; starts empty. operator bool is false. The type can later hold add, a lambda, or a bind-expression — possibly on the heap.'
                     : id === 'fun' && i === 2
-                      ? 'f() hops and throws std::bad_function_call. Assign a target first. Check if (f) when the empty state is part of your protocol.'
+                      ? 'f() throws std::bad_function_call. Assign a target first. Check if (f) when the empty state is part of your protocol.'
                       : id === 'fun'
-                        ? 'A template <class F> void call(F f) inlines. std::function is for when you must store mixed callables in one container or member.'
+                        ? 'f = add, then f(1, 2) is 3. A template <class F> void call(F f) inlines. std::function is for when you must store mixed callables in one type.'
                         : i === 1
                           ? '[&] captures n by reference. The std::function now holds a callable that refers to a stack slot.'
                           : i === 2
-                            ? 'The frame is gone. f() hops into a dangling n. UB. Capture [n] by value, or keep the std::function inside the same scope as n.'
+                            ? 'The frame is gone. f() reads a dangling n. UB. Capture [n] by value, or keep the std::function inside the same scope as n.'
                             : 'This is the same lesson as a lambda returned from a function with [&]. std::function does not extend the lifetime of captures.'
 
-  const m = MODES.find((x) => x.id === id) ?? MODES[0]
-  const stageKind = trapped ? 'fp-stage--reject' : won ? 'fp-stage--win' : ''
+  const tone = bounce || emptyThrow || dangled ? 'trap' : won || memOk || funOk ? 'ok' : 'idle'
+
+  const leftLink = !stored
+    ? ''
+    : dangled || (id === 'mem' && called && !memOk)
+      ? 'fx-link--dead'
+      : 'fx-link--on'
+  const rightLink = dangled
+    ? 'fx-link--dead'
+    : bounce || emptyThrow
+      ? 'fx-link--dead'
+      : won || memOk || funOk
+        ? 'fx-link--weld'
+        : called
+          ? 'fx-link--on'
+          : ''
+
+  const playLabel =
+    id === 'fp'
+      ? 'Play fp(1, 2)'
+      : id === 'mem'
+        ? 'Play pm() then .*'
+        : id === 'fun'
+          ? 'Play empty f()'
+          : 'Play stored [&]'
+
+  const inName = id === 'fp' ? 'add' : id === 'mem' ? 'W::get' : id === 'fun' ? 'no target' : 'n'
+  const inVal =
+    id === 'fp'
+      ? '(int,int)'
+      : id === 'mem'
+        ? 'needs W'
+        : id === 'fun'
+          ? '—'
+          : frameGone
+            ? 'gone'
+            : '7'
+  const storeName = id === 'fp' ? 'fp' : id === 'mem' ? 'pm' : 'f'
+  const storeVal =
+    id === 'fp' && stored
+      ? '&add'
+      : id === 'mem' && stored
+        ? '&W::get'
+        : id === 'fun' && funOk
+          ? 'add'
+          : id === 'fun' && stored
+            ? 'empty'
+            : id === 'cap' && stored
+              ? 'holds [&]'
+              : '—'
+  const outName = id === 'fp' ? 'fp(1, 2)' : id === 'mem' ? (memOk ? '(w.*pm)()' : 'pm()') : 'f()'
+  const outVal =
+    won || funOk
+      ? '3'
+      : bounce
+        ? 'ill-formed'
+        : emptyThrow
+          ? 'throw'
+          : dangled
+            ? 'UB'
+            : memOk
+              ? '7'
+              : '—'
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        {MODES.map((x) => (
-          <button
-            key={x.id}
-            className={`chip${id === x.id ? ' chip--active' : ''}`}
-            onClick={() => select(x.id)}
-            disabled={playing}
-          >
-            {x.title}
-          </button>
-        ))}
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play call
-        </button>
-        <button className="chip chip--ghost" onClick={() => select(id)}>
-          reset
-        </button>
-      </div>
-
-      <div ref={stageRef} className={`viz-stage fp-stage viz-stage--live ${stageKind}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{stepCount} · <code>{m.sig}</code>
-        </p>
-        <div className="fp-row">
-          <div ref={srcRef} className={`own-card${i >= 1 ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">in</span>
-            <span className="own-name">{leftName}</span>
-            <span className="mem-val">{leftVal}</span>
-            <span className="mem-note">callable</span>
-          </div>
-          <div ref={midRef} className={`own-card${i >= 1 && !useRight ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">store</span>
-            <span className="own-name">{midName}</span>
-            <span className="mem-val">{midVal}</span>
-            <span className="mem-note">{midNote}</span>
-          </div>
-          <div
-            ref={rightRef}
-            className={`own-card${won ? ' own-card--unique' : ''}${trapped ? ' nd-card--ub' : ''}`}
-          >
-            <span className="lf-tag">out</span>
-            <span className="own-name">{rightName}</span>
-            <span className="mem-val">{rightVal}</span>
-            <span className="mem-note">{rightNote}</span>
+    <SceneShell
+      modes={MODES}
+      mode={id}
+      onSelect={select}
+      playing={playing}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setId(id)
+      }}
+      playLabel={playLabel}
+      step={i}
+      stepCount={4}
+      sig={MODES.find((m) => m.id === id)?.title}
+      caption={caption}
+      code={code}
+      tone={tone}
+    >
+      <div className="fx-own">
+        <div className={`fx-pane${stored && !frameGone ? ' fx-pane--focus' : ''}${frameGone ? ' fx-pane--gone' : ''}`}>
+          <span className="fx-kicker">{id === 'cap' ? 'frame' : 'callable'}</span>
+          <div className={`fx-slot${stored && !frameGone ? ' fx-slot--focus' : ' fx-slot--dim'}${frameGone ? ' fx-pane--gone' : ''}`}>
+            <span className="fx-kicker">{inName}</span>
+            <span className="fx-value">{inVal}</span>
+            <span className="fx-note">{frameGone ? 'destroyed' : id === 'fun' ? 'assign first' : 'source'}</span>
           </div>
         </div>
-        {pos && (
-          <span
-            className={`ptr-pulse fp-flyer${trapped || bounce ? ' fp-flyer--trap' : ''}`}
-            style={{ left: pos.x, top: pos.y }}
+        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
+        <div className={`fx-pane${stored ? ' fx-pane--focus' : ''}`}>
+          <span className="fx-kicker">store</span>
+          <div
+            className={`fx-slot${
+              dangled || emptyThrow
+                ? ' fx-slot--trap'
+                : stored
+                  ? id === 'fp' || memOk || funOk
+                    ? ' fx-slot--focus'
+                    : ' fx-slot--focus'
+                  : ' fx-slot--dim'
+            }`}
           >
-            {flyerText}
-          </span>
-        )}
+            <span className="fx-kicker">{storeName}</span>
+            <span className="fx-value">{storeVal}</span>
+            <span className="fx-note">
+              {id === 'fp'
+                ? '& optional'
+                : id === 'mem'
+                  ? 'not a fp'
+                  : id === 'fun'
+                    ? funOk
+                      ? 'has a target'
+                      : 'type erasure'
+                    : stored
+                      ? 'outlives n?'
+                      : '—'}
+            </span>
+          </div>
+        </div>
+        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
+        <div className={`fx-pane${called ? ' fx-pane--focus' : ''}`}>
+          <span className="fx-kicker">call</span>
+          <div
+            className={`fx-slot${
+              bounce || emptyThrow || dangled
+                ? ' fx-slot--trap'
+                : won || memOk || funOk
+                  ? ' fx-slot--ok'
+                  : ' fx-slot--dim'
+            }`}
+          >
+            <span className="fx-kicker">{outName}</span>
+            <span className="fx-value">{outVal}</span>
+            <span className="fx-note">
+              {won
+                ? 'indirect jump'
+                : bounce
+                  ? 'needs an object'
+                  : memOk
+                    ? 'w has this'
+                    : emptyThrow
+                      ? 'bad_function_call'
+                      : funOk
+                        ? 'target assigned'
+                        : dangled
+                          ? 'dangling capture'
+                          : 'not called'}
+            </span>
+          </div>
+        </div>
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{code}</code>
-      </pre>
-      <p className="layout-hint">{caption}</p>
-    </div>
+      <div
+        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
+          bounce || emptyThrow || dangled
+            ? 'fx-verdict--trap'
+            : won || memOk || funOk
+              ? 'fx-verdict--ok'
+              : ''
+        }`}
+      >
+        {id === 'fp' && won
+          ? 'fp(1, 2) · 3'
+          : bounce
+            ? 'pm() ill-formed · needs W'
+            : memOk
+              ? '(w.*pm)() · 7'
+              : emptyThrow
+                ? 'empty · bad_function_call'
+                : funOk
+                  ? 'f = add · f(1, 2) is 3'
+                  : dangled
+                    ? 'stored [&] · UB'
+                    : ''}
+      </div>
+    </SceneShell>
   )
 }
