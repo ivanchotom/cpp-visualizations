@@ -1,241 +1,143 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { centerOf, hop, waitNextBeat, type Point } from './motion.ts'
+import { useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
-type Arg = 'idle' | 'int' | 'double' | 'string'
+type Mode = 'int' | 'fp' | 'str'
 
-interface Frame {
-  arg: Arg
-  trying: boolean
-  winner: 'integral' | 'floating' | null
-  hard: boolean
-  hint: string
-  code: string
-}
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'int', title: 'describe(42)' },
+  { id: 'fp', title: 'describe(1.5)' },
+  { id: 'str', title: 'describe(s)' },
+]
 
-const FRAMES: Frame[] = [
-  {
-    arg: 'idle',
-    trying: false,
-    winner: null,
-    hard: false,
-    hint: 'Two overloads. Substitution happens in the signature. A failure there drops the candidate quietly — that is SFINAE.',
-    code: `template <typename T>
+export function SfinaeViz() {
+  const [id, setId] = useState<Mode>('int')
+  const { i, playing, play, reset } = useBeats(4)
+
+  function select(next: string) {
+    reset()
+    setId(next as Mode)
+  }
+
+  const trying = i === 1
+  const decided = i >= 2
+  const intWin = id === 'int' && decided
+  const fpWin = id === 'fp' && decided
+  const intOut = decided && id !== 'int'
+  const fpOut = decided && id !== 'fp'
+  const hard = id === 'str' && decided
+
+  const arg = id === 'int' ? '42' : id === 'fp' ? '1.5' : 's'
+  const tName = id === 'int' ? 'int' : id === 'fp' ? 'double' : 'string'
+
+  const code =
+    i === 0
+      ? `template <typename T>
 std::enable_if_t<std::is_integral<T>::value, const char*>
 describe(T) { return "int"; }
 
 template <typename T>
 std::enable_if_t<std::is_floating_point<T>::value, const char*>
-describe(T) { return "fp"; }`,
-  },
-  {
-    arg: 'int',
-    trying: true,
-    winner: null,
-    hard: false,
-    hint: 'describe(42). The compiler substitutes T = int into both signatures.',
-    code: `describe(42);  // T = int`,
-  },
-  {
-    arg: 'int',
-    trying: false,
-    winner: 'integral',
-    hard: false,
-    hint: 'is_integral<int> is true → ::type exists. is_floating_point<int> fails in the signature and that overload vanishes.',
-    code: `describe(42);  // picks the integral overload`,
-  },
-  {
-    arg: 'double',
-    trying: true,
-    winner: null,
-    hard: false,
-    hint: 'describe(1.5). Fresh substitution: T = double into both signatures.',
-    code: `describe(1.5);  // T = double`,
-  },
-  {
-    arg: 'double',
-    trying: false,
-    winner: 'floating',
-    hard: false,
-    hint: 'The floating overload survives. The integral one is gone — its body is never instantiated.',
-    code: `describe(1.5);  // picks the floating overload`,
-  },
-  {
-    arg: 'string',
-    trying: true,
-    winner: null,
-    hard: false,
-    hint: 'describe(s) with T = string. Both enable_if conditions are false.',
-    code: `std::string s{"hi"};
-describe(s);  // T = string`,
-  },
-  {
-    arg: 'string',
-    trying: false,
-    winner: null,
-    hard: true,
-    hint: 'Both substitutions fail. That is a hard error at the call site — SFINAE only helps when at least one candidate remains.',
-    code: `describe(s);  // error: no matching function`,
-  },
-]
+describe(T) { return "fp"; }`
+      : id === 'int'
+        ? decided
+          ? `describe(42);  // picks the integral overload`
+          : `describe(42);  // T = int`
+        : id === 'fp'
+          ? decided
+            ? `describe(1.5);  // picks the floating overload`
+            : `describe(1.5);  // T = double`
+          : decided
+            ? `std::string s{"hi"};
+describe(s);  // error: no matching function`
+            : `std::string s{"hi"};
+describe(s);  // T = string`
 
-const STEP_MS = 1300
-const HOP_MS = 680
+  const caption =
+    i === 0
+      ? 'Play describe. Substitution happens in the signature. A failure there drops the candidate quietly — that is SFINAE. C++14: enable_if_t and is_integral<T>::value (not _v).'
+      : trying
+        ? `The compiler substitutes T = ${tName} into both signatures. Failure in the body would be a hard error; failure in enable_if is not.`
+        : intWin
+          ? i === 2
+            ? 'is_integral<int> is true → ::type exists. is_floating_point<int> fails in the signature and that overload vanishes.'
+            : 'The integral overload is the winner. Function templates cannot be partially specialized — overload or enable_if. Errors in the body are not SFINAE.'
+          : fpWin
+            ? i === 2
+              ? 'The floating overload survives. The integral one is gone — its body is never instantiated.'
+              : 'Only one recipe remains. That is how you pick an overload from a trait in C++14 without if constexpr.'
+            : i === 2
+              ? 'Both enable_if conditions are false. Both substitutions fail. SFINAE only helps when at least one candidate remains.'
+              : 'Hard error at the call site. enable_if is not a constraint (C++20). You still need a viable overload, or a static_assert in a remaining one.'
 
-export function SfinaeViz() {
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [from, setFrom] = useState<Point>({ x: 80, y: 40 })
-  const [to, setTo] = useState<Point>({ x: 80, y: 160 })
+  const tone = hard ? 'trap' : intWin || fpWin ? 'ok' : 'idle'
+  const playLabel =
+    id === 'int' ? 'Play describe(42)' : id === 'fp' ? 'Play describe(1.5)' : 'Play describe(s)'
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const callRef = useRef<HTMLDivElement>(null)
-  const intRef = useRef<HTMLDivElement>(null)
-  const fpRef = useRef<HTMLDivElement>(null)
-  const errRef = useRef<HTMLSpanElement>(null)
-
-  const f = FRAMES[Math.min(i, FRAMES.length - 1)]
-  const hops = i === 2 || i === 4 || i === 6
-
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    const src = callRef.current
-    const dst = f.hard ? errRef.current : f.winner === 'floating' ? fpRef.current : intRef.current
-    if (!stage || !src || !dst) return
-    const origin = stage.getBoundingClientRect()
-    setFrom(centerOf(src, origin))
-    setTo(centerOf(dst, origin))
-  }, [i, f.hard, f.winner])
-
-  useEffect(() => {
-    if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
-    }
-    raf = requestAnimationFrame(hopLoop)
-    const stop = waitNextBeat(STEP_MS, () => {
-      if (i >= FRAMES.length - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stop()
-    }
-  }, [playing, i])
-
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
-  }
-
-  const pos = hops && hopT < 1 ? hop(from, to, hopT) : null
-  const flyer = i === 2 ? '42' : i === 4 ? '1.5' : i === 6 ? 's' : null
-  const callLabel = f.arg === 'int' ? 'describe(42)' : f.arg === 'double' ? 'describe(1.5)' : f.arg === 'string' ? 'describe(s)' : 'describe(?)'
+  const intTag = intWin ? 'survives' : trying ? 'substituting' : intOut ? 'SFINAE out' : 'candidate'
+  const fpTag = fpWin ? 'survives' : trying ? 'substituting' : fpOut ? 'SFINAE out' : 'candidate'
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play describe(42) then 1.5 then s
-        </button>
-        <button className="chip" onClick={() => setI((n) => Math.max(0, n - 1))} disabled={playing || i === 0}>
-          ◂ prev
-        </button>
-        <button className="chip" onClick={() => setI((n) => Math.min(FRAMES.length - 1, n + 1))} disabled={playing || i === FRAMES.length - 1}>
-          next ▸
-        </button>
-        <button
-          className="chip chip--ghost"
-          onClick={() => {
-            setPlaying(false)
-            setI(0)
-            setHopT(1)
-          }}
-        >
-          reset
-        </button>
+    <SceneShell
+      modes={MODES}
+      mode={id}
+      onSelect={select}
+      playing={playing}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setId(id)
+      }}
+      playLabel={playLabel}
+      step={i}
+      stepCount={4}
+      sig={MODES.find((m) => m.id === id)?.title}
+      caption={caption}
+      code={code}
+      tone={tone}
+    >
+      <div className={`fx-slot${i >= 1 ? ' fx-slot--focus' : ''}${hard ? ' fx-slot--trap' : ''}`}>
+        <span className="fx-kicker">call</span>
+        <span className="fx-value">
+          <code>
+            describe({arg})
+          </code>
+        </span>
+        <span className="fx-note">T = {i >= 1 ? tName : '?'}</span>
       </div>
-
-      <div ref={stageRef} className={`viz-stage sf-stage viz-stage--live${f.hard ? ' sf-stage--hard' : ''}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{FRAMES.length}
-          {f.hard ? ' · hard error' : f.winner ? ' · survives' : f.trying ? ' · substituting' : ' · candidates'}
-        </p>
-        <div className="lf-beats" aria-hidden>
-          {FRAMES.map((_, n) => (
-            <span
-              key={n}
-              className={`lf-beat${n === i ? ' lf-beat--on' : ''}${n < i ? ' lf-beat--done' : ''}${n === FRAMES.length - 1 ? ' lf-beat--dtor' : ''}`}
-            />
-          ))}
-        </div>
-        <div ref={callRef} className={`sf-call${f.arg !== 'idle' ? ' sf-call--on' : ''}${f.hard ? ' sf-call--hard' : ''}`}>
-          <span className="tpl-kicker">call</span>
-          <code>{callLabel}</code>
-        </div>
-        <div className="sfinae-list">
-          <div
-            ref={intRef}
-            className={`sfinae-card${f.trying ? ' sfinae-card--try' : ''}${f.winner === 'integral' ? ' sfinae-card--ok' : ''}${!f.trying && f.winner !== 'integral' && f.arg !== 'idle' ? ' sfinae-card--fail' : ''}`}
-          >
-            <span className="sfinae-tag">
-              {f.winner === 'integral' ? 'survives' : f.trying ? 'substituting' : !f.trying && f.arg !== 'idle' ? 'SFINAE out' : 'candidate'}
-            </span>
-            <code>{`enable_if_t<is_integral<T>::value>`}</code>
-            <p>
-              {f.arg === 'int' && f.winner === 'integral'
-                ? 'is_integral<int> is true → ::type exists. This overload is the winner.'
-                : f.arg === 'double' && !f.trying
-                  ? 'is_integral<double> is false → substitution fails. Quietly dropped.'
-                  : f.arg === 'string' && !f.trying
-                    ? 'is_integral<string> is false → dropped.'
-                    : 'Waits for T. Failure here is not an error.'}
-            </p>
-          </div>
-          <div
-            ref={fpRef}
-            className={`sfinae-card${f.trying ? ' sfinae-card--try' : ''}${f.winner === 'floating' ? ' sfinae-card--ok' : ''}${!f.trying && f.winner !== 'floating' && f.arg !== 'idle' ? ' sfinae-card--fail' : ''}`}
-          >
-            <span className="sfinae-tag">
-              {f.winner === 'floating' ? 'survives' : f.trying ? 'substituting' : !f.trying && f.arg !== 'idle' ? 'SFINAE out' : 'candidate'}
-            </span>
-            <code>{`enable_if_t<is_floating_point<T>::value>`}</code>
-            <p>
-              {f.arg === 'double' && f.winner === 'floating'
-                ? 'is_floating_point<double> is true. This overload is the winner.'
-                : f.arg === 'int' && !f.trying
-                  ? 'is_floating_point<int> is false → dropped.'
-                  : f.arg === 'string' && !f.trying
-                    ? 'is_floating_point<string> is false → dropped.'
-                    : 'A second recipe. Only one should remain after substitution.'}
-            </p>
-          </div>
-        </div>
-        {pos && flyer && (
-          <span className={`sf-flyer${f.hard ? ' sf-flyer--hard' : ''}`} style={{ left: pos.x, top: pos.y }}>
-            {flyer}
-          </span>
-        )}
-        {f.hard && (
-          <span ref={errRef} className="sf-hard">
-            hard error
-          </span>
-        )}
+      <div
+        className={`fx-rank${trying ? ' fx-rank--on' : ''}${intWin ? ' fx-rank--on' : ''}${
+          intOut ? ' fx-rank--done' : ''
+        }`}
+      >
+        <code>enable_if_t&lt;is_integral&lt;T&gt;::value&gt;</code>
+        <span className="fx-note">{intTag}</span>
+        <span className="fx-note">{intWin ? 'best' : intOut ? 'dropped' : 'candidate'}</span>
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{f.code}</code>
-      </pre>
-      <p className="layout-hint">{f.hint}</p>
-    </div>
+      <div
+        className={`fx-rank${trying ? ' fx-rank--on' : ''}${fpWin ? ' fx-rank--on' : ''}${
+          fpOut && !hard ? ' fx-rank--done' : ''
+        }${hard ? ' fx-rank--trap' : ''}`}
+      >
+        <code>enable_if_t&lt;is_floating_point&lt;T&gt;::value&gt;</code>
+        <span className="fx-note">{fpTag}</span>
+        <span className="fx-note">{fpWin ? 'best' : fpOut || hard ? 'dropped' : 'candidate'}</span>
+      </div>
+      <div
+        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
+          hard ? 'fx-verdict--trap' : intWin || fpWin ? 'fx-verdict--ok' : ''
+        }`}
+      >
+        {intWin
+          ? 'integral survives · floating SFINAE out'
+          : fpWin
+            ? 'floating survives · integral SFINAE out'
+            : hard
+              ? 'no candidate · hard error'
+              : trying
+                ? `substituting T = ${tName}`
+                : ''}
+      </div>
+    </SceneShell>
   )
 }
