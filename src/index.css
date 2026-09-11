@@ -4925,6 +4925,12 @@ pre {
   flex: 1;
 }
 
+.fx-frames > .fx-frame {
+  width: 100%;
+  max-width: 560px;
+  min-width: 0;
+}
+
 .fx-frame {
   border: 1px dashed #3d4a5c;
   border-radius: 14px;
@@ -5212,11 +5218,15 @@ button.fx-slot {
   margin-top: 10px;
 }
 
-.fx-struct-line {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.fx-members {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
+  margin-top: 8px;
+}
+
+.fx-lifetime-body {
+  margin-top: 10px;
 }
 
 .fx-obj-row {

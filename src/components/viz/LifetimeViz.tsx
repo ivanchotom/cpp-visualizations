@@ -1,130 +1,95 @@
-import { useEffect, useState } from 'react'
-import { waitNextBeat } from './motion.ts'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 const STEPS = [
-  { t: 'Base()', label: 'construct Base subobject first', kind: 'ctor' as const, target: 'base' },
-  { t: 'm1()', label: 'members construct in declaration order — m1 before m2', kind: 'ctor' as const, target: 'm1' },
+  { t: 'Base()', label: 'Construct Base subobject first. Members and the Derived body do not exist yet.', kind: 'ctor' as const, target: 'base' },
+  { t: 'm1()', label: 'Members construct in declaration order — m1 before m2.', kind: 'ctor' as const, target: 'm1' },
   { t: 'm2()', label: 'm2 is next. Initializer-list order does not win over declaration order.', kind: 'ctor' as const, target: 'm2' },
-  { t: 'Derived() body', label: 'only now does the Derived constructor body run', kind: 'ctor' as const, target: 'body' },
-  { t: '~Derived() body', label: 'destruction starts with the Derived body', kind: 'dtor' as const, target: 'body' },
-  { t: '~m2()', label: 'members destroy in reverse: m2 before m1', kind: 'dtor' as const, target: 'm2' },
+  { t: 'Derived() body', label: 'Only now does the Derived constructor body run.', kind: 'ctor' as const, target: 'body' },
+  { t: '~Derived() body', label: 'Destruction starts with the Derived body.', kind: 'dtor' as const, target: 'body' },
+  { t: '~m2()', label: 'Members destroy in reverse: m2 before m1.', kind: 'dtor' as const, target: 'm2' },
   { t: '~m1()', label: 'm1 is gone. Base is still alive.', kind: 'dtor' as const, target: 'm1' },
   { t: '~Base()', label: 'Base last. The object is fully dead.', kind: 'dtor' as const, target: 'base' },
 ]
 
-const STEP_MS = 1100
-
 export function LifetimeViz() {
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-
-  const step = STEPS[Math.min(i, STEPS.length - 1)]
+  const { i, playing, play, reset, jump } = useBeats(STEPS.length, 1200)
+  const step = STEPS[i]
   const base = i < 7
   const m1 = i >= 1 && i < 6
   const m2 = i >= 2 && i < 5
   const body = i === 3 || i === 4
   const constructing = i < 4
-  const target = step.target
-  const kind = step.kind
-
-  useEffect(() => {
-    if (!playing) return
-    return waitNextBeat(STEP_MS, () => {
-      if (i >= STEPS.length - 1) {
-        setPlaying(false)
-        return
-      }
-      setI(i + 1)
-    })
-  }, [playing, i])
-
-  function play() {
-    setI(0)
-    setPlaying(true)
-  }
+  const { target, kind } = step
 
   const code =
     kind === 'ctor'
-      ? `struct Derived : Base {
-  Mem m1, m2;
-  Derived() : Base(), m1(), m2() {
-    // body runs last
-  }
-};`
-      : `// ~Derived runs first, then members
-// in reverse declaration order, then ~Base
-~Derived() { /* body */ }`
+      ? `struct Derived : Base {\n  Mem m1, m2;\n  Derived() : Base(), m1(), m2() {\n    // body runs last\n  }\n};`
+      : `// ~Derived runs first, then members\n// in reverse declaration order, then ~Base\n~Derived() { /* body */ }`
+
+  const tone = kind === 'dtor' ? (i >= 7 ? 'ok' : 'warn') : 'idle'
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play construct → destroy
-        </button>
-        <button className="chip" onClick={() => setI((n) => Math.max(0, n - 1))} disabled={playing}>
-          ◂ prev
-        </button>
-        <button className="chip" onClick={() => setI((n) => Math.min(STEPS.length - 1, n + 1))} disabled={playing}>
-          next ▸
-        </button>
-        <button
-          className="chip chip--ghost"
-          onClick={() => {
-            setPlaying(false)
-            setI(0)
-          }}
-        >
-          reset
-        </button>
-      </div>
-
-      <div className={`viz-stage lf-stage viz-stage--live${kind === 'dtor' ? ' lf-stage--dtor' : ''}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{STEPS.length} · <strong>{step.t}</strong>
-        </p>
-        <div className="lf-beats" aria-hidden>
-          {STEPS.map((s, n) => (
-            <span
-              key={s.t}
-              className={`lf-beat${n === i ? ' lf-beat--on' : ''}${n < i ? ' lf-beat--done' : ''}${s.kind === 'dtor' ? ' lf-beat--dtor' : ''}`}
-            />
-          ))}
+    <SceneShell
+      playing={playing}
+      onPlay={play}
+      onReset={reset}
+      playLabel="Play construct → destroy"
+      step={i}
+      stepCount={STEPS.length}
+      sig={step.t}
+      caption={step.label}
+      code={code}
+      tone={tone}
+      footer={
+        <div className="stepper">
+          <button className="chip" onClick={() => jump(i - 1)} disabled={playing || i === 0}>
+            ◂ prev
+          </button>
+          <button className="chip" onClick={() => jump(i + 1)} disabled={playing || i === STEPS.length - 1}>
+            next ▸
+          </button>
         </div>
-        <div className={`lf-shell${base ? ' lf-on' : ' lf-dead'}${target === 'base' ? ` lf-now lf-now--${kind}` : ''}`}>
-          <span className="lf-tag">Base subobject</span>
-          <div className="lf-members">
-            {m1 ? (
-              <div className={`lf-piece lf-on${target === 'm1' ? ` lf-now lf-now--${kind}` : ''}`}>
-                <span className="lf-tag">member</span>
-                m1
-              </div>
-            ) : (
-              <div className="lf-piece lf-empty">{kind === 'ctor' ? 'm1 not yet' : 'm1 gone'}</div>
-            )}
-            {m2 ? (
-              <div className={`lf-piece lf-on${target === 'm2' ? ` lf-now lf-now--${kind}` : ''}`}>
-                <span className="lf-tag">member</span>
-                m2
-              </div>
-            ) : (
-              <div className="lf-piece lf-empty">{kind === 'ctor' ? 'm2 not yet' : 'm2 gone'}</div>
-            )}
-          </div>
-          {body ? (
-            <div className={`lf-body lf-on${target === 'body' ? ` lf-now lf-now--${kind}` : ''}`}>
-              <span className="lf-tag">Derived</span>
-              {constructing ? 'constructor body' : 'destructor body'}
+      }
+    >
+      <div className="fx-frames">
+        <div className={`fx-frame${base ? '' : ' fx-frame--dead'}${target === 'base' ? ' fx-frame--inner' : ''}`}>
+          <span className="fx-kicker">Base subobject {base ? 'alive' : 'destroyed'}</span>
+          <div className="fx-members">
+            <div
+              className={`fx-slot${m1 ? '' : ' fx-slot--dim'}${target === 'm1' ? ' fx-slot--focus' : ''}${
+                !m1 && i >= 6 ? ' fx-pane--gone' : ''
+              }`}
+            >
+              <span className="fx-kicker">member</span>
+              <span className="fx-value">m1</span>
+              <span className="fx-note">{m1 ? 'alive' : constructing ? 'not yet' : 'gone'}</span>
             </div>
-          ) : (
-            <div className="lf-body lf-empty">{constructing ? 'body not yet' : 'body done'}</div>
-          )}
+            <div
+              className={`fx-slot${m2 ? '' : ' fx-slot--dim'}${target === 'm2' ? ' fx-slot--focus' : ''}${
+                !m2 && i >= 5 ? ' fx-pane--gone' : ''
+              }`}
+            >
+              <span className="fx-kicker">member</span>
+              <span className="fx-value">m2</span>
+              <span className="fx-note">{m2 ? 'alive' : constructing ? 'not yet' : 'gone'}</span>
+            </div>
+          </div>
+          <div
+            className={`fx-slot fx-lifetime-body${body ? ' fx-slot--weld' : ' fx-slot--dim'}${target === 'body' ? ' fx-slot--focus' : ''}`}
+          >
+            <span className="fx-kicker">Derived</span>
+            <span className="fx-note">
+              {body ? (constructing ? 'constructor body' : 'destructor body') : constructing ? 'body not yet' : 'body done'}
+            </span>
+          </div>
         </div>
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{code}</code>
-      </pre>
-      <p className="layout-hint">{step.label}</p>
-    </div>
+      <div
+        className={`fx-verdict fx-verdict--show ${kind === 'dtor' ? (i >= 7 ? 'fx-verdict--ok' : 'fx-verdict--warn') : 'fx-verdict--ok'}`}
+      >
+        {kind === 'ctor' ? `construct · ${step.t}` : `destroy · ${step.t}`}
+      </div>
+    </SceneShell>
   )
 }
