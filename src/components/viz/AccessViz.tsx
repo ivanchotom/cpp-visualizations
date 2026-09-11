@@ -175,31 +175,16 @@ class Token { int id_; };  // private`
         </div>
       )}
       {id === 'friend' && (
-        <div className="fx-own">
-          <div className="fx-pane">
-            <span className="fx-kicker">main</span>
-            <div className={`fx-slot${stepped ? ' fx-slot--dim' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">caller</span>
-              <span className="fx-note">cannot name Token(int)</span>
-            </div>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${won ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">main</span>
+            <code>Token{'{id}'}</code>
+            <span className="fx-note">{stepped ? 'ill' : '—'}</span>
           </div>
-          <div className={`fx-link${won ? ' fx-link--dead' : ''}`} />
-          <div className={`fx-pane${won ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">Token</span>
-            <div className={`fx-slot${won ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">private ctor</span>
-              <span className="fx-note">{won ? 'named only by friends' : 'locked'}</span>
-              <span className="fx-badge fx-badge--lock">private</span>
-            </div>
-          </div>
-          <div className={`fx-link${won ? ' fx-link--weld' : stepped ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">makeToken</span>
-            <div className={`fx-slot${won ? ' fx-slot--weld' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">friend</span>
-              <span className="fx-note">{won ? 'Token{id} allowed here' : 'one function'}</span>
-              {won && <span className="fx-badge fx-badge--open">ok</span>}
-            </div>
+          <div className={`fx-rank${won ? ' fx-rank--on' : ''}`}>
+            <span className="fx-note">friend</span>
+            <code>makeToken</code>
+            <span className="fx-note">{won ? 'ok' : '—'}</span>
           </div>
         </div>
       )}

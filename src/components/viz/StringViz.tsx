@@ -108,7 +108,6 @@ s.reserve(64);
   const playLabel =
     id === 'plus' ? 'Play s = s + x' : id === 'sso' ? 'Play SSO' : id === 'cstr' ? 'Play c_str()' : 'Play reserve(64)'
 
-  const sPlus = plusFix ? ['a', 'b', 'c', '·'] : ['a', 'b', '·', '·']
   const plusResult =
     i === 1 ? ['a', 'b', 'c', '·'] : i === 2 ? ['a', 'b', 'c', 'd'] : ['·', '·', '·', '·']
   const ssoObj = ssoInline ? ['h', 'i', '\\0'] : ['·', '·', '·']
@@ -123,7 +122,6 @@ s.reserve(64);
     : []
 
   const leftLink = stepped ? (cstrLive ? 'fx-link--weld' : cstrDangle ? 'fx-link--dead' : ssoHeap ? 'fx-link--on' : 'fx-link--on') : ''
-  const rightLink = plusFix ? 'fx-link--weld' : plusCopy ? 'fx-link--on' : appendOk ? 'fx-link--weld' : ''
 
   const verdict =
     id === 'plus' && i === 2
@@ -216,72 +214,50 @@ s.reserve(64);
             )}
           </div>
         </div>
-      ) : (
-        <div className="fx-own">
+      ) : id === 'plus' ? (
+        <div className="fx-sh">
           <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">std::string s</span>
+            <span className="fx-kicker">s</span>
             <Letters
-              chars={id === 'plus' ? sPlus : reserveSlots.length ? reserveSlots : ['·']}
-              cls={(n, ch) =>
-                ch === '·'
-                  ? 'fx-letter--empty'
-                  : id === 'plus' && plusFix && n === 2
-                    ? 'fx-letter--on'
-                    : id === 'reserve' && appendOk
-                      ? 'fx-letter--on'
-                      : 'fx-letter--on'
-              }
+              chars={plusFix ? ['a', 'b', 'c', '·'] : ['a', 'b', '·', '·']}
+              cls={(_n, ch) => (ch === '·' ? 'fx-letter--empty' : 'fx-letter--on')}
+            />
+            <span className="fx-note">{plusFix ? '+= wrote in place' : 'owns "ab"'}</span>
+          </div>
+          <div
+            className={`fx-link${
+              plusFix ? ' fx-link--weld' : i === 2 ? ' fx-link--dead' : plusCopy ? ' fx-link--on' : ''
+            }`}
+          />
+          <div className={`fx-pane${plusCopy || plusFix ? ' fx-pane--focus' : ''}${i === 2 ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">{plusFix ? '+=' : 's + x'}</span>
+            <Letters
+              chars={plusFix ? ['a', 'b', 'c', '·'] : plusResult}
+              cls={(_n, ch) => (ch === '·' ? 'fx-letter--empty' : plusFix ? 'fx-letter--on' : 'fx-letter--write')}
+            />
+            <span className="fx-note">{plusFix ? 'one buffer' : plusCopy ? 'always a new string' : 'waiting'}</span>
+          </div>
+        </div>
+      ) : (
+        <div className="fx-sh">
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">buffer</span>
+            <Letters
+              chars={reserveSlots.length ? reserveSlots : ['·', '·', '·', '·', '·', '·', '·', '·']}
+              cls={(_n, ch) => (ch === '·' ? 'fx-letter--empty' : 'fx-letter--on')}
             />
             <span className="fx-note">
-              {id === 'plus'
-                ? plusFix
-                  ? 'append in place'
-                  : 'owns "ab"'
-                : reserved
-                  ? appendOk
-                    ? recap
-                      ? 'size 5 · cap 8'
-                      : 'size 3 · cap 8'
-                    : 'size 0 · cap 8'
-                  : 'size 0 · cap 0'}
+              {appendOk ? (recap ? 'size 5 · cap 8' : 'size 3 · cap 8') : reserved ? 'size 0 · cap 8' : 'size 0 · cap 0'}
             </span>
           </div>
-          <div className={`fx-link${leftLink && id === 'plus' && plusCopy ? ` ${leftLink}` : reserved ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${plusCopy || reserved ? ' fx-pane--focus' : ''}${id === 'plus' && i === 2 ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">{id === 'plus' ? 's + x' : 'capacity'}</span>
-            {id === 'plus' ? (
-              <>
-                <Letters
-                  chars={plusResult}
-                  cls={(_n, ch) => (plusCopy && ch !== '·' ? 'fx-letter--on' : 'fx-letter--empty')}
-                />
-                <span className="fx-note">{plusCopy ? 'always a new string' : 'waiting'}</span>
-              </>
-            ) : (
-              <>
-                <span className="fx-value">{reserved ? '64' : '0'}</span>
-                <span className="fx-note">{reserved ? 'paid up front' : 'no allocation'}</span>
-              </>
-            )}
-          </div>
-          <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
-          <div className={`fx-pane${plusFix || appendOk ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">{id === 'plus' ? 's += x' : 'append'}</span>
-            {id === 'plus' ? (
-              <>
-                <Letters
-                  chars={plusFix ? ['a', 'b', 'c', '·'] : ['·', '·', '·', '·']}
-                  cls={(_n, ch) => (plusFix && ch !== '·' ? 'fx-letter--on' : 'fx-letter--empty')}
-                />
-                <span className="fx-note">{plusFix ? 'one buffer' : 'loops go quadratic'}</span>
-              </>
-            ) : (
-              <div className={`fx-slot${appendOk ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
-                <span className="fx-kicker">+=</span>
-                <span className="fx-value">{appendOk ? 'in place' : '—'}</span>
-                <span className="fx-note">{appendOk ? 'no realloc' : 'not yet'}</span>
-              </div>
-            )}
+          <div className={`fx-link${appendOk ? ' fx-link--weld' : reserved ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${reserved ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">capacity</span>
+            <div className={`fx-slot${appendOk ? ' fx-slot--ok' : reserved ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">reserve</span>
+              <span className="fx-value">{reserved ? '64' : '0'}</span>
+              <span className="fx-note">{appendOk ? '+= no realloc' : reserved ? 'paid up front' : 'no allocation'}</span>
+            </div>
           </div>
         </div>
       )}
