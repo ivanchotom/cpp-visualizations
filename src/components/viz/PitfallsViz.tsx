@@ -254,24 +254,24 @@ int r = a / b;     // 0`
       </div>
       {id === 'parse' && stepped ? (
         <div className="fx-sh">
-          <div className={`fx-pane${parseTrap ? ' fx-pane--trap' : parseFix ? ' fx-pane--gone' : ' fx-pane--focus'}`}>
-            <span className="fx-kicker">Widget w()</span>
+          <div className={`fx-pane${parseTrap ? ' fx-pane--trap' : ' fx-pane--focus'}`}>
+            <span className="fx-kicker">function</span>
             <div className="fx-buf-row">
               <span className={`fx-letter${parseTrap || !recap ? ' fx-letter--dead' : ' fx-letter--empty'}`}>f</span>
             </div>
-            <span className="fx-note">function</span>
+            <span className="fx-note">
+              <code>w();</code>
+            </span>
           </div>
           <div className={`fx-link${parseFix ? ' fx-link--weld' : parseTrap ? ' fx-link--dead' : ''}`} />
           <div className={`fx-pane${parseFix ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">Widget w{ '{}' }</span>
+            <span className="fx-kicker">object</span>
             <div className="fx-buf-row">
-              {['W'].map((ch) => (
-                <span key={ch} className={`fx-letter${parseFix ? ' fx-letter--on' : ' fx-letter--empty'}`}>
-                  {parseFix ? ch : '·'}
-                </span>
-              ))}
+              <span className={`fx-letter${parseFix ? ' fx-letter--on' : ' fx-letter--empty'}`}>{parseFix ? 'W' : '·'}</span>
             </div>
-            <span className="fx-note">object</span>
+            <span className="fx-note">
+              <code>w{'{}'}</code>
+            </span>
           </div>
         </div>
       ) : null}
