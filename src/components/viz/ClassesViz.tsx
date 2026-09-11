@@ -20,44 +20,52 @@ export function ClassesViz() {
     setId(next as Mode)
   }
 
-  const bounced = id === 'access' && i === 2
-  const apiOk = id === 'access' && i >= 3
-  const threw = id === 'inv' && i >= 2
-  const constThis = id === 'thisc' && i >= 1
-  const writeBlocked = id === 'thisc' && i >= 2
-  const wrongSpeak = id === 'virtctor' && i >= 2
+  const stepped = i >= 1
+  const decided = i >= 2
+  const recap = i >= 3
+  const bounced = id === 'access' && decided && !recap
+  const apiOk = id === 'access' && recap
+  const wrote = id === 'inv' && stepped && !decided
+  const threw = id === 'inv' && decided
+  const threwLive = id === 'inv' && decided && !recap
+  const constThis = id === 'thisc' && stepped
+  const writeBlocked = id === 'thisc' && decided
+  const baseOn = id === 'virtctor' && stepped
+  const wrongSpeak = id === 'virtctor' && decided
+  const trap = bounced || threwLive || (writeBlocked && !recap)
+  const ok = apiOk || (id === 'thisc' && recap) || (id === 'virtctor' && recap) || (id === 'inv' && recap)
 
   const code =
     id === 'access'
-      ? i < 2
-        ? `class Ratio {
+      ? recap
+        ? `// r.den_   // ill-formed
+r.den();           // the API`
+        : `class Ratio {
   int num_, den_;  // private
 public:
   int den() const;
 };`
-        : `// r.den_   // error
-r.den();           // the API`
       : id === 'inv'
-        ? i < 2
-          ? `Ratio(int n, int d) : num_(n), den_(d) {
+        ? recap
+          ? `Ratio(1, 0);  // throws
+// no object. The invariant held.`
+          : `Ratio(int n, int d) : num_(n), den_(d) {
   if (den_ == 0) throw std::invalid_argument("den");
 }`
-          : `Ratio(1, 0);  // throws
-// no object. The invariant held.`
         : id === 'thisc'
           ? `int num() const {
   // this has type const Ratio*
   return num_;
 }`
-          : i < 2
-            ? `struct Base {
+          : recap
+            ? `Base() { speak(); }
+// D’s part is not constructed.
+// Base::speak runs, not D::speak.`
+            : `struct Base {
   Base() { speak(); }
   virtual void speak();
 };
 struct D : Base { void speak(); };`
-            : `Base() { speak(); }
-// D’s part is not constructed.
-// Base::speak runs, not D::speak.`
 
   const caption =
     i === 0
@@ -92,10 +100,32 @@ struct D : Base { void speak(); };`
                             ? 'Base::speak. D’s vtable slot is not active. Calling a pure virtual here is UB. Don’t virtual-dispatch in ctor/dtor.'
                             : 'D() body has not run. Members of D are not constructed. This is why factories after full construction exist.'
 
-  const tone = bounced || threw || writeBlocked ? 'trap' : wrongSpeak ? 'warn' : apiOk ? 'ok' : 'idle'
-
+  const tone = bounced || (writeBlocked && !recap) || threwLive ? 'trap' : wrongSpeak && !recap ? 'warn' : ok ? 'ok' : 'idle'
   const playLabel =
     id === 'access' ? 'Play r.den_' : id === 'inv' ? 'Play Ratio(1, 0)' : id === 'thisc' ? 'Play num() const' : 'Play speak() in ctor'
+
+  const verdict =
+    bounced
+      ? 'r.den_ · private · ill-formed'
+      : apiOk
+        ? 'r.den() · the API'
+        : wrote
+          ? 'den_ = 0 · body will check'
+          : threw && !recap
+            ? 'throw · no Ratio exists'
+            : id === 'inv' && recap
+              ? 'invariant held · no object'
+              : writeBlocked && !recap
+                ? 'const this · write ill-formed'
+                : id === 'thisc' && recap
+                  ? 'const Ratio& may only call const'
+                  : wrongSpeak && !recap
+                    ? 'Base::speak · D not alive'
+                    : id === 'virtctor' && recap
+                      ? 'dynamic type is the class under construction'
+                      : id === 'access' && stepped
+                        ? 'name lookup · den_ is private'
+                        : ''
 
   return (
     <SceneShell
@@ -118,15 +148,15 @@ struct D : Base { void speak(); };`
     >
       {id === 'access' && (
         <div className="fx-sh">
-          <div className={`fx-slot${i >= 1 ? ' fx-slot--focus' : ''}${bounced ? ' fx-slot--trap' : ''}`}>
+          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ''}${bounced ? ' fx-slot--trap' : ''}`}>
             <span className="fx-kicker">caller</span>
             <span className="fx-value">
               <code>r</code>
             </span>
-            <span className="fx-note">{apiOk ? 'r.den()' : i >= 1 ? 'wants r.den_' : 'outside the class'}</span>
+            <span className="fx-note">{apiOk ? 'r.den()' : stepped ? 'wants r.den_' : 'outside the class'}</span>
           </div>
-          <div className={`fx-link${bounced ? ' fx-link--dead' : apiOk ? ' fx-link--weld' : i >= 1 ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${i >= 1 ? ' fx-pane--focus' : ''}${bounced ? ' fx-pane--trap' : ''}`}>
+          <div className={`fx-link${bounced ? ' fx-link--dead' : apiOk ? ' fx-link--weld' : stepped ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${bounced ? ' fx-pane--trap' : ''}`}>
             <span className="fx-kicker">Ratio</span>
             <div className={`fx-slot${bounced ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
               <span className="fx-kicker">private</span>
@@ -145,19 +175,19 @@ struct D : Base { void speak(); };`
       )}
       {id === 'inv' && (
         <div className="fx-sh">
-          <div className={`fx-slot${i >= 1 ? ' fx-slot--focus' : ''}${threw ? ' fx-slot--trap' : ''}`}>
+          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ''}${threw ? ' fx-slot--trap' : ''}`}>
             <span className="fx-kicker">ctor args</span>
             <span className="fx-value">
               <code>Ratio(1, 0)</code>
             </span>
             <span className="fx-note">{threw ? 'construction failed' : 'n = 1, d = 0'}</span>
           </div>
-          <div className={`fx-link${threw ? ' fx-link--dead' : i >= 1 ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${i >= 1 && !threw ? ' fx-pane--focus' : ''}${threw ? ' fx-pane--gone' : ''}`}>
+          <div className={`fx-link${threw ? ' fx-link--dead' : stepped ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${wrote ? ' fx-pane--focus' : ''}${threw ? ' fx-pane--gone' : ''}`}>
             <span className="fx-kicker">{threw ? 'no object' : 'constructing'}</span>
-            <div className={`fx-slot${i >= 1 && !threw ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
+            <div className={`fx-slot${wrote ? ' fx-slot--trap' : threw ? ' fx-slot--dim' : ' fx-slot--dim'}`}>
               <span className="fx-kicker">den_</span>
-              <span className="fx-value">{i >= 1 && !threw ? '0' : '—'}</span>
+              <span className="fx-value">{wrote ? '0' : '—'}</span>
               <span className="fx-note">{threw ? 'destroyed on unwind' : 'must not be 0'}</span>
             </div>
           </div>
@@ -172,58 +202,43 @@ struct D : Base { void speak(); };`
             </span>
             <span className="fx-note">callers may only call const members</span>
           </div>
-          <div className={`fx-link${constThis ? ' fx-link--weld' : ''}`} />
-          <div className={`fx-pane${constThis ? ' fx-pane--focus' : ''}${writeBlocked ? ' fx-pane--trap' : ''}`}>
+          <div className={`fx-link${constThis ? ' fx-link--weld' : ''}${writeBlocked && !recap ? ' fx-link--dead' : ''}`} />
+          <div className={`fx-pane${constThis ? ' fx-pane--focus' : ''}${writeBlocked && !recap ? ' fx-pane--trap' : ''}`}>
             <span className="fx-kicker">this</span>
             <span className="fx-value">
               <code>{constThis ? 'const Ratio*' : '—'}</code>
             </span>
-            <div className={`fx-slot${writeBlocked ? ' fx-slot--trap' : constThis ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+            <div className={`fx-slot${writeBlocked && !recap ? ' fx-slot--trap' : constThis ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
               <span className="fx-kicker">num_</span>
-              <span className="fx-note">{writeBlocked ? 'write is ill-formed' : constThis ? 'read is fine' : 'not in the member yet'}</span>
+              <span className="fx-note">
+                {writeBlocked && !recap ? 'write is ill-formed' : recap ? 'read is fine' : constThis ? 'read is fine' : 'not in the member yet'}
+              </span>
             </div>
           </div>
         </div>
       )}
       {id === 'virtctor' && (
-        <div className="fx-sh">
-          <div className="fx-pane">
-            <span className="fx-kicker">under construction</span>
-            <div className={`fx-slot${i >= 1 ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">Base</span>
-              <span className="fx-note">{i >= 1 ? 'vptr → Base' : 'not started'}</span>
-            </div>
-            <div className="fx-slot fx-slot--dim">
-              <span className="fx-kicker">Derived</span>
-              <span className="fx-note">not constructed</span>
-            </div>
+        <div className="fx-inh">
+          <div className={`fx-slice${baseOn ? ' fx-slice--on' : ' fx-slice--off'}${wrongSpeak ? ' fx-slice--hot' : ''}`}>
+            <span className="fx-kicker">Base</span>
+            <span className="fx-note">{baseOn ? 'vptr → Base' : 'not started'}</span>
           </div>
-          <div className={`fx-link${i >= 2 ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${wrongSpeak ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">virtual call</span>
-            <div className={`fx-vt-slot${wrongSpeak ? ' fx-vt-slot--hot' : ''}`}>
-              <code>speak</code>
-              <span className="fx-vt-fn">{wrongSpeak ? 'Base::speak' : 'D::speak?'}</span>
-            </div>
+          <div className="fx-slice fx-slice--off">
+            <span className="fx-kicker">Derived</span>
+            <span className="fx-note">not constructed</span>
+          </div>
+          <div className={`fx-slice fx-slice--derived${wrongSpeak ? ' fx-slice--on fx-slice--hot' : ' fx-slice--off'}`}>
+            <span className="fx-kicker">speak()</span>
+            <span className="fx-note">{wrongSpeak ? 'Base::speak' : 'D::speak?'}</span>
           </div>
         </div>
       )}
       <div
-        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
-          bounced || threw || writeBlocked ? 'fx-verdict--trap' : wrongSpeak ? 'fx-verdict--warn' : i >= 3 ? 'fx-verdict--ok' : ''
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          trap && !recap ? 'fx-verdict--trap' : wrongSpeak && !recap ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
-        {id === 'access' && bounced
-          ? 'r.den_ · private · ill-formed'
-          : apiOk
-            ? 'r.den() · the API'
-            : threw
-              ? 'throw · no Ratio exists'
-              : writeBlocked
-                ? 'const this · write ill-formed'
-                : wrongSpeak && i >= 2
-                  ? 'Base::speak · D not alive'
-                  : ''}
+        {verdict}
       </div>
     </SceneShell>
   )

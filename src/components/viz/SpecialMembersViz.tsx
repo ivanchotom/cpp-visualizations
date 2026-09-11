@@ -56,41 +56,45 @@ export function SpecialMembersViz() {
     setId(next as Mode)
   }
 
-  const copied = id === 'dtor' && i >= 3
-  const stolen = (id === 'zero' || id === 'del') && i >= 3
-  const aEmpty = stolen
-  const bOn = i >= 3
+  const stepped = i >= 1
+  const decided = i >= 2
+  const recap = i >= 3
+  const copied = id === 'dtor' && recap
+  const stolen = (id === 'zero' || id === 'del') && recap
+  const trap = copied
+  const ok = stolen || (id === 'five' && recap)
 
   const code =
     id === 'zero'
-      ? i < 2
-        ? `class Person {
+      ? recap
+        ? `Person b = std::move(a);
+// members move. You wrote nothing.`
+        : `class Person {
   std::string name_;
   std::unique_ptr<Profile> p_;
 };`
-        : `Person b = std::move(a);
-// members move. You wrote nothing.`
       : id === 'dtor'
-        ? i === 0
-          ? `class Handle { /* compiler five */ };`
+        ? recap
+          ? `Handle b = std::move(a);  // copies
+// implicit moves are gone (C++14)`
           : i === 1
             ? `~Handle();  // user-declared`
             : i === 2
               ? `// implicit moves are gone (C++14)`
-              : `Handle b = std::move(a);  // copies`
+              : `class Handle { /* compiler five */ };`
         : id === 'five'
-          ? i < 3
-            ? `Handle(const Handle&);
+          ? recap
+            ? `// define or delete all five.`
+            : `Handle(const Handle&);
 Handle& operator=(const Handle&);
 Handle(Handle&&) noexcept;
 Handle& operator=(Handle&&) noexcept;
 ~Handle();`
-            : `// define or delete all five.`
-          : i < 2
-            ? `Handle(const Handle&) = delete;
-Handle& operator=(const Handle&) = delete;`
-            : `Handle(Handle&&) = default;
+          : recap
+            ? `Handle(Handle&&) = default;
 // move-only, like unique_ptr`
+            : `Handle(const Handle&) = delete;
+Handle& operator=(const Handle&) = delete;`
 
   const caption =
     i === 0
@@ -106,7 +110,7 @@ Handle& operator=(const Handle&) = delete;`
         : id === 'zero' && i === 2
           ? 'All five stay generated. No user dtor, no user copy, no user move — the compiler may write moves.'
           : id === 'zero'
-            ? 'std::move(a) steals into b. You wrote nothing. Members did the rest. Cells fill on b; a goes empty in place.'
+            ? 'std::move(a) steals into b. You wrote nothing. Members did the rest. a goes empty in place; b is the owner.'
             : id === 'dtor' && i === 1
               ? 'A user-declared destructor. Even an empty one “for logging” counts. =default is still user-declared for this rule.'
               : id === 'dtor' && i === 2
@@ -125,10 +129,41 @@ Handle& operator=(const Handle&) = delete;`
                             ? 'Copy ctor and copy assign are deleted. Copy initialization will not compile.'
                             : 'b steals. a is empty. You cannot accidentally copy a Handle and double-free.'
 
-  const tone = copied ? 'warn' : stolen || (id === 'five' && i >= 3) ? 'ok' : 'idle'
-
+  const tone = trap ? 'warn' : ok ? 'ok' : 'idle'
   const playLabel =
     id === 'zero' ? 'Play T b = std::move(a)' : id === 'dtor' ? 'Play user ~T()' : id === 'five' ? 'Play the five' : 'Play = delete copy'
+
+  const aOn = stepped
+  const bOn = recap
+  const aEmpty = stolen
+  const linkKind = stolen ? 'weld' : copied ? 'on' : decided && id === 'del' ? 'dead' : stepped ? 'on' : ''
+
+  const verdict =
+    id === 'zero' && i === 1
+      ? 'all five generated'
+      : id === 'zero' && i === 2
+        ? 'members manage · no specials'
+        : stolen && id === 'zero'
+          ? 'members moved · you wrote nothing'
+          : id === 'dtor' && i === 1
+            ? 'user dtor · even empty'
+            : id === 'dtor' && i === 2
+              ? 'moves absent · C++14 trap'
+              : copied
+                ? 'std::move copied · source unchanged'
+                : id === 'five' && i === 1
+                  ? 'dtor user · look at the rest'
+                  : id === 'five' && i === 2
+                    ? 'copies user · moves pending'
+                    : id === 'five' && recap
+                      ? 'all five user · define or delete'
+                      : id === 'del' && i === 1
+                        ? 'dtor + moves · copy pending'
+                        : id === 'del' && decided && !recap
+                          ? 'copy = delete · move-only'
+                          : stolen && id === 'del'
+                            ? 'move-only · a empty'
+                            : ''
 
   return (
     <SceneShell
@@ -160,45 +195,44 @@ Handle& operator=(const Handle&) = delete;`
           )
         })}
       </div>
-      <div className="fx-obj-row">
-        <div className={`fx-slot${i >= 1 ? ' fx-slot--focus' : ''}${aEmpty ? ' fx-slot--dim' : ''}`}>
-          <span className="fx-kicker">a</span>
-          <span className="fx-value">
-            <code>Handle</code>
-          </span>
-          <span className="fx-note">{aEmpty ? 'moved-from / empty' : i >= 1 ? 'owns' : 'not in the scene yet'}</span>
-          {i >= 1 && !aEmpty && <span className="fx-badge fx-badge--owner">owner</span>}
+      {id !== 'five' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${aOn ? ' fx-pane--focus' : ''}${aEmpty ? ' fx-pane--gone' : ''}`}>
+            <span className="fx-kicker">a</span>
+            <div className={`fx-slot${aOn && !aEmpty ? ' fx-slot--focus' : ' fx-slot--dim'}${copied ? ' fx-slot--ok' : ''}`}>
+              <span className="fx-kicker">Handle</span>
+              <div className="fx-buf-row">
+                <span className={`fx-letter${aOn && !aEmpty ? ' fx-letter--on' : ' fx-letter--empty'}`}>
+                  {aOn && !aEmpty ? 'H' : '·'}
+                </span>
+              </div>
+              <span className="fx-note">{aEmpty ? 'moved-from / empty' : aOn ? 'owns' : 'not in the scene yet'}</span>
+              {aOn && !aEmpty && <span className="fx-badge fx-badge--owner">owner</span>}
+            </div>
+          </div>
+          <div className={`fx-link${linkKind ? ` fx-link--${linkKind}` : ''}`} />
+          <div className={`fx-pane${bOn ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">b</span>
+            <div className={`fx-slot${bOn ? (stolen ? ' fx-slot--weld' : copied ? ' fx-slot--ok' : ' fx-slot--focus') : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">Handle</span>
+              <div className="fx-buf-row">
+                <span className={`fx-letter${bOn ? (stolen ? ' fx-letter--move' : ' fx-letter--on') : ' fx-letter--empty'}`}>
+                  {bOn ? 'H' : '·'}
+                </span>
+              </div>
+              <span className="fx-note">{copied ? 'copy of a' : stolen ? 'stole a' : 'not yet'}</span>
+              {copied && <span className="fx-badge fx-badge--open">copy</span>}
+              {stolen && <span className="fx-badge fx-badge--owner">owner</span>}
+            </div>
+          </div>
         </div>
-        <div className={`fx-slot${bOn ? ' fx-slot--focus' : ' fx-slot--dim'}${copied ? '' : stolen ? ' fx-slot--weld' : ''}`}>
-          <span className="fx-kicker">b</span>
-          <span className="fx-value">
-            <code>Handle</code>
-          </span>
-          <span className="fx-note">{copied ? 'copy of a' : stolen ? 'stole a' : 'not yet'}</span>
-          {copied && <span className="fx-badge fx-badge--open">copy</span>}
-          {stolen && <span className="fx-badge fx-badge--owner">owner</span>}
-        </div>
-      </div>
+      )}
       <div
-        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
-          copied ? 'fx-verdict--warn' : stolen || (id === 'five' && i >= 3) ? 'fx-verdict--ok' : ''
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          trap ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
-        {id === 'zero' && i >= 3
-          ? 'members moved · you wrote nothing'
-          : id === 'dtor' && i >= 2 && i < 3
-            ? 'moves absent · C++14 trap'
-            : copied
-              ? 'std::move copied · source unchanged'
-              : id === 'five' && i >= 3
-                ? 'all five user · define or delete'
-                : id === 'del' && i >= 2 && i < 3
-                  ? 'copy = delete · move-only'
-                  : stolen
-                    ? 'move-only · a empty'
-                    : id === 'zero' && i >= 1
-                      ? 'all five generated'
-                      : ''}
+        {verdict}
       </div>
     </SceneShell>
   )
