@@ -108,32 +108,6 @@ auto b = std::chrono::system_clock::now();
           ? 'Play duration_cast'
           : 'Play a - b'
 
-  const inName =
-    id === 'steady' ? 'steady_clock' : id === 'jump' ? 'system_clock' : id === 'cast' ? 'milliseconds' : 'steady tp'
-  const inVal =
-    id === 'steady' ? 'monotonic' : id === 'jump' ? (jumped ? 'jumped' : 'wall') : id === 'cast' ? '1500' : 'epoch A'
-  const midName =
-    id === 'steady' ? 'work()' : id === 'jump' ? 'work()' : id === 'cast' ? 'duration_cast<seconds>' : 'system tp'
-  const midVal =
-    id === 'steady' && stepped
-      ? decided
-        ? 'done'
-        : 'running'
-      : id === 'jump' && stepped
-        ? jumped
-          ? 'NTP −2s'
-          : 'running'
-        : id === 'cast' && stepped
-          ? 'toward 0'
-          : id === 'mix' && stepped
-            ? 'different epoch'
-            : '—'
-  const outName = id === 'steady' ? 'duration' : id === 'jump' ? 'now − t0' : id === 'cast' ? 'count()' : 'minus'
-  const outVal = steadyOk ? '42 ms' : jumped ? (recap ? '−2000 ms' : '??') : castOk ? '1' : mixTrap ? 'ill-formed' : '—'
-
-  const leftLink = stepped ? 'fx-link--on' : ''
-  const rightLink = jumped || mixTrap ? 'fx-link--dead' : steadyOk || castOk ? 'fx-link--weld' : decided ? 'fx-link--on' : ''
-
   const verdict =
     id === 'steady' && i === 2
       ? 'same clock · duration'
@@ -152,10 +126,6 @@ auto b = std::chrono::system_clock::now();
                   : mixTrap
                     ? 'different clocks · no minus'
                     : ''
-
-  const pipN =
-    id === 'steady' ? (recap ? 8 : decided ? 5 : 0) : id === 'cast' ? (castOk ? 1 : stepped ? 15 : 0) : jumped ? 3 : 0
-  const pipOf = id === 'cast' ? (castOk ? 2 : 15) : 8
 
   return (
     <SceneShell
@@ -176,60 +146,87 @@ auto b = std::chrono::system_clock::now();
       code={code}
       tone={tone}
     >
-      <div className="fx-own">
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">clock</span>
-          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{inName}</span>
-            <span className="fx-value">{inVal}</span>
-            <span className="fx-note">when / how long</span>
+      {id === 'steady' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">t0</span>
+            <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">now</span>
+              <span className="fx-value">{stepped ? 'tp' : '—'}</span>
+              <span className="fx-note">steady_clock · epoch</span>
+            </div>
+          </div>
+          <div className={`fx-link${steadyOk ? ' fx-link--weld' : stepped ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">duration</span>
+            <div className={`fx-slot${steadyOk ? ' fx-slot--ok' : decided ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">count</span>
+              <span className="fx-value">{steadyOk ? '42' : decided ? 'ms' : '—'}</span>
+              <Pips n={recap ? 8 : decided ? 5 : 0} of={8} />
+              <span className="fx-note">{steadyOk ? 'print .count() and the unit' : 'work() then now - t0'}</span>
+            </div>
           </div>
         </div>
-        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${mixTrap ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">step</span>
-          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{midName}</span>
-            <span className="fx-value">{midVal}</span>
-            <span className="fx-note">
-              {id === 'steady'
-                ? 'does not jump'
-                : id === 'jump'
-                  ? 'NTP / user can step it'
-                  : id === 'cast'
-                    ? 'truncate, not round'
-                    : 'no implicit conversion'}
-            </span>
+      )}
+      {id === 'jump' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${jumped ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">t0</span>
+            <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">wall</span>
+              <span className="fx-value">{stepped ? 'sys' : '—'}</span>
+              <span className="fx-note">system_clock</span>
+            </div>
+          </div>
+          <div className={`fx-link${jumped ? ' fx-link--dead' : stepped ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}${jumped ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">now − t0</span>
+            <div className={`fx-slot${jumped ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">elapsed</span>
+              <span className="fx-value">{recap ? '-2s' : jumped ? '??' : '—'}</span>
+              {jumped && recap && <Pips n={3} of={8} trap />}
+              <span className="fx-note">{jumped ? 'NTP can step backward' : 'not a stopwatch'}</span>
+            </div>
           </div>
         </div>
-        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
-        <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}${jumped || mixTrap ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">out</span>
-          <div
-            className={`fx-slot${
-              jumped || mixTrap ? ' fx-slot--trap' : steadyOk || castOk ? ' fx-slot--ok' : ' fx-slot--dim'
-            }`}
-          >
-            <span className="fx-kicker">{outName}</span>
-            <span className="fx-value">{outVal}</span>
-            {(id === 'steady' || id === 'cast') && stepped && (
-              <Pips n={pipN} of={pipOf} trap={false} />
-            )}
-            {jumped && recap && <Pips n={3} of={8} trap />}
-            <span className="fx-note">
-              {steadyOk
-                ? 'elapsed, .count()'
-                : jumped
-                  ? 'wall clock lied'
-                  : castOk
-                    ? '1500 ms → 1 s'
-                    : mixTrap
-                      ? 'ill-formed mix'
-                      : 'waiting'}
-            </span>
+      )}
+      {id === 'cast' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">ms</span>
+            <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">count</span>
+              <span className="fx-value">{stepped ? '1500' : '—'}</span>
+              <Pips n={stepped ? 15 : 0} of={15} />
+              <span className="fx-note">milliseconds</span>
+            </div>
+          </div>
+          <div className={`fx-link${castOk ? ' fx-link--weld' : stepped ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${castOk ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">seconds</span>
+            <div className={`fx-slot${castOk ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">count</span>
+              <span className="fx-value">{castOk ? '1' : '—'}</span>
+              <Pips n={castOk ? 1 : 0} of={2} />
+              <span className="fx-note">{castOk ? 'toward zero, not 2' : 'duration_cast'}</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+      {id === 'mix' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${mixTrap ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">steady</span>
+            <code>now()</code>
+            <span className="fx-note">{stepped ? 'tp A' : '—'}</span>
+          </div>
+          <div className={`fx-rank${mixTrap ? ' fx-rank--on fx-rank--trap' : ''}`}>
+            <span className="fx-note">system</span>
+            <code>a - b</code>
+            <span className="fx-note">{mixTrap ? 'err' : '—'}</span>
+          </div>
+        </div>
+      )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
           jumped || mixTrap ? 'fx-verdict--trap' : verdict ? 'fx-verdict--ok' : ''
