@@ -20,49 +20,54 @@ export function StackHeapViz() {
     setMode(next as Mode)
   }
 
-  const inFrame = i === 1 || i === 2
-  const showX = (mode === 'leak' && inFrame) || (mode === 'dangle' && inFrame) || (mode === 'stat' && i >= 1)
-  const showPtr = mode === 'leak' ? i === 2 : mode === 'raii' ? i >= 1 && i < 3 : mode === 'dangle' && i >= 2
-  const hasHeap = mode === 'leak' ? i >= 2 : mode === 'raii' ? i === 1 || i === 2 : false
-  const leaked = mode === 'leak' && i === 3
-  const deleted = mode === 'raii' && i === 3
-  const dangling = mode === 'dangle' && i === 3
-  const staticLive = mode === 'stat' && i === 3
-  const weld = (mode === 'leak' && i === 2) || (mode === 'raii' && i === 2)
+  const stepped = i >= 1
+  const decided = i >= 2
+  const recap = i >= 3
+  const leaked = mode === 'leak' && recap
+  const deleted = mode === 'raii' && recap
+  const dangling = mode === 'dangle' && recap
+  const staticLive = mode === 'stat' && recap
   const trap = leaked || dangling
   const ok = deleted || staticLive
 
   const code =
     mode === 'leak'
-      ? i < 2
+      ? recap
         ? `void f() {
-  int x = 7;          // automatic
-}`
-        : i === 2
+  int* p = new int{42};
+} // p dies, *p does not  ← leak`
+        : decided
           ? `void f() {
   int x = 7;
   int* p = new int{42}; // p on stack, 42 on heap
 }`
           : `void f() {
-  int* p = new int{42};
-} // p dies, *p does not  ← leak`
+  int x = 7;          // automatic
+}`
       : mode === 'raii'
-        ? i < 3
+        ? recap
           ? `void f() {
   auto p = std::make_unique<int>(42);
-}`
+} // ~unique_ptr deletes`
           : `void f() {
   auto p = std::make_unique<int>(42);
-} // ~unique_ptr deletes`
+}`
         : mode === 'dangle'
-          ? i < 3
-            ? `int* f() {
+          ? recap
+            ? `int* p = f();
+*p;                    // dangling — UB`
+            : `int* f() {
   int x = 7;
   return &x;           // address of automatic
 }`
-            : `int* p = f();
-*p;                    // dangling — UB`
-          : recapCode(i)
+          : recap
+            ? `void f() {
+  static int n = 0;
+  ++n;                 // still 1, then 2
+}`
+            : `void f() {
+  static int n = 0;    // first call
+}`
 
   const caption =
     i === 0
@@ -76,13 +81,13 @@ export function StackHeapViz() {
       : mode === 'leak' && i === 1
         ? 'x is automatic. It will vanish when f returns — no delete, no leak. Still no heap object.'
         : mode === 'leak' && i === 2
-          ? 'p is just an address on the stack. The 42 is a separate heap object. The cyan bar is not ownership.'
+          ? 'p is just an address on the stack. The 42 is a separate heap object. The pointer is not ownership.'
           : mode === 'leak'
             ? 'The frame is gone. The heap object has no pointer left. Still allocated, reachable from nowhere — a leak.'
             : mode === 'raii' && i === 1
               ? 'make_unique puts the unique_ptr on the stack and the int on the heap. The owner is automatic; the int is not.'
               : mode === 'raii' && i === 2
-                ? 'Green weld: the stack owner is bound to the heap int. Returning will run the destructor.'
+                ? 'The stack owner is bound to the heap int. Returning will run the destructor.'
                 : mode === 'raii'
                   ? 'Destructor ran. Heap int is gone. RAII made the cleanup the same path as the return.'
                   : mode === 'dangle' && i === 1
@@ -101,21 +106,16 @@ export function StackHeapViz() {
   const playLabel =
     mode === 'leak' ? 'Play bare new' : mode === 'raii' ? 'Play unique_ptr' : mode === 'dangle' ? 'Play return &x' : 'Play static'
 
-  const linkKind = leaked || dangling ? 'dead' : mode === 'raii' && weld ? 'weld' : showPtr && hasHeap ? 'on' : mode === 'dangle' && i >= 2 ? (dangling ? 'dead' : 'on') : ''
-
-  const xVal = mode === 'stat' ? (i >= 2 ? '1' : '0') : '7'
-  const xNote = mode === 'stat' ? (staticLive ? 'still alive' : inFrame || i >= 1 ? 'static storage' : '') : dangling ? 'destroyed' : 'automatic'
-
   const verdict =
-    mode === 'leak' && i === 2
+    mode === 'leak' && decided && !recap
       ? 'p stores an address · not an owner'
       : leaked
         ? 'p gone · 42 still allocated · leak'
-        : mode === 'raii' && i === 2
+        : mode === 'raii' && decided && !recap
           ? 'owner on the stack · int on the heap'
           : deleted
             ? '~unique_ptr ran delete · heap empty'
-            : mode === 'dangle' && i === 2
+            : mode === 'dangle' && decided && !recap
               ? '&x copied · object about to die'
               : dangling
                 ? 'frame gone · p dangling · UB'
@@ -146,84 +146,75 @@ export function StackHeapViz() {
       code={code}
       tone={tone}
     >
-      <div className="fx-sh">
-        <div className={`fx-pane${inFrame || (mode === 'stat' && i >= 1) ? ' fx-pane--focus' : ''}${i === 3 && mode !== 'stat' ? ' fx-pane--gone' : ''}`}>
-          <span className="fx-kicker">{mode === 'stat' ? 'static storage' : 'stack · automatic'}</span>
-          <span className="fx-note">{inFrame ? 'f()' : i === 3 && mode !== 'stat' ? 'frame destroyed' : mode === 'stat' && i >= 1 ? 'program lifetime' : 'no frame yet'}</span>
-          {showX && (
-            <div className={`fx-slot${dangling && i === 3 ? ' fx-slot--dim' : ' fx-slot--ok'}${staticLive ? ' fx-slot--weld' : ''}`}>
-              <span className="fx-kicker">{mode === 'stat' ? 'static int n' : 'int x'}</span>
-              <span className="fx-value">{dangling && i === 3 ? '—' : xVal}</span>
-              <span className="fx-note">{xNote}</span>
-            </div>
-          )}
-          {showPtr && (
-            <div className={`fx-slot${weld ? (mode === 'raii' ? ' fx-slot--weld' : ' fx-slot--focus') : dangling ? ' fx-slot--trap' : ''}`}>
-              <span className="fx-kicker">{mode === 'leak' ? 'int* p' : mode === 'raii' ? 'unique_ptr p' : 'int* p'}</span>
-              <span className="fx-value">{mode === 'raii' ? 'owns' : dangling ? 'dangling' : '0xH0'}</span>
-              {mode === 'raii' && <span className="fx-badge fx-badge--open">dtor will delete</span>}
-            </div>
-          )}
+      {mode === 'leak' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${leaked ? ' fx-rank--done' : ''}`}>
+            <code>x</code>
+            <span className="fx-note">automatic</span>
+            <span className="fx-note">{leaked ? 'gone' : stepped ? '7' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${leaked ? ' fx-rank--trap' : ''}`}>
+            <code>p</code>
+            <span className="fx-note">
+              <code>new int</code>
+            </span>
+            <span className="fx-note">{leaked ? 'leak' : decided ? '42' : '—'}</span>
+          </div>
         </div>
-        <div
-          className={`fx-link${linkKind === 'on' ? ' fx-link--on' : ''}${linkKind === 'weld' ? ' fx-link--weld' : ''}${
-            linkKind === 'dead' ? ' fx-link--dead' : ''
-          }`}
-        />
-        <div
-          className={`fx-pane${hasHeap || dangling ? ' fx-pane--focus' : ''}${leaked || dangling ? ' fx-pane--trap' : ''}${
-            deleted ? ' fx-pane--gone' : ''
-          }`}
-        >
-          <span className="fx-kicker">{mode === 'dangle' ? 'caller' : 'heap · free store'}</span>
-          {hasHeap && (
-            <div className={`fx-slot${leaked ? ' fx-slot--trap' : ''}${mode === 'raii' && i === 2 ? ' fx-slot--weld' : ''}`}>
-              <span className="fx-kicker">int</span>
-              <span className="fx-value">42</span>
-              <span className="fx-note">{leaked ? 'orphaned — leaked' : 'new int{42}'}</span>
-            </div>
-          )}
-          {deleted && (
-            <div className="fx-slot fx-slot--ok">
-              <span className="fx-kicker">deleted</span>
-              <span className="fx-value">~p</span>
-              <span className="fx-note">destructor ran delete</span>
-            </div>
-          )}
-          {mode === 'dangle' && i >= 2 && (
-            <div className={`fx-slot${dangling ? ' fx-slot--trap' : ' fx-slot--focus'}`}>
-              <span className="fx-kicker">returned p</span>
-              <span className="fx-value">{dangling ? 'UB' : '&x'}</span>
-              <span className="fx-note">{dangling ? 'object is gone' : 'address copy'}</span>
-            </div>
-          )}
-          {!hasHeap && !deleted && mode !== 'dangle' && <p className="fx-note">no allocations</p>}
+      )}
+      {mode === 'raii' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${deleted ? ' fx-rank--done' : ''}`}>
+            <code>p</code>
+            <span className="fx-note">
+              <code>unique_ptr</code>
+            </span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+            <code>T</code>
+            <span className="fx-note">heap int</span>
+            <span className="fx-note">{deleted ? 'gone' : decided ? '42' : '—'}</span>
+          </div>
         </div>
-      </div>
-      {showX ? (
-        <div className="fx-buf-row" style={{ justifyContent: 'center' }}>
-          <span className={`fx-letter${dangling ? ' fx-letter--dead' : ' fx-letter--on'}`}>{dangling ? '·' : xVal}</span>
+      )}
+      {mode === 'dangle' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${dangling ? ' fx-rank--done' : ''}`}>
+            <code>x</code>
+            <span className="fx-note">automatic</span>
+            <span className="fx-note">{dangling || decided ? 'gone' : stepped ? '7' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${dangling ? ' fx-rank--trap' : ''}`}>
+            <code>p</code>
+            <span className="fx-note">
+              <code>{'return &x'}</code>
+            </span>
+            <span className="fx-note">{dangling ? 'ub' : decided ? 'ok' : '—'}</span>
+          </div>
         </div>
-      ) : null}
+      )}
+      {mode === 'stat' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${staticLive ? ' fx-rank--on' : ''}`}>
+            <code>n</code>
+            <span className="fx-note">static local</span>
+            <span className="fx-note">{staticLive ? '2' : decided ? '1' : stepped ? '0' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>f</code>
+            <span className="fx-note">this frame</span>
+            <span className="fx-note">{decided ? 'gone' : '—'}</span>
+          </div>
+        </div>
+      )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
-          trap ? 'fx-verdict--trap' : ok ? 'fx-verdict--ok' : weld && mode === 'raii' ? 'fx-verdict--ok' : ''
+          trap ? 'fx-verdict--trap' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
         {verdict}
       </div>
     </SceneShell>
   )
-}
-
-function recapCode(i: number): string {
-  if (i >= 3) {
-    return `void f() {
-  static int n = 0;
-  ++n;                 // still 1, then 2
-}`
-  }
-  return `void f() {
-  static int n = 0;    // first call
-}`
 }

@@ -2,8 +2,6 @@ import { useState } from 'react'
 import { SceneShell } from './scene/SceneShell.tsx'
 import { useBeats } from './scene/useBeats.ts'
 
-const LETTERS = ['A', 'B', 'C', 'D'] as const
-
 type Mode = 'copy' | 'move' | 'cass' | 'mass'
 
 const MODES: { id: Mode; title: string }[] = [
@@ -25,35 +23,9 @@ export function CopyMoveViz() {
   const stepped = i >= 1
   const decided = i >= 2
   const recap = i >= 3
-  const aFilled = mode === 'move' && recap ? 0 : stepped ? 4 : 0
-  const bFilled =
-    mode === 'copy'
-      ? recap
-        ? 4
-        : decided
-          ? 2
-          : 0
-      : mode === 'move'
-        ? decided
-          ? 4
-          : 0
-        : mode === 'cass'
-          ? recap
-            ? 4
-            : decided
-              ? 2
-              : stepped
-                ? 0
-                : 0
-          : recap
-            ? 4
-            : decided
-              ? 4
-              : 0
-  const bBorn = mode === 'cass' || mode === 'mass' ? stepped : mode === 'copy' ? decided : decided
-  const aEmpty = (mode === 'move' || mode === 'mass') && recap
   const stolen = (mode === 'move' || mode === 'mass') && recap
   const cloned = (mode === 'copy' || mode === 'cass') && recap
+  const ok = stolen || cloned
 
   const code =
     mode === 'copy'
@@ -73,7 +45,7 @@ b = std::move(a);     // steal, a is nullptr`
   const caption =
     i === 0
       ? mode === 'copy'
-        ? 'Play T b = a. Copy constructs a second object with its own buffer. The source keeps every element. Cells fill in place — nothing flies.'
+        ? 'Play T b = a. Copy constructs a second object with its own buffer. The source keeps every element. Stations light in place — nothing flies.'
         : mode === 'move'
           ? 'Play std::move. Move steals the buffer. The source stays a valid object, but it no longer owns the data.'
           : mode === 'cass'
@@ -82,13 +54,13 @@ b = std::move(a);     // steal, a is nullptr`
       : mode === 'copy' && i === 1
         ? 'a owns ABCD. b does not exist yet. Copy will allocate a second buffer, not reseat a pointer.'
         : mode === 'copy' && i === 2
-          ? 'b’s new allocation fills in place. a still holds A B C D. Two objects, two buffers.'
+          ? 'b’s new allocation fills. a still holds ABCD. Two objects, two buffers.'
           : mode === 'copy'
             ? 'Clone complete. Mutating b later cannot change a. C++14 std::vector / std::string do this.'
             : mode === 'move' && i === 1
               ? 'a owns the buffer. b is not constructed. Move will take a’s pointer, not clone cells.'
               : mode === 'move' && i === 2
-                ? 'b now owns the same buffer. Letters light on b in place. a still names them until we empty it.'
+                ? 'b now owns the same buffer. a still names them until we empty it. No element-wise copy.'
                 : mode === 'move'
                   ? 'a’s pointer is nullptr. Same allocation, new owner. a is empty and valid. Nothing was element-wise copied.'
                   : mode === 'cass' && i === 1
@@ -100,10 +72,10 @@ b = std::move(a);     // steal, a is nullptr`
                         : i === 1
                           ? 'b already exists. Move-assign will release b’s old buffer, then steal a’s pointer.'
                           : i === 2
-                            ? 'Steal. b lights ABCD. a still names the buffer until we null it. No element-wise copy.'
+                            ? 'Steal. b owns ABCD. a still names the buffer until we null it. No element-wise copy.'
                             : 'a is nullptr. b owns ABCD. Moves should be noexcept when you can — std::vector relocates with move only if it cannot throw.'
 
-  const tone = stolen ? 'ok' : cloned ? 'ok' : 'idle'
+  const tone = ok ? 'ok' : 'idle'
   const playLabel =
     mode === 'copy'
       ? 'Play T b = a'
@@ -132,9 +104,6 @@ b = std::move(a);     // steal, a is nullptr`
                     ? 'release b, then steal'
                     : ''
 
-  const aTone = aEmpty ? 'empty' : 'source'
-  const bTone = stolen ? 'move' : cloned || (mode === 'copy' && decided) || (mode === 'cass' && decided) ? 'copy' : 'empty'
-
   return (
     <SceneShell
       modes={MODES}
@@ -154,68 +123,69 @@ b = std::move(a);     // steal, a is nullptr`
       code={code}
       tone={tone}
     >
-      <div className="fx-sh">
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${aEmpty ? ' fx-pane--gone' : ''}`}>
-          <span className="fx-kicker">a</span>
-          <div className={`fx-slot${stepped && !aEmpty ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">source</span>
-            <span className="fx-value">
-              <code>T a</code>
-            </span>
-            <span className="fx-note">ptr → {aEmpty ? 'nullptr' : stepped ? 'buf' : '—'}</span>
-            {stepped && !aEmpty && <span className="fx-badge fx-badge--owner">owner</span>}
+      {mode === 'copy' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${cloned ? ' fx-rank--done' : ''}`}>
+            <code>a</code>
+            <span className="fx-note">source keeps</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <Buf filled={aFilled} tone={aTone} />
-        </div>
-        <div
-          className={`fx-link${stolen ? ' fx-link--weld' : cloned ? ' fx-link--on' : decided ? ' fx-link--on' : ''}`}
-        />
-        <div className={`fx-pane${bBorn ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">b</span>
-          <div
-            className={`fx-slot${stolen ? ' fx-slot--weld' : cloned ? ' fx-slot--ok' : bBorn ? ' fx-slot--focus' : ' fx-slot--dim'}`}
-          >
-            <span className="fx-kicker">destination</span>
-            <span className="fx-value">
-              <code>T b</code>
-            </span>
-            <span className="fx-note">ptr → {stolen || cloned ? 'buf' : bBorn ? 'buf' : '∅'}</span>
-            {stolen && <span className="fx-badge fx-badge--owner">owner</span>}
-            {cloned && <span className="fx-badge fx-badge--open">copy</span>}
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+            <code>b</code>
+            <span className="fx-note">copy ctor</span>
+            <span className="fx-note">{cloned ? 'ok' : decided ? 'new' : '—'}</span>
           </div>
-          <Buf filled={bFilled} tone={bTone} ghost={!bBorn} />
         </div>
-      </div>
+      )}
+      {mode === 'move' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${stolen ? ' fx-rank--done' : ''}`}>
+            <code>a</code>
+            <span className="fx-note">source</span>
+            <span className="fx-note">{stolen ? 'gone' : stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+            <code>b</code>
+            <span className="fx-note">steal buffer</span>
+            <span className="fx-note">{stolen ? 'ok' : decided ? 'own' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {mode === 'cass' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${cloned ? ' fx-rank--done' : ''}`}>
+            <code>a</code>
+            <span className="fx-note">unchanged</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+            <code>b</code>
+            <span className="fx-note">copy assign</span>
+            <span className="fx-note">{cloned ? 'ok' : decided ? 'over' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {mode === 'mass' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${stolen ? ' fx-rank--done' : ''}`}>
+            <code>a</code>
+            <span className="fx-note">
+              <code>nullptr</code>
+            </span>
+            <span className="fx-note">{stolen ? 'gone' : stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+            <code>b</code>
+            <span className="fx-note">steal after free</span>
+            <span className="fx-note">{stolen ? 'ok' : decided ? 'own' : '—'}</span>
+          </div>
+        </div>
+      )}
       <div
-        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
-          stolen || cloned ? 'fx-verdict--ok' : ''
-        }`}
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${ok ? 'fx-verdict--ok' : ''}`}
       >
         {verdict}
       </div>
     </SceneShell>
-  )
-}
-
-function Buf({ filled, tone, ghost }: { filled: number; tone: 'source' | 'copy' | 'move' | 'empty'; ghost?: boolean }) {
-  return (
-    <div className="fx-buf-row">
-      {LETTERS.map((ch, n) => {
-        const on = n < filled && !ghost
-        const cls =
-          tone === 'empty' || !on
-            ? 'fx-letter fx-letter--empty'
-            : tone === 'copy'
-              ? 'fx-letter fx-letter--on'
-              : tone === 'move'
-                ? 'fx-letter fx-letter--move'
-                : 'fx-letter fx-letter--on'
-        return (
-          <span key={ch} className={cls}>
-            {on ? ch : '·'}
-          </span>
-        )
-      })}
-    </div>
   )
 }
