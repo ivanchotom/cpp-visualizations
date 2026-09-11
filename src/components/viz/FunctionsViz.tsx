@@ -20,37 +20,40 @@ export function FunctionsViz() {
     setId(next as Mode)
   }
 
-  const filled = id === 'def' && i >= 2
-  const dispatched = id === 'virt' && i >= 2
-  const inlined = id === 'inline' && i >= 2
-  const odr = id === 'hdr' && i >= 3
-  const tuA = (id === 'inline' || id === 'hdr') && i >= 1
-  const tuB = (id === 'inline' || id === 'hdr') && i >= 2
+  const stepped = i >= 1
+  const decided = i >= 2
+  const recap = i >= 3
+  const odr = id === 'hdr' && recap
+  const trap = odr || (id === 'hdr' && decided)
+  const ok = (id === 'def' && recap) || (id === 'virt' && recap) || (id === 'inline' && recap)
 
   const code =
     id === 'def'
-      ? i < 2
-        ? `int scale(int x, int factor = 2);
-scale(5);`
-        : `scale(5);           // caller wrote one arg
+      ? recap
+        ? `scale(5);           // caller wrote one arg
 scale(5, 2);        // what the compiler sees`
+        : `int scale(int x, int factor = 2);
+scale(5);`
       : id === 'virt'
-        ? i < 2
-          ? `struct B { virtual void f(int n = 1); };
+        ? recap
+          ? `p->f();     // calls D::f
+            // with n = 1  (B’s default)`
+          : `struct B { virtual void f(int n = 1); };
 struct D : B { void f(int n = 2); };
 B* p = &d;
 p->f();`
-          : `p->f();     // calls D::f
-            // with n = 1  (B’s default)`
         : id === 'inline'
-          ? `// a.cpp and b.cpp both include:
+          ? recap
+            ? `// a.cpp and b.cpp both include:
 inline int add(int a, int b) { return a + b; }
 // one definition, many TUs. Allowed.`
-          : i < 3
-            ? `// util.hpp — not inline
-int add(int a, int b) { return a + b; }`
-            : `// two TUs include it → two definitions
+            : `// a.cpp and b.cpp both include:
+inline int add(int a, int b) { return a + b; }`
+          : recap
+            ? `// two TUs include it → two definitions
 // linker error / ODR violation`
+            : `// util.hpp — not inline
+int add(int a, int b) { return a + b; }`
 
   const caption =
     i === 0
@@ -59,10 +62,10 @@ int add(int a, int b) { return a + b; }`
         : id === 'virt'
           ? 'Play p->f(). Virtual dispatch picks the function. Default arguments still come from the static type of the call.'
           : id === 'inline'
-            ? 'Play inline. inline means “this definition may appear in many TUs.” It is a hint to the inliner, not a command.'
-            : 'Play a non-inline definition in a header. Each TU that includes it gets a definition. The linker then sees two.'
+            ? 'Play inline add. inline means “this definition may appear in many TUs.” It is a hint to the inliner, not a command.'
+            : 'Play header def. A non-inline definition in a header: each TU that includes it gets a definition. The linker then sees two.'
       : id === 'def' && i === 1
-        ? 'x is 5. The second parameter is missing in the source. The declaration the caller saw has factor = 2.'
+        ? 'x is 5. The second parameter is missing in the source. The declaration the caller saw has factor = 2. Stations light in place.'
         : id === 'def' && i === 2
           ? 'factor fills with 2 in place. A different declaration (no default) would not fill it — the caller would have to pass 2.'
           : id === 'def'
@@ -85,10 +88,36 @@ int add(int a, int b) { return a + b; }`
                             ? 'The same definition appears in TU b. Two definitions of a non-inline function. The One Definition Rule is already broken.'
                             : 'ODR / linker error. Put non-inline functions in a .cpp. Headers get inline, templates, or just a declaration.'
 
-  const tone = odr ? 'trap' : dispatched || inlined || filled ? 'ok' : 'idle'
-
+  const tone = trap ? 'trap' : ok ? 'ok' : 'idle'
   const playLabel =
     id === 'def' ? 'Play scale(5)' : id === 'virt' ? 'Play p->f()' : id === 'inline' ? 'Play inline add' : 'Play header def'
+
+  const verdict =
+    id === 'def' && recap
+      ? 'call site · factor = 2'
+      : id === 'def' && decided
+        ? 'filled · 2'
+        : id === 'def' && stepped
+          ? 'x · 5'
+          : id === 'virt' && recap
+            ? 'D::f · n from B is 1'
+            : id === 'virt' && decided
+              ? 'n = 1 · not 2'
+              : id === 'virt' && stepped
+                ? 'p · static B*'
+                : id === 'inline' && recap
+                  ? 'inline · many TUs'
+                  : id === 'inline' && decided
+                    ? 'TU b · ok'
+                    : id === 'inline' && stepped
+                      ? 'TU a · ok'
+                      : odr
+                        ? 'ODR · two defs'
+                        : id === 'hdr' && decided
+                          ? 'TU b · second def'
+                          : id === 'hdr' && stepped
+                            ? 'TU a · the def'
+                            : ''
 
   return (
     <SceneShell
@@ -111,65 +140,66 @@ int add(int a, int b) { return a + b; }`
     >
       {id === 'def' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${i >= 1 ? ' fx-rank--on' : ''}${filled ? ' fx-rank--done' : ''}`}>
-            <span className="fx-note">caller</span>
-            <code>scale(5)</code>
-            <span className="fx-note">{i >= 1 ? '1' : '—'}</span>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>x</code>
+            <span className="fx-note">scale(5)</span>
+            <span className="fx-note">{stepped ? '5' : '—'}</span>
           </div>
-          <div className={`fx-rank${filled ? ' fx-rank--on' : ''}`}>
-            <span className="fx-note">filled</span>
-            <code>scale(5, 2)</code>
-            <span className="fx-note">{filled ? '2' : '—'}</span>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>n</code>
+            <span className="fx-note">factor</span>
+            <span className="fx-note">{decided ? '2' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'virt' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${i >= 1 ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">static B*</span>
-            <span className="fx-value">
-              <code>p</code>
-            </span>
-            <span className="fx-note">defaults from B · n = 1</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>p</code>
+            <span className="fx-note">static B*</span>
+            <span className="fx-note">{decided ? '1' : stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-link${dispatched ? ' fx-link--on' : i >= 1 ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${dispatched ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">dynamic D</span>
-            <div className={`fx-vt-slot${dispatched ? ' fx-vt-slot--hot' : i >= 1 ? ' fx-vt-slot--on' : ''}`}>
-              <code>f</code>
-              <span className="fx-vt-fn">{dispatched ? 'D::f(1)  not 2' : 'D::f'}</span>
-            </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>D</code>
+            <span className="fx-note">D::f</span>
+            <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
-      {(id === 'inline' || id === 'hdr') && (
+      {id === 'inline' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${tuA ? ' fx-rank--on' : ''}${odr ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>a</code>
             <span className="fx-note">TU a</span>
-            <code>add()</code>
-            <span className="fx-note">{tuA ? 'ok' : '—'}</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${tuB ? ' fx-rank--on' : ''}${odr ? ' fx-rank--trap' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>b</code>
             <span className="fx-note">TU b</span>
-            <code>{id === 'inline' ? 'inline' : 'add()'}</code>
-            <span className="fx-note">{odr ? 'ill' : tuB ? 'ok' : '—'}</span>
+            <span className="fx-note">{decided ? 'ok' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'hdr' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+            <code>a</code>
+            <span className="fx-note">TU a</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${trap ? ' fx-rank--trap' : ''}`}>
+            <code>b</code>
+            <span className="fx-note">TU b</span>
+            <span className="fx-note">{trap ? 'ill' : decided ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       <div
-        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
-          odr ? 'fx-verdict--trap' : dispatched || inlined || filled ? 'fx-verdict--ok' : ''
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          trap ? 'fx-verdict--trap' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
-        {filled
-          ? 'call site filled factor = 2'
-          : dispatched
-            ? 'D::f · default from B is 1'
-            : inlined && i >= 3
-              ? 'inline · many TUs, one entity'
-              : odr
-                ? 'ODR · two definitions'
-                : ''}
+        {verdict}
       </div>
     </SceneShell>
   )
