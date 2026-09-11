@@ -4888,6 +4888,10 @@ pre {
   border-color: var(--accent);
 }
 
+.fx-node--live {
+  opacity: 1;
+}
+
 .fx-node--skip {
   opacity: 0.35;
   text-decoration: line-through;
@@ -5112,6 +5116,7 @@ pre {
   .fx-letter,
   .fx-pane,
   .fx-size-unit,
+  .fx-vt-slot,
   .fx-pipe-rail::after {
     transition: none !important;
     animation: none !important;
@@ -5284,5 +5289,41 @@ button.fx-slot {
 
 .fx-size-unit--trap {
   background: #e06c75;
+}
+
+.fx-slot .fx-slot {
+  min-height: 0;
+  padding: 8px 10px;
+}
+
+.fx-vt-slot {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 8px;
+  align-items: center;
+  min-height: 36px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #0d1524;
+  opacity: 0.4;
+  transition: opacity 0.28s var(--ease-out), border-color 0.22s var(--ease-out), background 0.22s var(--ease-out);
+}
+
+.fx-vt-slot--on {
+  opacity: 0.85;
+}
+
+.fx-vt-slot--hot {
+  opacity: 1;
+  border-color: var(--ref);
+  background: rgba(125, 206, 130, 0.12);
+  box-shadow: 0 0 0 1px rgba(125, 206, 130, 0.18);
+}
+
+.fx-vt-fn {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
 }
 
