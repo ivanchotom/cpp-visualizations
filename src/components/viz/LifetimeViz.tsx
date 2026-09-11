@@ -147,25 +147,26 @@ export function LifetimeViz() {
       tone={tone}
     >
       {id === 'order' ? (
-        <div className="fx-own">
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${aJunk ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">int a</span>
-            <div className={`fx-slot${aJunk ? ' fx-slot--trap' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">declared first</span>
-              <span className="fx-value">{aJunk ? '?' : stepped ? 'init' : '—'}</span>
-              <span className="fx-note">{aJunk ? 'b not alive yet' : 'runs first'}</span>
+        <>
+          <div className="fx-ladder">
+            <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${aJunk ? ' fx-rank--trap' : ''}`}>
+              <code>a</code>
+              <span className="fx-note">declared 1st</span>
+              <span className="fx-note">{aJunk ? '?' : stepped ? 'ok' : '—'}</span>
+            </div>
+            <div className={`fx-rank${recap ? ' fx-rank--on' : ''}`}>
+              <code>b</code>
+              <span className="fx-note">listed 1st</span>
+              <span className="fx-note">{recap ? 'x' : '—'}</span>
             </div>
           </div>
-          <div className={`fx-link${aJunk ? ' fx-link--dead' : recap ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${recap ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">int b</span>
-            <div className={`fx-slot${recap ? ' fx-slot--weld' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">listed first</span>
-              <span className="fx-value">{recap ? 'x' : '—'}</span>
-              <span className="fx-note">runs second</span>
-            </div>
+          <div className="fx-buf-row" style={{ justifyContent: 'center' }}>
+            <span className={`fx-letter${aJunk ? ' fx-letter--junk' : stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>
+              {aJunk ? '?' : stepped ? 'a' : '·'}
+            </span>
+            <span className={`fx-letter${recap ? ' fx-letter--on' : ' fx-letter--empty'}`}>{recap ? 'b' : '·'}</span>
           </div>
-        </div>
+        </>
       ) : (
         <div className="fx-inh">
           <div className={`fx-slice${baseOn ? ' fx-slice--on' : ' fx-slice--off'}${id === 'ctor' && i === 1 ? ' fx-slice--hot' : ''}`}>
@@ -190,12 +191,6 @@ export function LifetimeViz() {
           </div>
         </div>
       )}
-      {id === 'order' && stepped ? (
-        <div className="fx-buf-row" style={{ justifyContent: 'center' }}>
-          <span className={`fx-letter${aJunk ? ' fx-letter--junk' : ' fx-letter--on'}`}>{aJunk ? '?' : 'a'}</span>
-          <span className={`fx-letter${recap ? ' fx-letter--on' : ' fx-letter--empty'}`}>{recap ? 'b' : '·'}</span>
-        </div>
-      ) : null}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${trap ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''}`}
       >
