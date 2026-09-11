@@ -99,28 +99,6 @@ bool ok = x.compare_exchange_weak(
   const playLabel =
     id === 'seq' ? 'Play seq_cst' : id === 'pub' ? 'Play release/acquire' : id === 'relaxed' ? 'Play relaxed' : 'Play CAS'
 
-  const inName = id === 'seq' ? 'thread A' : id === 'cas' ? 'expected' : 'publisher'
-  const inVal = id === 'seq' ? 'store(1)' : id === 'cas' ? '0 → 1' : 'data = 7'
-  const midName =
-    id === 'seq' ? 'atomic<int>' : id === 'pub' ? 'release store' : id === 'relaxed' ? 'relaxed store' : 'atomic'
-  const midVal =
-    id === 'seq' && stepped
-      ? 'seq_cst'
-      : id === 'pub' && stepped
-        ? 'ready = true'
-        : id === 'relaxed' && stepped
-          ? 'flag only'
-          : id === 'cas' && stepped
-            ? recap
-              ? '1'
-              : '0'
-            : '—'
-  const outName = id === 'seq' ? 'thread B' : id === 'cas' ? 'observed' : 'listener'
-  const outVal = seqOk ? '1' : pubOk ? 'data is 7' : relaxedTrap ? 'stale / UB' : casWin ? '1' : casFail ? 'spurious' : '—'
-
-  const leftLink = stepped ? (id === 'pub' && !decided ? 'fx-link--on' : pubOk ? 'fx-link--weld' : relaxedTrap ? 'fx-link--dead' : 'fx-link--on') : ''
-  const rightLink = relaxedTrap ? 'fx-link--dead' : seqOk || pubOk || casWin ? 'fx-link--weld' : casFail ? 'fx-link--dead' : ''
-
   const verdict =
     id === 'seq' && i === 1
       ? 'store · seq_cst total order'
@@ -142,6 +120,11 @@ bool ok = x.compare_exchange_weak(
                       ? 'retry · stored 1'
                       : ''
 
+  const seqLetter = seqOk ? '1' : stepped ? '1' : '0'
+  const payloadLetter = relaxedTrap ? '?' : stepped ? '7' : '·'
+  const flagLetter = decided ? '1' : '0'
+  const casAtomic = casWin ? '1' : '0'
+
   return (
     <SceneShell
       modes={MODES}
@@ -161,68 +144,102 @@ bool ok = x.compare_exchange_weak(
       code={code}
       tone={tone}
     >
-      <div className="fx-own">
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">in</span>
-          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{inName}</span>
-            <span className="fx-value">{inVal}</span>
-            <span className="fx-note">thread</span>
+      {id === 'seq' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${seqOk ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">store</span>
+            <code>x.store(1)</code>
+            <span className="fx-note">{stepped ? 'wrote' : '—'}</span>
           </div>
-        </div>
-        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${relaxedTrap ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">order</span>
-          <div
-            className={`fx-slot${
-              relaxedTrap
-                ? ' fx-slot--trap'
-                : pubOk || (id === 'pub' && stepped)
-                  ? ' fx-slot--weld'
-                  : stepped
-                    ? ' fx-slot--focus'
-                    : ' fx-slot--dim'
-            }`}
-          >
-            <span className="fx-kicker">{midName}</span>
-            <span className="fx-value">{midVal}</span>
-            <span className="fx-note">
-              {id === 'seq'
-                ? 'default, total order'
-                : id === 'pub'
-                  ? 'synchronizes-with'
-                  : id === 'relaxed'
-                    ? 'no happens-before'
-                    : 'strong / weak'}
+          <div className={`fx-rank${seqOk ? ' fx-rank--on' : ''}`}>
+            <span className="fx-note">load</span>
+            <code>x.load()</code>
+            <span className="fx-note">{seqOk ? '1' : '—'}</span>
+          </div>
+          <div className="fx-buf-row">
+            <span
+              className={`fx-letter${
+                seqOk ? ' fx-letter--on' : stepped ? ' fx-letter--write' : ' fx-letter--empty'
+              }`}
+            >
+              {seqLetter}
             </span>
           </div>
         </div>
-        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
-        <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}${relaxedTrap ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">out</span>
-          <div
-            className={`fx-slot${
-              relaxedTrap ? ' fx-slot--trap' : casFail ? ' fx-slot--trap' : seqOk || pubOk || casWin ? ' fx-slot--ok' : ' fx-slot--dim'
-            }`}
-          >
-            <span className="fx-kicker">{outName}</span>
-            <span className="fx-value">{outVal}</span>
-            <span className="fx-note">
-              {seqOk
-                ? 'same total order'
-                : pubOk
-                  ? 'acquire saw release'
-                  : relaxedTrap
-                    ? 'no sync'
-                    : casWin
-                      ? 'loop until true'
-                      : casFail
-                        ? 'retry is required'
-                        : 'waiting'}
+      )}
+      {id === 'pub' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">payload</span>
+            <div className="fx-buf-row">
+              <span className={`fx-letter${stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>
+                {payloadLetter}
+              </span>
+            </div>
+            <span className="fx-note">non-atomic write first</span>
+          </div>
+          <div className={`fx-link${pubOk ? ' fx-link--weld' : stepped ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">ready</span>
+            <div className="fx-buf-row">
+              <span className={`fx-letter${decided ? ' fx-letter--on' : ' fx-letter--empty'}`}>
+                {flagLetter}
+              </span>
+            </div>
+            <span className="fx-note">{pubOk ? 'acquire saw release' : 'release store'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'relaxed' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${relaxedTrap ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">payload</span>
+            <div className="fx-buf-row">
+              <span
+                className={`fx-letter${
+                  relaxedTrap ? ' fx-letter--junk' : stepped ? ' fx-letter--on' : ' fx-letter--empty'
+                }`}
+              >
+                {payloadLetter}
+              </span>
+            </div>
+            <span className="fx-note">non-atomic · no sync</span>
+          </div>
+          <div className={`fx-link${relaxedTrap ? ' fx-link--dead' : stepped ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}${relaxedTrap ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">flag</span>
+            <div className="fx-buf-row">
+              <span className={`fx-letter${decided ? ' fx-letter--it' : ' fx-letter--empty'}`}>
+                {flagLetter}
+              </span>
+            </div>
+            <span className="fx-note">relaxed · not a signal</span>
+          </div>
+        </div>
+      )}
+      {id === 'cas' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${casWin ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">expected</span>
+            <code>e = 0</code>
+            <span className="fx-note">{stepped ? '0' : '—'}</span>
+          </div>
+          <div className={`fx-rank${casFail ? ' fx-rank--on fx-rank--trap' : casWin ? ' fx-rank--on' : ''}`}>
+            <span className="fx-note">atomic</span>
+            <code>x</code>
+            <span className="fx-note">{casWin ? '1' : casFail ? 'fail' : stepped ? '0' : '—'}</span>
+          </div>
+          <div className="fx-buf-row">
+            <span
+              className={`fx-letter${
+                casWin ? ' fx-letter--on' : casFail ? ' fx-letter--junk' : stepped ? ' fx-letter--write' : ' fx-letter--empty'
+              }`}
+            >
+              {casAtomic}
             </span>
           </div>
         </div>
-      </div>
+      )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
           relaxedTrap ? 'fx-verdict--trap' : casFail ? 'fx-verdict--warn' : verdict ? 'fx-verdict--ok' : ''

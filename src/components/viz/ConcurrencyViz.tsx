@@ -96,36 +96,6 @@ t2.join();`
   const playLabel =
     id === 'race' ? 'Play ++hits' : id === 'guard' ? 'Play lock_guard' : id === 'join' ? 'Play ~thread' : 'Play fetch_add'
 
-  const inName = id === 'join' ? 'std::thread t' : 'thread t1'
-  const inVal =
-    id === 'race'
-      ? '++hits'
-      : id === 'guard'
-        ? 'lock then ++'
-        : id === 'join'
-          ? decided
-            ? 'joinable'
-            : 'running'
-          : 'fetch_add'
-  const midName = id === 'race' ? 'int hits' : id === 'guard' ? 'mutex m' : id === 'join' ? 'destructor' : 'atomic<int>'
-  const midVal =
-    raced
-      ? 'UB'
-      : id === 'guard' && stepped
-        ? recap
-          ? 'unlocked'
-          : 'held'
-        : joinTrap
-          ? 'joinable still'
-          : id === 'atomic' && stepped
-            ? 'seq_cst'
-            : '—'
-  const outName = id === 'join' ? 'std::terminate' : id === 'atomic' ? 'hits' : 'thread t2'
-  const outVal = raced ? 'same object' : serialized ? 'after unlock' : joinTrap ? 'abort' : atomicOk ? '2' : '—'
-
-  const leftLink = stepped ? (id === 'guard' && !recap ? 'fx-link--weld' : raced || joinTrap ? 'fx-link--dead' : 'fx-link--on') : ''
-  const rightLink = raced || joinTrap ? 'fx-link--dead' : serialized || atomicOk ? 'fx-link--weld' : locked ? 'fx-link--on' : ''
-
   const hits =
     id === 'race'
       ? raced
@@ -146,6 +116,15 @@ t2.join();`
               ? 1
               : 0
           : 0
+
+  const hitsGlyph = raced ? '?' : String(hits)
+  const hitsClass = raced
+    ? 'fx-letter--dead'
+    : hits > 0
+      ? id === 'atomic'
+        ? 'fx-letter--on'
+        : 'fx-letter--write'
+      : 'fx-letter--empty'
 
   const verdict =
     id === 'race' && i === 1
@@ -187,75 +166,88 @@ t2.join();`
       code={code}
       tone={tone}
     >
-      <div className="fx-own">
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">t1</span>
-          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{inName}</span>
-            <span className="fx-value">{inVal}</span>
-            <span className="fx-note">callable</span>
+      {id === 'race' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${raced ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">t1</span>
+            <code>++hits</code>
+            <span className="fx-note">{stepped ? 'wrote' : '—'}</span>
+          </div>
+          <div className={`fx-rank${raced ? ' fx-rank--on fx-rank--trap' : ''}`}>
+            <span className="fx-note">t2</span>
+            <code>++hits</code>
+            <span className="fx-note">{raced ? 'UB' : '—'}</span>
+          </div>
+          <div className="fx-buf-row">
+            <span className={`fx-letter ${hitsClass}`}>{hitsGlyph}</span>
           </div>
         </div>
-        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${raced || joinTrap ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">shared</span>
-          <div
-            className={`fx-slot${
-              raced || joinTrap
-                ? ' fx-slot--trap'
-                : id === 'guard' && stepped && !recap
-                  ? ' fx-slot--weld'
-                  : atomicOk
-                    ? ' fx-slot--ok'
-                    : ' fx-slot--dim'
-            }`}
-          >
-            <span className="fx-kicker">{midName}</span>
-            <span className="fx-value">{midVal}</span>
-            {id !== 'join' && (
-              <div className="fx-count" aria-hidden>
-                {[0, 1].map((n) => (
-                  <span key={n} className={`fx-count-pip${n < hits ? ' fx-count-pip--on' : ''}`} />
-                ))}
-              </div>
-            )}
-            <span className="fx-note">
-              {id === 'race'
-                ? 'not “just an int”'
-                : id === 'guard'
-                  ? 'RAII: all exit paths'
-                  : id === 'join'
-                    ? 'must join or detach'
-                    : 'one object, not a mutex'}
+      )}
+      {id === 'guard' && (
+        <div className="fx-lockrow">
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">t1</span>
+            <div className="fx-buf-row">
+              <span className={`fx-letter${hits >= 1 ? ' fx-letter--on' : ' fx-letter--empty'}`}>
+                {hits >= 1 ? '1' : '0'}
+              </span>
+            </div>
+            <span className={`fx-badge${locked || (stepped && !recap) ? ' fx-badge--lock' : ' fx-badge--open'}`}>
+              {recap ? 'unlocked' : stepped ? 'lock' : 'mutex m'}
             </span>
           </div>
-        </div>
-        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
-        <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}${raced || joinTrap ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">{id === 'join' ? 'out' : 't2'}</span>
           <div
-            className={`fx-slot${
-              raced || joinTrap ? ' fx-slot--trap' : serialized || atomicOk ? ' fx-slot--ok' : ' fx-slot--dim'
+            className={`fx-link${
+              recap ? ' fx-link--on' : stepped && !recap ? ' fx-link--weld' : ''
             }`}
-          >
-            <span className="fx-kicker">{outName}</span>
-            <span className="fx-value">{outVal}</span>
-            <span className="fx-note">
-              {raced
-                ? 'data race = UB'
-                : serialized
-                  ? 'serialized'
-                  : joinTrap
-                    ? 'no catch'
-                    : atomicOk
-                      ? 'not a data race'
-                      : id === 'guard'
-                        ? 'waits on the lock'
-                        : 'waiting'}
-            </span>
+          />
+          <div className={`fx-pane${recap ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">t2</span>
+            <div className="fx-buf-row">
+              <span className={`fx-letter${recap ? ' fx-letter--on' : ' fx-letter--empty'}`}>
+                {recap ? '2' : '·'}
+              </span>
+            </div>
+            <div className="fx-count" aria-hidden>
+              {[0, 1].map((n) => (
+                <span key={n} className={`fx-count-pip${n < hits ? ' fx-count-pip--on' : ''}`} />
+              ))}
+            </div>
+            <span className="fx-note">{recap ? 'after unlock' : 'waits on the lock'}</span>
           </div>
         </div>
-      </div>
+      )}
+      {id === 'join' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${joinTrap ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">thread</span>
+            <code>t</code>
+            <span className="fx-note">{stepped ? 'yes' : '—'}</span>
+          </div>
+          <div className={`fx-rank${joinTrap ? ' fx-rank--on fx-rank--trap' : ''}`}>
+            <span className="fx-note">dtor</span>
+            <code>~thread</code>
+            <span className="fx-note">{joinTrap ? 'abort' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'atomic' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${atomicOk ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">t1</span>
+            <code>fetch_add</code>
+            <span className="fx-note">{stepped ? '1' : '—'}</span>
+          </div>
+          <div className={`fx-rank${atomicOk ? ' fx-rank--on' : ''}`}>
+            <span className="fx-note">t2</span>
+            <code>fetch_add</code>
+            <span className="fx-note">{atomicOk ? '2' : '—'}</span>
+          </div>
+          <div className="fx-buf-row">
+            <span className={`fx-letter ${hitsClass}`}>{hitsGlyph}</span>
+          </div>
+        </div>
+      )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
           raced || joinTrap ? 'fx-verdict--trap' : verdict ? 'fx-verdict--ok' : ''
