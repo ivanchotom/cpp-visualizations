@@ -20,30 +20,52 @@ export function EnumsViz() {
     setId(next as Mode)
   }
 
-  const bounce = (id === 'scoped' && i >= 2) || (id === 'mask' && i >= 2)
-  const leak = id === 'legacy' && i >= 2
-  const won = id === 'width' && i >= 2
+  const stepped = i >= 1
+  const decided = i >= 2
+  const recap = i >= 3
+
+  const redOk = id === 'scoped' && stepped
+  const nIll = id === 'scoped' && decided
+  const leaked = id === 'legacy' && stepped
+  const converted = id === 'legacy' && decided
+  const sized = id === 'width' && decided
+  const maskIll = id === 'mask' && decided
+  const trap = nIll || maskIll
+  const warn = converted
+  const ok = sized && recap
 
   const code =
     id === 'scoped'
-      ? `enum class Color { red, green };\nColor c = Color::red;\nint n = c;              // error`
+      ? recap
+        ? `enum class Color { red, green };
+Color c = Color::red;
+// int n = c;              // error
+int n = static_cast<int>(c);`
+        : `enum class Color { red, green };
+Color c = Color::red;
+int n = c;              // error`
       : id === 'legacy'
-        ? `enum Legacy { FLAG_ON = 1 };\nint x = FLAG_ON;        // implicit`
+        ? `enum Legacy { FLAG_ON = 1 };
+int x = FLAG_ON;        // implicit`
         : id === 'width'
-          ? `enum class Color : std::uint8_t { red, green };`
-          : `Color::red | Color::green;  // error unless you define |`
+          ? `enum class Color : std::uint8_t { red, green };
+// sizeof(Color) == 1`
+          : recap
+            ? `// Color::red | Color::green  // error
+// define operator| if you want flags`
+            : `Color::red | Color::green;  // error unless you define |`
 
   const caption =
     i === 0
       ? id === 'scoped'
-        ? 'Play enum class. Names live inside the type. No implicit conversion to int.'
+        ? 'Play Color::red. Names live inside the type. No implicit conversion to int. Stations light in place.'
         : id === 'legacy'
-          ? 'Play unscoped enum. Enumerators leak into the surrounding scope and convert to int without asking.'
+          ? 'Play FLAG_ON. Unscoped enumerators leak into the surrounding scope and convert to int without asking.'
           : id === 'width'
-            ? 'Play underlying type. Specify it when the width or signedness matters. Default is implementation-defined for unscoped.'
-            : 'Play bitmask. enum class has no operator|. That is the point — define it if you want flags.'
+            ? 'Play uint8_t. Specify the underlying type when the width or signedness matters. Default is implementation-defined for unscoped.'
+            : 'Play Color | Color. enum class has no operator|. That is the point — define it if you want flags.'
       : id === 'scoped' && i === 1
-        ? 'Color::red is a Color. The int slot is empty. No conversion has happened.'
+        ? 'Color::red is a Color. The int assignment has not happened. No conversion is in flight.'
         : id === 'scoped'
           ? 'int n = c is rejected. static_cast<int>(c) if you truly need the integer.'
           : id === 'legacy' && i === 1
@@ -51,14 +73,43 @@ export function EnumsViz() {
             : id === 'legacy'
               ? 'int x = FLAG_ON compiles. The name leaked, and the value converted. Collides with macros and other enums.'
               : id === 'width' && i === 1
-                ? 'Underlying type is uint8_t. sizeof(Color) is 1. You asked for that width.'
+                ? 'Underlying type is uint8_t. You asked for that width. sizeof has not been read yet.'
                 : id === 'width'
-                  ? 'Keep it scoped and sized. Packed flags and wire formats need this.'
+                  ? 'sizeof(Color) is 1. Keep it scoped and sized. Packed flags and wire formats need this.'
                   : i === 1
                     ? 'red and green are Color values. | is not defined for Color.'
                     : 'The | is rejected. Unscoped enums convert to int and | silently. That is a footgun, not a feature.'
 
-  const tone = bounce ? 'trap' : leak ? 'warn' : won ? 'ok' : 'idle'
+  const tone = trap ? 'trap' : warn ? 'warn' : ok ? 'ok' : 'idle'
+  const playLabel =
+    id === 'scoped'
+      ? 'Play Color::red'
+      : id === 'legacy'
+        ? 'Play FLAG_ON'
+        : id === 'width'
+          ? 'Play uint8_t'
+          : 'Play Color | Color'
+
+  const verdict =
+    nIll && recap
+      ? 'int n = c · does not compile'
+      : nIll
+        ? 'no implicit conversion'
+        : converted && recap
+          ? 'FLAG_ON leaked · converts to int'
+          : converted
+            ? 'int x = 1 · silent'
+            : leaked
+              ? 'FLAG_ON is in this scope'
+              : sized && recap
+                ? 'underlying type std::uint8_t'
+                : sized
+                  ? 'sizeof(Color) is 1'
+                  : maskIll && recap
+                    ? 'no operator| · define it if you mean flags'
+                    : maskIll
+                      ? '| is ill-formed'
+                      : ''
 
   return (
     <SceneShell
@@ -71,7 +122,7 @@ export function EnumsViz() {
         reset()
         setId(id)
       }}
-      playLabel="Play enum"
+      playLabel={playLabel}
       step={i}
       stepCount={4}
       sig={MODES.find((m) => m.id === id)?.title}
@@ -79,45 +130,74 @@ export function EnumsViz() {
       code={code}
       tone={tone}
     >
-      <div className="fx-split">
-        <div className={`fx-ns${id === 'legacy' && leak ? ' fx-ns--leak' : ' fx-pane--focus'}`}>
-          <span className="fx-kicker">{id === 'legacy' ? 'enum Legacy' : 'enum class Color'}</span>
-          <div className="fx-ns-item">red</div>
-          <div className={`fx-ns-item${id === 'legacy' && leak ? ' fx-ns-item--out' : ''}`}>
-            {id === 'width' ? 'green · uint8_t' : 'green'}
+      {id === 'scoped' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${redOk ? ' fx-rank--on' : ''}${nIll ? ' fx-rank--done' : ''}`}>
+            <code>red</code>
+            <span className="fx-note">
+              <code>Color::red</code>
+            </span>
+            <span className="fx-note">{redOk ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${nIll ? ' fx-rank--trap' : ''}`}>
+            <code>n = c</code>
+            <span className="fx-note">implicit to int</span>
+            <span className="fx-note">{nIll ? 'ill' : '—'}</span>
           </div>
         </div>
-        <div className="fx-gutter">{id === 'mask' ? '|' : '→'}</div>
-        <div className={`fx-slot${bounce ? ' fx-slot--trap' : leak ? ' fx-slot--trap' : won ? ' fx-slot--ok' : ''}`}>
-          <span className="fx-kicker">{id === 'width' ? 'sizeof' : id === 'mask' ? 'operator|' : 'int'}</span>
-          <span className="fx-value">
-            {bounce ? '∅' : leak && i >= 2 ? '1' : won ? '1 B' : i >= 1 && id === 'scoped' ? 'Color' : '—'}
-          </span>
-          <span className="fx-note">
-            {bounce
-              ? 'no implicit conversion'
-              : leak
-                ? 'leaked + converted'
-                : won
-                  ? 'you chose the width'
-                  : 'destination'}
-          </span>
+      )}
+      {id === 'legacy' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${leaked ? ' fx-rank--on' : ''}${converted ? ' fx-rank--done' : ''}`}>
+            <code>FLAG_ON</code>
+            <span className="fx-note">leaked name</span>
+            <span className="fx-note">{leaked ? 'yes' : '—'}</span>
+          </div>
+          <div className={`fx-rank${converted ? ' fx-rank--trap' : ''}`}>
+            <code>int x</code>
+            <span className="fx-note">implicit convert</span>
+            <span className="fx-note">{converted ? '1' : '—'}</span>
+          </div>
         </div>
-      </div>
+      )}
+      {id === 'width' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${sized ? ' fx-rank--done' : ''}`}>
+            <code>type</code>
+            <span className="fx-note">
+              <code>uint8_t</code>
+            </span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${sized ? ' fx-rank--on' : ''}`}>
+            <code>size</code>
+            <span className="fx-note">
+              <code>sizeof</code>
+            </span>
+            <span className="fx-note">{sized ? '1' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'mask' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${maskIll ? ' fx-rank--done' : ''}`}>
+            <code>red</code>
+            <span className="fx-note">Color value</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${maskIll ? ' fx-rank--trap' : ''}`}>
+            <code>|</code>
+            <span className="fx-note">operator|</span>
+            <span className="fx-note">{maskIll ? 'ill' : '—'}</span>
+          </div>
+        </div>
+      )}
       <div
-        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
-          bounce ? 'fx-verdict--trap' : leak ? 'fx-verdict--warn' : won ? 'fx-verdict--ok' : ''
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          trap ? 'fx-verdict--trap' : warn ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
-        {id === 'scoped' && bounce
-          ? 'int n = c  ·  does not compile'
-          : id === 'legacy' && leak
-            ? 'FLAG_ON is in this scope · converts to int'
-            : id === 'width' && won
-              ? 'underlying type std::uint8_t'
-              : id === 'mask' && bounce
-                ? 'no operator| · define it if you mean flags'
-                : ''}
+        {verdict}
       </div>
     </SceneShell>
   )

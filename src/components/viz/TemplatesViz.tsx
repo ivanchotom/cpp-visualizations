@@ -23,13 +23,17 @@ export function TemplatesViz() {
   const stepped = i >= 1
   const decided = i >= 2
   const recap = i >= 3
+
   const stampInt = (id === 'fn' && stepped) || (id === 'unused' && stepped)
   const stampDouble = id === 'fn' && decided
   const noString = id === 'unused' && decided
+  const recipeOn = id === 'cls' && stepped
   const boxOk = id === 'cls' && decided
-  const tnNeed = id === 'tn' && stepped && !recap
-  const tnOk = id === 'tn' && recap
+  const tnNeed = id === 'tn' && stepped
   const tnTrap = id === 'tn' && decided && !recap
+  const tnOk = id === 'tn' && recap
+  const trap = tnTrap
+  const ok = (id === 'fn' && recap) || (id === 'unused' && recap) || (boxOk && recap) || tnOk
 
   const code =
     id === 'fn'
@@ -99,13 +103,9 @@ void f(T& c) {
                             ? 'Ill-formed (or parsed as a value). Two-phase lookup: non-dependent names at definition, dependent names at instantiation.'
                             : 'typename T::iterator tells the compiler it is a type. Same idea as template for a dependent template: c.template get<0>().'
 
-  const tone = tnTrap ? 'trap' : stampInt || boxOk || tnOk ? 'ok' : 'idle'
+  const tone = trap ? 'trap' : ok ? 'ok' : 'idle'
   const playLabel =
     id === 'fn' ? 'Play twice(21)' : id === 'unused' ? 'Play no twice<string>' : id === 'cls' ? 'Play Box<int>' : 'Play T::iterator'
-
-  const leftName = id === 'cls' ? 'Box<T>' : id === 'tn' ? 'T::iterator' : 'twice<T>'
-  const leftNote = id === 'tn' ? 'dependent name' : 'not a function yet'
-  const linkCls = tnTrap ? 'fx-link--dead' : tnOk || boxOk || stampDouble || noString ? 'fx-link--weld' : stepped ? 'fx-link--on' : ''
 
   const verdict =
     id === 'fn' && recap
@@ -124,7 +124,7 @@ void f(T& c) {
                   ? 'C++14 · write Box<int>'
                   : boxOk
                     ? 'Box<int> is a type'
-                    : id === 'cls' && stepped
+                    : recipeOn
                       ? 'Box is a recipe'
                       : tnOk
                         ? 'typename · it is a type'
@@ -153,58 +153,81 @@ void f(T& c) {
       code={code}
       tone={tone}
     >
-      <div className="fx-sh">
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">recipe</span>
-          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">template</span>
-            <span className="fx-value">
-              <code>{leftName}</code>
+      {id === 'fn' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stampInt ? ' fx-rank--on' : ''}${stampDouble ? ' fx-rank--done' : ''}`}>
+            <code>int</code>
+            <span className="fx-note">
+              <code>{'twice<int>'}</code>
             </span>
-            <span className="fx-note">{leftNote}</span>
+            <span className="fx-note">{stampInt ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${stampDouble ? ' fx-rank--on' : ''}`}>
+            <code>dbl</code>
+            <span className="fx-note">
+              <code>{'twice<double>'}</code>
+            </span>
+            <span className="fx-note">{stampDouble ? 'ok' : '—'}</span>
           </div>
         </div>
-        <div className={`fx-link${linkCls ? ` ${linkCls}` : ''}`} />
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${tnTrap ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">{id === 'tn' ? 'instantiation' : 'this TU'}</span>
-          {id === 'fn' || id === 'unused' ? (
-            <>
-              <div className={`fx-slot${stampInt ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
-                <span className="fx-kicker">T = int</span>
-                <span className="fx-value">{stampInt ? '42' : '—'}</span>
-                <span className="fx-note">{stampInt ? 'int twice(int)' : 'not generated yet'}</span>
-              </div>
-              <div
-                className={`fx-slot${
-                  stampDouble ? ' fx-slot--ok' : noString ? ' fx-slot--dim' : ' fx-slot--dim'
-                }`}
-              >
-                <span className="fx-kicker">{id === 'unused' ? 'T = string' : 'T = double'}</span>
-                <span className="fx-value">{stampDouble ? '5.0' : '—'}</span>
-                <span className="fx-note">
-                  {stampDouble ? 'double twice(double)' : noString ? 'never asked for' : 'not generated yet'}
-                </span>
-              </div>
-            </>
-          ) : id === 'cls' ? (
-            <div className={`fx-slot${boxOk ? ' fx-slot--ok' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">Box&lt;int&gt;</span>
-              <span className="fx-value">{boxOk ? '1' : '—'}</span>
-              <span className="fx-note">{boxOk ? 'a type, stamped' : 'write the argument'}</span>
-              {boxOk && <span className="fx-badge fx-badge--open">no CTAD in C++14</span>}
-            </div>
-          ) : (
-            <div className={`fx-slot${tnTrap ? ' fx-slot--trap' : tnOk ? ' fx-slot--ok' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">{tnOk ? 'typename T::iterator' : 'T::iterator'}</span>
-              <span className="fx-value">{tnOk ? 'it' : tnTrap ? 'error' : stepped ? '?' : '—'}</span>
-              <span className="fx-note">{tnOk ? 'now a type' : tnTrap ? 'needs typename' : 'dependent name'}</span>
-            </div>
-          )}
+      )}
+      {id === 'unused' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stampInt ? ' fx-rank--on' : ''}${noString ? ' fx-rank--done' : ''}`}>
+            <code>int</code>
+            <span className="fx-note">
+              <code>{'twice<int>'}</code>
+            </span>
+            <span className="fx-note">{stampInt ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${noString ? ' fx-rank--on' : ''}`}>
+            <code>str</code>
+            <span className="fx-note">
+              <code>{'twice<string>'}</code>
+            </span>
+            <span className="fx-note">—</span>
+          </div>
         </div>
-      </div>
+      )}
+      {id === 'cls' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${recipeOn ? ' fx-rank--on' : ''}${boxOk ? ' fx-rank--done' : ''}`}>
+            <code>recipe</code>
+            <span className="fx-note">
+              <code>{'Box<T>'}</code>
+            </span>
+            <span className="fx-note">—</span>
+          </div>
+          <div className={`fx-rank${boxOk ? ' fx-rank--on' : ''}`}>
+            <code>type</code>
+            <span className="fx-note">
+              <code>{'Box<int>'}</code>
+            </span>
+            <span className="fx-note">{boxOk ? 'ok' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'tn' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${tnNeed ? ' fx-rank--on' : ''}${tnTrap ? ' fx-rank--trap' : tnOk ? ' fx-rank--done' : ''}`}>
+            <code>nested</code>
+            <span className="fx-note">
+              <code>T::iterator</code>
+            </span>
+            <span className="fx-note">{tnTrap ? 'ill' : tnNeed ? '?' : '—'}</span>
+          </div>
+          <div className={`fx-rank${tnOk ? ' fx-rank--on' : ''}`}>
+            <code>kw</code>
+            <span className="fx-note">
+              <code>typename</code>
+            </span>
+            <span className="fx-note">{tnOk ? 'ok' : '—'}</span>
+          </div>
+        </div>
+      )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
-          tnTrap ? 'fx-verdict--trap' : verdict ? 'fx-verdict--ok' : ''
+          trap ? 'fx-verdict--trap' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
         {verdict}
