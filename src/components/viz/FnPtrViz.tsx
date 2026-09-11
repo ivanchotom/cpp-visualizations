@@ -26,7 +26,6 @@ export function FnPtrViz() {
   const bounce = id === 'mem' && i === 2
   const emptyThrow = id === 'fun' && i === 2
   const dangled = id === 'cap' && i >= 2
-  const frameGone = id === 'cap' && i >= 2
   const won = id === 'fp' && called
   const memOk = id === 'mem' && recovered
   const funOk = id === 'fun' && recovered
@@ -102,22 +101,6 @@ if (f) { /* has a target */ }`
                             : 'This is the same lesson as a lambda returned from a function with [&]. std::function does not extend the lifetime of captures.'
 
   const tone = bounce || emptyThrow || dangled ? 'trap' : won || memOk || funOk ? 'ok' : 'idle'
-
-  const leftLink = !stored
-    ? ''
-    : dangled || (id === 'mem' && called && !memOk)
-      ? 'fx-link--dead'
-      : 'fx-link--on'
-  const rightLink = dangled
-    ? 'fx-link--dead'
-    : bounce || emptyThrow
-      ? 'fx-link--dead'
-      : won || memOk || funOk
-        ? 'fx-link--weld'
-        : called
-          ? 'fx-link--on'
-          : ''
-
   const playLabel =
     id === 'fp'
       ? 'Play fp(1, 2)'
@@ -127,43 +110,20 @@ if (f) { /* has a target */ }`
           ? 'Play empty f()'
           : 'Play stored [&]'
 
-  const inName = id === 'fp' ? 'add' : id === 'mem' ? 'W::get' : id === 'fun' ? 'no target' : 'n'
-  const inVal =
-    id === 'fp'
-      ? '(int,int)'
-      : id === 'mem'
-        ? 'needs W'
-        : id === 'fun'
-          ? '—'
-          : frameGone
-            ? 'gone'
-            : '7'
-  const storeName = id === 'fp' ? 'fp' : id === 'mem' ? 'pm' : 'f'
-  const storeVal =
-    id === 'fp' && stored
-      ? '&add'
-      : id === 'mem' && stored
-        ? '&W::get'
-        : id === 'fun' && funOk
-          ? 'add'
-          : id === 'fun' && stored
-            ? 'empty'
-            : id === 'cap' && stored
-              ? 'holds [&]'
-              : '—'
-  const outName = id === 'fp' ? 'fp(1, 2)' : id === 'mem' ? (memOk ? '(w.*pm)()' : 'pm()') : 'f()'
-  const outVal =
-    won || funOk
-      ? '3'
+  const verdict =
+    id === 'fp' && won
+      ? 'fp(1, 2) · 3'
       : bounce
-        ? 'ill-formed'
-        : emptyThrow
-          ? 'throw'
-          : dangled
-            ? 'UB'
-            : memOk
-              ? '7'
-              : '—'
+        ? 'pm() ill-formed · needs W'
+        : memOk
+          ? '(w.*pm)() · 7'
+          : emptyThrow
+            ? 'empty · bad_function_call'
+            : funOk
+              ? 'f = add · f(1, 2) is 3'
+              : dangled
+                ? 'stored [&] · UB'
+                : ''
 
   return (
     <SceneShell
@@ -184,100 +144,89 @@ if (f) { /* has a target */ }`
       code={code}
       tone={tone}
     >
-      <div className="fx-own">
-        <div className={`fx-pane${stored && !frameGone ? ' fx-pane--focus' : ''}${frameGone ? ' fx-pane--gone' : ''}`}>
-          <span className="fx-kicker">{id === 'cap' ? 'frame' : 'callable'}</span>
-          <div className={`fx-slot${stored && !frameGone ? ' fx-slot--focus' : ' fx-slot--dim'}${frameGone ? ' fx-pane--gone' : ''}`}>
-            <span className="fx-kicker">{inName}</span>
-            <span className="fx-value">{inVal}</span>
-            <span className="fx-note">{frameGone ? 'destroyed' : id === 'fun' ? 'assign first' : 'source'}</span>
+      {id === 'fp' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stored ? ' fx-rank--on' : ''}${won ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">store</span>
+            <code>fp = add</code>
+            <span className="fx-note">{stored ? '&add' : '—'}</span>
+          </div>
+          <div className={`fx-rank${won ? ' fx-rank--on' : ''}`}>
+            <span className="fx-note">call</span>
+            <code>fp(1, 2)</code>
+            <span className="fx-note">{won ? '3' : '—'}</span>
+          </div>
+          <div className="fx-buf-row">
+            <span className={`fx-letter${won ? ' fx-letter--on' : ' fx-letter--empty'}`}>{won ? '3' : '·'}</span>
           </div>
         </div>
-        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
-        <div className={`fx-pane${stored ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">store</span>
-          <div
-            className={`fx-slot${
-              dangled || emptyThrow
-                ? ' fx-slot--trap'
-                : stored
-                  ? id === 'fp' || memOk || funOk
-                    ? ' fx-slot--focus'
-                    : ' fx-slot--focus'
-                  : ' fx-slot--dim'
-            }`}
-          >
-            <span className="fx-kicker">{storeName}</span>
-            <span className="fx-value">{storeVal}</span>
-            <span className="fx-note">
-              {id === 'fp'
-                ? '& optional'
-                : id === 'mem'
-                  ? 'not a fp'
-                  : id === 'fun'
-                    ? funOk
-                      ? 'has a target'
-                      : 'type erasure'
-                    : stored
-                      ? 'outlives n?'
-                      : '—'}
+      )}
+      {id === 'mem' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stored ? ' fx-rank--on' : ''}${bounce ? ' fx-rank--trap' : memOk ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">pm()</span>
+            <code>no this</code>
+            <span className="fx-note">{bounce || memOk ? 'ill' : stored ? 'pm' : '—'}</span>
+          </div>
+          <div className={`fx-rank${memOk ? ' fx-rank--on' : bounce ? ' fx-rank--trap' : ''}`}>
+            <span className="fx-note">w.*pm</span>
+            <code>(w.*pm)()</code>
+            <span className="fx-note">{memOk ? '7' : bounce ? 'need W' : '—'}</span>
+          </div>
+          <div className="fx-buf-row">
+            <span className={`fx-letter${memOk ? ' fx-letter--on' : bounce ? ' fx-letter--junk' : ' fx-letter--empty'}`}>
+              {memOk ? '7' : bounce ? '?' : '·'}
             </span>
           </div>
         </div>
-        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
-        <div className={`fx-pane${called ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">call</span>
-          <div
-            className={`fx-slot${
-              bounce || emptyThrow || dangled
-                ? ' fx-slot--trap'
-                : won || memOk || funOk
-                  ? ' fx-slot--ok'
-                  : ' fx-slot--dim'
-            }`}
-          >
-            <span className="fx-kicker">{outName}</span>
-            <span className="fx-value">{outVal}</span>
-            <span className="fx-note">
-              {won
-                ? 'indirect jump'
-                : bounce
-                  ? 'needs an object'
-                  : memOk
-                    ? 'w has this'
-                    : emptyThrow
-                      ? 'bad_function_call'
-                      : funOk
-                        ? 'target assigned'
-                        : dangled
-                          ? 'dangling capture'
-                          : 'not called'}
+      )}
+      {id === 'fun' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stored ? ' fx-rank--on' : ''}${emptyThrow ? ' fx-rank--trap' : funOk ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">empty</span>
+            <code>f()</code>
+            <span className="fx-note">{emptyThrow || funOk ? 'throw' : stored ? 'no tgt' : '—'}</span>
+          </div>
+          <div className={`fx-rank${funOk ? ' fx-rank--on' : emptyThrow ? ' fx-rank--trap' : ''}`}>
+            <span className="fx-note">assign</span>
+            <code>f = add</code>
+            <span className="fx-note">{funOk ? '3' : '—'}</span>
+          </div>
+          <div className="fx-buf-row">
+            <span className={`fx-letter${funOk ? ' fx-letter--on' : emptyThrow ? ' fx-letter--junk' : ' fx-letter--empty'}`}>
+              {funOk ? '3' : emptyThrow ? '?' : '·'}
             </span>
           </div>
         </div>
-      </div>
+      )}
+      {id === 'cap' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${stored && !dangled ? ' fx-pane--focus' : ''}${dangled ? ' fx-pane--gone' : ''}`}>
+            <span className="fx-kicker">frame</span>
+            <div className="fx-buf-row">
+              <span className={`fx-letter${dangled ? ' fx-letter--dead' : stored ? ' fx-letter--on' : ' fx-letter--empty'}`}>
+                {dangled ? '·' : stored ? '7' : '·'}
+              </span>
+            </div>
+            <span className="fx-note">{dangled ? 'n destroyed' : 'int n'}</span>
+          </div>
+          <div className={`fx-link${dangled ? ' fx-link--dead' : stored ? ' fx-link--weld' : ''}`} />
+          <div className={`fx-pane${called ? ' fx-pane--focus' : ''}${dangled ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">f</span>
+            <div className={`fx-slot${dangled ? ' fx-slot--trap' : stored ? ' fx-slot--weld' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">[&]</span>
+              <span className="fx-value">{dangled ? 'UB' : stored ? 'ref' : '—'}</span>
+              <span className="fx-note">{dangled ? 'capture outlived n' : 'std::function holds it'}</span>
+            </div>
+          </div>
+        </div>
+      )}
       <div
-        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
-          bounce || emptyThrow || dangled
-            ? 'fx-verdict--trap'
-            : won || memOk || funOk
-              ? 'fx-verdict--ok'
-              : ''
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          bounce || emptyThrow || dangled ? 'fx-verdict--trap' : won || memOk || funOk ? 'fx-verdict--ok' : ''
         }`}
       >
-        {id === 'fp' && won
-          ? 'fp(1, 2) · 3'
-          : bounce
-            ? 'pm() ill-formed · needs W'
-            : memOk
-              ? '(w.*pm)() · 7'
-              : emptyThrow
-                ? 'empty · bad_function_call'
-                : funOk
-                  ? 'f = add · f(1, 2) is 3'
-                  : dangled
-                    ? 'stored [&] · UB'
-                    : ''}
+        {verdict}
       </div>
     </SceneShell>
   )

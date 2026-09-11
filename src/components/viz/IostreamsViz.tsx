@@ -98,55 +98,6 @@ if (!in) throw std::runtime_error("open");`
           ? 'Play cin >> x'
           : 'Play ifstream'
 
-  const inName = id === 'eof' ? 'ifstream in' : id === 'setw' ? 'cout' : id === 'tie' ? 'cin' : 'ifstream in'
-  const inVal =
-    id === 'eof'
-      ? eofTrap
-        ? 'failbit'
-        : i === 2
-          ? 'empty'
-          : i === 1
-            ? '"b"'
-            : '"a\\nb"'
-      : id === 'setw'
-        ? 'stream'
-        : id === 'tie'
-          ? 'waiting'
-          : recap
-            ? 'closed'
-            : '"data.txt"'
-  const midName = id === 'eof' ? 'in >> x' : id === 'setw' ? 'setw(4)' : id === 'tie' ? 'cout (tied)' : 'getline'
-  const midVal =
-    id === 'eof' && i === 1
-      ? 'x="a"'
-      : id === 'eof' && i >= 2
-        ? 'x="b"'
-        : id === 'setw' && i === 1
-          ? 'next field only'
-          : id === 'setw' && decided
-            ? 'spent'
-            : id === 'tie' && stepped
-              ? 'flushed'
-              : id === 'file' && stepped
-                ? 'line'
-                : '—'
-  const outName = id === 'eof' ? 'eofbit' : id === 'setw' ? 'next << 7' : id === 'tie' ? 'prompt' : '~ifstream'
-  const outVal =
-    eofTrap
-      ? 'after fail'
-      : id === 'setw' && i === 1
-        ? '"  42"'
-        : id === 'setw' && decided
-          ? '7  (no pad)'
-          : id === 'tie' && decided
-            ? 'then extract'
-            : fileClosed
-              ? 'closed'
-              : '—'
-
-  const leftLink = stepped ? (id === 'tie' ? 'fx-link--weld' : 'fx-link--on') : ''
-  const rightLink = eofTrap || setwSpent ? 'fx-link--dead' : tieOk || fileClosed || setwOk ? 'fx-link--weld' : decided ? 'fx-link--on' : ''
-
   const verdict =
     eofTrap
       ? 'eof after fail · used garbage'
@@ -165,6 +116,10 @@ if (!in) throw std::runtime_error("open");`
                   : fileClosed
                     ? '~ifstream · handle closed'
                     : ''
+
+  const eofA = i >= 1
+  const eofB = i >= 2
+  const eofJunk = eofTrap
 
   return (
     <SceneShell
@@ -185,60 +140,95 @@ if (!in) throw std::runtime_error("open");`
       code={code}
       tone={tone}
     >
-      <div className="fx-own">
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${fileClosed ? ' fx-pane--gone' : ''}`}>
-          <span className="fx-kicker">stream</span>
-          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{inName}</span>
-            <span className="fx-value">{inVal}</span>
-            <span className="fx-note">state</span>
+      {id === 'eof' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${eofTrap ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">eofbit</span>
+            <code>!in.eof()</code>
+            <span className="fx-note">{eofTrap ? 'fail' : stepped ? 'false' : '—'}</span>
           </div>
-        </div>
-        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">op</span>
-          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{midName}</span>
-            <span className="fx-value">{midVal}</span>
-            <span className="fx-note">
-              {id === 'eof'
-                ? eofTrap
-                  ? 'failed read'
-                  : 'eof not set yet'
-                : id === 'setw'
-                  ? 'does not stick'
-                  : id === 'tie'
-                    ? 'flush before cin'
-                    : 'RAII owns the handle'}
+          <div className={`fx-rank${eofTrap ? ' fx-rank--on fx-rank--trap' : ''}`}>
+            <span className="fx-note">use(x)</span>
+            <code>x</code>
+            <span className="fx-note">{eofTrap ? 'stale' : decided ? 'b' : stepped ? 'a' : '—'}</span>
+          </div>
+          <div className="fx-buf-row">
+            <span className={`fx-letter${eofA ? ' fx-letter--read' : ' fx-letter--empty'}`}>{eofA ? 'a' : '·'}</span>
+            <span className={`fx-letter${eofB ? ' fx-letter--read' : ' fx-letter--empty'}`}>{eofB ? 'b' : '·'}</span>
+            <span className={`fx-letter${eofJunk ? ' fx-letter--junk' : ' fx-letter--empty'}`}>
+              {eofJunk ? '?' : '·'}
             </span>
           </div>
         </div>
-        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
-        <div className={`fx-pane${decided || (id === 'setw' && i === 1) ? ' fx-pane--focus' : ''}${eofTrap ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">out</span>
-          <div
-            className={`fx-slot${
-              eofTrap ? ' fx-slot--trap' : setwSpent ? ' fx-slot--trap' : tieOk || fileClosed || setwOk ? ' fx-slot--ok' : ' fx-slot--dim'
-            }`}
-          >
-            <span className="fx-kicker">{outName}</span>
-            <span className="fx-value">{outVal}</span>
-            <span className="fx-note">
-              {eofTrap
-                ? 'you already used garbage'
-                : id === 'setw' && recap
-                  ? 'precision would stick'
-                  : id === 'setw'
-                    ? 'setw is the exception'
-                    : id === 'tie'
-                      ? 'cerr is unbuffered-ish'
-                      : fileClosed
-                        ? 'dtor always runs'
-                        : 'waiting'}
-            </span>
+      )}
+      {id === 'setw' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">setw(4)</span>
+            <div className="fx-buf-row">
+              <span className={`fx-letter${stepped ? ' fx-letter--pad' : ' fx-letter--empty'}`}>·</span>
+              <span className={`fx-letter${stepped ? ' fx-letter--pad' : ' fx-letter--empty'}`}>·</span>
+              <span className={`fx-letter${stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>{stepped ? '4' : '·'}</span>
+              <span className={`fx-letter${stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>{stepped ? '2' : '·'}</span>
+            </div>
+            <span className="fx-note">consumed by this field</span>
+          </div>
+          <div className={`fx-link${setwOk ? ' fx-link--on' : setwSpent ? ' fx-link--dead' : stepped ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}${setwSpent ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">next</span>
+            <div className="fx-buf-row">
+              <span className={`fx-letter${decided ? ' fx-letter--it' : ' fx-letter--empty'}`}>
+                {decided ? '7' : '·'}
+              </span>
+            </div>
+            <span className="fx-note">{setwOk ? 'precision would stick' : 'no pad'}</span>
           </div>
         </div>
-      </div>
+      )}
+      {id === 'tie' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">cout</span>
+            <div className={`fx-slot${stepped ? ' fx-slot--weld' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">prompt</span>
+              <span className="fx-value">{stepped ? 'n?' : '—'}</span>
+              <span className="fx-note">flush before cin</span>
+            </div>
+          </div>
+          <div className={`fx-link${tieOk ? ' fx-link--weld' : stepped ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">cin</span>
+            <div className={`fx-slot${tieOk ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">x</span>
+              <span className="fx-value">{tieOk ? 'in' : '—'}</span>
+              <span className="fx-note">{tieOk ? 'extract after flush' : 'waiting'}</span>
+            </div>
+          </div>
+        </div>
+      )}
+      {id === 'file' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${stepped && !fileClosed ? ' fx-pane--focus' : ''}${fileClosed ? ' fx-pane--gone' : ''}`}>
+            <span className="fx-kicker">ifstream</span>
+            <div className="fx-buf-row">
+              <span className={`fx-letter${fileClosed ? ' fx-letter--empty' : stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>
+                {fileClosed ? '·' : stepped ? 'f' : '·'}
+              </span>
+            </div>
+            <span className="fx-note">{fileClosed ? 'destroyed' : 'if (!in) check open'}</span>
+          </div>
+          <div className={`fx-link${fileClosed ? ' fx-link--dead' : decided ? ' fx-link--weld' : stepped ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">handle</span>
+            <div className="fx-buf-row">
+              <span className={`fx-letter${fileClosed ? ' fx-letter--dead' : decided ? ' fx-letter--on' : ' fx-letter--empty'}`}>
+                {fileClosed ? '·' : decided ? 'h' : '·'}
+              </span>
+            </div>
+            <span className="fx-note">{fileClosed ? '~ifstream closed it' : 'RAII owns the FILE'}</span>
+          </div>
+        </div>
+      )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
           eofTrap ? 'fx-verdict--trap' : setwSpent ? 'fx-verdict--warn' : verdict ? 'fx-verdict--ok' : ''
