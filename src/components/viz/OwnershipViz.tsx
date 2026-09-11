@@ -206,93 +206,78 @@ auto q = std::move(p);`
           </div>
         </div>
       ) : kind === 'move' ? (
-        <div className="fx-own">
-          <div className="fx-pane">
-            <span className="fx-kicker">source</span>
-            <div className={`fx-slot${pOwnsMove ? ' fx-slot--weld' : ' fx-slot--dim'}${qOwnsMove ? ' fx-pane--gone' : ''}`}>
-              <span className="fx-kicker">unique_ptr</span>
-              <span className="fx-value">
-                <code>p</code>
-              </span>
-              <span className="fx-note">{pOwnsMove ? 'exclusive' : qOwnsMove ? 'empty after move' : 'no owner yet'}</span>
-              {pOwnsMove && <span className="fx-badge fx-badge--owner">owner</span>}
+        <>
+          <div className="fx-sh">
+            <div className={`fx-pane${pOwnsMove ? ' fx-pane--focus' : ''}${qOwnsMove ? ' fx-pane--gone' : ''}`}>
+              <span className="fx-kicker">p</span>
+              <div className={`fx-slot${pOwnsMove ? ' fx-slot--weld' : qOwnsMove ? ' fx-slot--dim' : ' fx-slot--dim'}`}>
+                <span className="fx-kicker">unique_ptr</span>
+                <span className="fx-value">
+                  <code>p</code>
+                </span>
+                <span className="fx-note">{pOwnsMove ? 'exclusive' : qOwnsMove ? 'empty after move' : 'no owner yet'}</span>
+                {pOwnsMove && <span className="fx-badge fx-badge--owner">owner</span>}
+              </div>
             </div>
-          </div>
-          <div className={`fx-link${pOwnsMove ? ' fx-link--weld' : qOwnsMove ? ' fx-link--dead' : ''}`} />
-          <div className={`fx-pane${heapOn ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">heap</span>
-            <div className={`fx-slot${heapOn ? '' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">T</span>
-              <span className="fx-value">{heapOn ? '42' : '—'}</span>
-              <span className="fx-note">{heapOn ? 'T stayed put' : 'not allocated'}</span>
-            </div>
-          </div>
-          <div className={`fx-link${qOwnsMove ? ' fx-link--weld' : ''}`} />
-          <div className="fx-pane">
-            <span className="fx-kicker">destination</span>
-            <div className={`fx-slot${qOwnsMove ? ' fx-slot--weld' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">unique_ptr</span>
-              <span className="fx-value">
-                <code>q</code>
-              </span>
-              <span className="fx-note">{qOwnsMove ? 'stole the pointer' : 'not yet'}</span>
-              {qOwnsMove && <span className="fx-badge fx-badge--owner">owner</span>}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="fx-own">
-          <div className="fx-pane">
-            <span className="fx-kicker">owners</span>
-            <div className={`fx-slot${kind === 'shared' ? (pShared ? ' fx-slot--weld' : ' fx-slot--dim fx-pane--gone') : pWeakOwner ? ' fx-slot--weld' : ' fx-slot--dim fx-pane--gone'}`}>
-              <span className="fx-kicker">shared_ptr</span>
-              <span className="fx-value">
-                <code>p</code>
-              </span>
-              <span className="fx-note">{kind === 'shared' ? (pShared ? 'owner' : 'reset') : pWeakOwner ? 'owner' : 'reset'}</span>
-            </div>
-            {kind === 'shared' ? (
-              <div className={`fx-slot${qShared ? ' fx-slot--weld' : ' fx-slot--dim'}${i >= 2 ? ' fx-pane--gone' : ''}`}>
-                <span className="fx-kicker">shared_ptr</span>
+            <div className={`fx-link${pOwnsMove ? ' fx-link--weld' : qOwnsMove ? ' fx-link--dead' : ''}`} />
+            <div className={`fx-pane${qOwnsMove ? ' fx-pane--focus' : ''}`}>
+              <span className="fx-kicker">q</span>
+              <div className={`fx-slot${qOwnsMove ? ' fx-slot--weld' : ' fx-slot--dim'}`}>
+                <span className="fx-kicker">unique_ptr</span>
                 <span className="fx-value">
                   <code>q</code>
                 </span>
-                <span className="fx-note">{qShared ? 'copy, not clone' : i === 0 ? 'not yet' : 'reset'}</span>
+                <span className="fx-note">{qOwnsMove ? 'stole the pointer' : 'not yet'}</span>
+                {qOwnsMove && <span className="fx-badge fx-badge--owner">owner</span>}
               </div>
-            ) : (
-              <div className={`fx-slot${wLive ? ' fx-slot--focus' : ' fx-slot--dim'}${lockFail ? ' fx-slot--trap' : ''}`}>
-                <span className="fx-kicker">weak_ptr</span>
-                <span className="fx-value">
-                  <code>w</code>
-                </span>
-                <span className="fx-note">{lockFail ? 'lock() empty' : wLive ? 'observes, not owner' : 'not yet'}</span>
-              </div>
-            )}
+            </div>
           </div>
-          <div className={`fx-link${(kind === 'shared' ? pShared || qShared : pWeakOwner) ? ' fx-link--on' : wLive ? ' fx-link--dead' : ''}`} />
-          <div className={`fx-pane${ctrlLive ? ' fx-pane--focus' : ' fx-pane--gone'}`}>
-            <span className="fx-kicker">control block</span>
-            <span className="fx-note">use_count</span>
+          <div className="fx-buf-row" style={{ justifyContent: 'center' }}>
+            <span className={`fx-letter${heapOn ? ' fx-letter--on' : ' fx-letter--empty'}`}>{heapOn ? 'T' : '·'}</span>
+          </div>
+        </>
+      ) : (
+        <>
+        <div className="fx-ladder">
+          <div
+            className={`fx-rank${kind === 'shared' ? (pShared ? ' fx-rank--on' : '') : pWeakOwner ? ' fx-rank--on' : ''}${
+              kind === 'shared' && !pShared ? ' fx-rank--done' : ''
+            }${kind === 'weak' && !pWeakOwner ? ' fx-rank--done' : ''}`}
+          >
+            <code>p</code>
+            <span className="fx-note">shared</span>
+            <span className="fx-note">{kind === 'shared' ? (pShared ? 'on' : 'off') : pWeakOwner ? 'on' : 'off'}</span>
+          </div>
+          <div
+            className={`fx-rank${kind === 'shared' ? (qShared ? ' fx-rank--on' : '') : wLive ? ' fx-rank--on' : ''}${
+              lockFail ? ' fx-rank--trap' : ''
+            }${kind === 'shared' && i >= 2 ? ' fx-rank--done' : ''}`}
+          >
+            <code>{kind === 'shared' ? 'q' : 'w'}</code>
+            <span className="fx-note">{kind === 'shared' ? 'copy' : 'weak'}</span>
+            <span className="fx-note">
+              {kind === 'shared' ? (qShared ? 'on' : i === 0 ? '—' : 'off') : lockFail ? 'empty' : wLive ? 'obs' : '—'}
+            </span>
+          </div>
+          <div className={`fx-rank${ctrlLive || useCount > 0 ? ' fx-rank--on' : ''}${kind === 'shared' && recap ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">use</span>
             <div className="fx-count">
               {[0, 1].map((n) => (
                 <span key={n} className={`fx-count-pip${n < useCount ? ' fx-count-pip--on' : ''}`} />
               ))}
             </div>
             <span className="fx-note">
-              use = {useCount}
-              {kind === 'weak' ? ` · weak = ${weakCount}` : ''}
+              {useCount}
+              {kind === 'weak' ? `/${weakCount}` : ''}
             </span>
           </div>
-          <div className={`fx-link${heapOn ? (kind === 'weak' ? ' fx-link--on' : ' fx-link--weld') : ''}`} />
-          <div className={`fx-pane${heapOn ? ' fx-pane--focus' : ' fx-pane--gone'}`}>
-            <span className="fx-kicker">heap</span>
-            <div className={`fx-slot${heapOn ? '' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">T</span>
-              <span className="fx-value">{heapOn ? '42' : 'gone'}</span>
-              <span className="fx-note">{heapOn ? 'shared object' : 'destroyed'}</span>
-            </div>
-          </div>
         </div>
+        <div className="fx-buf-row" style={{ justifyContent: 'center' }}>
+          <span className={`fx-letter${heapOn ? ' fx-letter--on' : recap || lockFail ? ' fx-letter--dead' : ' fx-letter--empty'}`}>
+            {heapOn ? 'T' : recap || lockFail ? '·' : '·'}
+          </span>
+        </div>
+        </>
       )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${

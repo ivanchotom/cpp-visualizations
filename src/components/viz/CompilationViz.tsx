@@ -173,8 +173,8 @@ int add(int a, int b) { return a + b; }`
       code={code}
       tone={tone}
     >
-      <div className="fx-own">
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+      <div className="fx-sh">
+        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${id === 'undef' && recap ? ' fx-pane--gone' : ''}`}>
           <span className="fx-kicker">math.cpp</span>
           <div className="fx-buf-row">
             {STATIONS.map((_, s) => (
@@ -196,6 +196,30 @@ int add(int a, int b) { return a + b; }`
             ))}
           </div>
           <span className="fx-note">{id === 'pipe' && recap ? 'U add bound' : id === 'header' && decided ? 'no .o' : 'TU'}</span>
+        </div>
+      </div>
+      <div className="fx-ladder" style={{ marginTop: 8 }}>
+        <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${id === 'undef' && recap ? ' fx-rank--done' : ''}${id === 'odr' && recap ? ' fx-rank--trap' : ''}`}>
+          <span className="fx-note">math</span>
+          <code>T add</code>
+          <span className="fx-note">
+            {id === 'header'
+              ? '—'
+              : id === 'undef' && recap
+                ? 'off'
+                : id === 'odr' && recap
+                  ? 'dbl'
+                  : stepped
+                    ? 'ok'
+                    : '—'}
+          </span>
+        </div>
+        <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${trap ? ' fx-rank--trap' : pipeOk ? ' fx-rank--on' : ''}`}>
+          <span className="fx-note">main</span>
+          <code>{id === 'odr' ? 'T add' : id === 'header' ? 'cc' : 'U add'}</code>
+          <span className="fx-note">
+            {headerTrap ? 'ill' : undefTrap ? 'ill' : odrTrap ? 'dbl' : pipeOk ? 'bind' : stepped ? 'ok' : '—'}
+          </span>
         </div>
       </div>
       <p className="fx-note" style={{ textAlign: 'center' }}>
