@@ -2,7 +2,6 @@ import type { ReactElement } from 'react'
 import type { VizKind } from '../../curriculum/schema.ts'
 import { DataTypesView } from '../DataTypesView.tsx'
 import { MemoryLayoutView } from '../MemoryLayoutView.tsx'
-import { PatternsView } from '../PatternsView.tsx'
 import { CompilationViz } from './CompilationViz.tsx'
 import { OperatorsViz } from './OperatorsViz.tsx'
 import { StackHeapViz } from './StackHeapViz.tsx'
@@ -61,12 +60,7 @@ import { PatternsViz } from './PatternsViz.tsx'
 const registry: Record<VizKind, () => ReactElement> = {
   types: () => <DataTypesView />,
   layout: () => <MemoryLayoutView />,
-  patterns: () => (
-    <>
-      <PatternsViz />
-      <PatternsView />
-    </>
-  ),
+  patterns: () => <PatternsViz />,
   compilation: () => <CompilationViz />,
   operators: () => <OperatorsViz />,
   'stack-heap': () => <StackHeapViz />,

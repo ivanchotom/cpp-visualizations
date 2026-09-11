@@ -21,35 +21,43 @@ export function TypeTraitsViz() {
   }
 
   const stepped = i >= 1
-  const out = i >= 2
-  const recap = i >= 3
-  const trap = id === 'parens' && out
-  const won = (id === 'decay' && out) || (id === 'cond' && out) || (id === 'query' && i === 1)
+  const decided = i >= 2
+  const stripped = id === 'decay' && stepped
+  const decayed = id === 'decay' && decided
+  const intYes = id === 'query' && stepped
+  const ptrNo = id === 'query' && decided
+  const nameTy = id === 'parens' && stepped
+  const exprTy = id === 'parens' && decided
+  const predOn = id === 'cond' && stepped
+  const picked = id === 'cond' && decided
+  const trap = exprTy
 
   const code =
     id === 'decay'
-      ? i < 2
-        ? `static_assert(
+      ? decided
+        ? `using U = std::decay_t<int&>;  // int
+// remove_reference, then array/fn decay`
+        : `static_assert(
   std::is_same<std::decay_t<int&>, int>::value,
   "");`
-        : `using U = std::decay_t<int&>;  // int
-// remove_reference, then array/fn decay`
       : id === 'query'
-        ? i < 2
-          ? `static_assert(std::is_integral<int>::value, "");`
-          : `static_assert(!std::is_integral<int*>::value, "");
+        ? decided
+          ? `static_assert(!std::is_integral<int*>::value, "");
 // C++14: ::value, not std::is_integral_v`
+          : `static_assert(std::is_integral<int>::value, "");`
         : id === 'parens'
-          ? i < 2
+          ? decided
             ? `int x = 1;
+using A = decltype(x);     // int
+using B = decltype((x));  // int&`
+            : `int x = 1;
 using A = decltype(x);     // int`
-            : `using B = decltype((x));  // int&
-// extra parens make an lvalue expression`
-          : i < 2
+          : decided
             ? `using W = std::conditional_t<
-  sizeof(void*) == 8, long, int>;`
-            : `using W = long;  // LP64
-// std::conditional_t is C++14; ::type is C++11`
+    sizeof(void*) == 8, long, int>;
+// W is long on LP64`
+            : `using W = std::conditional_t<
+    sizeof(void*) == 8, long, int>;`
 
   const caption =
     i === 0
@@ -84,7 +92,7 @@ using A = decltype(x);     // int`
                             ? 'conditional_t<true, long, int> is long. The unused branch must still be a valid type name.'
                             : 'C++14: decay_t, enable_if_t, remove_reference_t, conditional_t. C++17 adds if constexpr for the body; this page is the type-level if.'
 
-  const tone = trap ? 'warn' : won || (id === 'query' && out) ? 'ok' : 'idle'
+  const tone = trap ? 'warn' : decayed || ptrNo || picked || (id === 'query' && intYes && !ptrNo) ? 'ok' : 'idle'
   const playLabel =
     id === 'decay'
       ? 'Play decay_t<int&>'
@@ -94,51 +102,24 @@ using A = decltype(x);     // int`
           ? 'Play decltype((x))'
           : 'Play conditional_t'
 
-  const inName = id === 'decay' ? 'int&' : id === 'query' ? (out ? 'int*' : 'int') : id === 'parens' ? 'int x' : 'pred'
-  const inVal = id === 'decay' ? 'x' : id === 'query' ? (out ? 'ptr' : '42') : id === 'parens' ? '1' : 'sizeof(void*)'
-  const midName =
-    id === 'decay'
-      ? 'remove_reference_t'
-      : id === 'query'
-        ? 'is_integral<T>'
-        : id === 'parens'
-          ? 'decltype(x)'
-          : 'conditional_t'
-  const midVal =
-    id === 'decay' && stepped
-      ? 'int'
-      : id === 'parens' && stepped
-        ? 'int'
-        : id === 'query' && i === 1
-          ? 'true'
-          : id === 'query' && out
-            ? 'false'
-            : id === 'cond' && stepped
-              ? 'sizeof==8'
-              : '—'
-  const outName =
-    id === 'decay'
-      ? 'decay_t<int&>'
-      : id === 'query'
-        ? out
-          ? 'false_type'
-          : 'true_type'
-        : id === 'parens'
-          ? 'decltype((x))'
-          : 'then / else'
-  const outVal =
-    id === 'decay' && out
-      ? 'int'
-      : id === 'query' && out
-        ? 'false'
-        : id === 'parens' && out
-          ? 'int&'
-          : id === 'cond' && out
-            ? 'long'
-            : '—'
-
-  const leftLink = stepped ? 'fx-link--on' : ''
-  const rightLink = trap ? 'fx-link--dead' : out ? (id === 'query' && recap ? 'fx-link--on' : 'fx-link--weld') : ''
+  const verdict =
+    decayed
+      ? 'decay_t<int&> · int'
+      : stripped
+        ? 'remove_reference_t · int'
+        : ptrNo
+          ? 'is_integral<int*> · false'
+          : intYes
+            ? 'is_integral<int> · true'
+            : exprTy
+              ? 'decltype((x)) · int&'
+              : nameTy
+                ? 'decltype(x) · int'
+                : picked
+                  ? 'conditional_t · long'
+                  : predOn
+                    ? 'pred · true on LP64'
+                    : ''
 
   return (
     <SceneShell
@@ -159,68 +140,87 @@ using A = decltype(x);     // int`
       code={code}
       tone={tone}
     >
-      <div className="fx-own">
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">in</span>
-          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{inName}</span>
-            <span className="fx-value">{inVal}</span>
-            <span className="fx-note">type argument</span>
+      {id === 'decay' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${stripped && !decayed ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">int&</span>
+            <div className={`fx-slot${stripped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">in</span>
+              <span className="fx-value">{stripped ? 'int&' : '—'}</span>
+              <span className="fx-note">reference wrapper</span>
+            </div>
+          </div>
+          <div className={`fx-link${decayed ? ' fx-link--weld' : stripped ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${decayed ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">decay_t</span>
+            <div className={`fx-slot${decayed ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">out</span>
+              <span className="fx-value">{decayed ? 'int' : stripped ? 'int' : '—'}</span>
+              <span className="fx-note">{decayed ? 'value type' : 'strip &, then decay'}</span>
+            </div>
           </div>
         </div>
-        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">trait</span>
-          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{midName}</span>
-            <span className="fx-value">{midVal}</span>
-            <span className="fx-note">
-              {id === 'decay'
-                ? 'strip &'
-                : id === 'query'
-                  ? '::value  (not _v)'
-                  : id === 'parens'
-                    ? 'the type of the name'
-                    : 'C++14 alias of ::type'}
-            </span>
+      )}
+      {id === 'query' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${intYes ? ' fx-rank--on' : ''}${ptrNo ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">int</span>
+            <code>is_integral</code>
+            <span className="fx-note">{intYes ? 'true' : '—'}</span>
+          </div>
+          <div className={`fx-rank${ptrNo ? ' fx-rank--on fx-rank--trap' : ''}`}>
+            <span className="fx-note">int*</span>
+            <code>is_integral</code>
+            <span className="fx-note">{ptrNo ? 'false' : '—'}</span>
           </div>
         </div>
-        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
-        <div className={`fx-pane${out ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">out</span>
-          <div className={`fx-slot${trap ? ' fx-slot--trap' : out ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{outName}</span>
-            <span className="fx-value">{outVal}</span>
-            <span className="fx-note">
-              {id === 'decay' && out
-                ? 'is_same with int'
-                : id === 'query' && out
-                  ? 'pointers are not integral'
-                  : id === 'parens' && out
-                    ? 'extra parens → lvalue'
-                    : id === 'cond' && out
-                      ? 'LP64: pointer is 8'
-                      : 'waiting'}
-            </span>
+      )}
+      {id === 'parens' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${nameTy ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">decltype(x)</span>
+            <div className={`fx-slot${nameTy ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">name</span>
+              <span className="fx-value">{nameTy ? 'int' : '—'}</span>
+              <span className="fx-note">declared type</span>
+            </div>
+          </div>
+          <div className={`fx-link${exprTy ? ' fx-link--dead' : nameTy ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${exprTy ? ' fx-pane--focus' : ''}${trap ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">decltype((x))</span>
+            <div className={`fx-slot${exprTy ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">expr</span>
+              <span className="fx-value">{exprTy ? 'int&' : '—'}</span>
+              <span className="fx-note">{exprTy ? 'extra parens → lvalue' : 'waiting'}</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+      {id === 'cond' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${predOn ? ' fx-rank--on' : ''}${picked ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">pred</span>
+            <code>sizeof==8</code>
+            <span className="fx-note">{predOn ? 'true' : '—'}</span>
+          </div>
+          <div className={`fx-rank${picked ? ' fx-rank--on' : ''}`}>
+            <span className="fx-note">then</span>
+            <code>long</code>
+            <span className="fx-note">{picked ? 'W' : '—'}</span>
+          </div>
+          <div className={`fx-rank${picked ? ' fx-rank--done' : predOn ? ' fx-rank--on' : ''}`}>
+            <span className="fx-note">else</span>
+            <code>int</code>
+            <span className="fx-note">{picked ? 'drop' : '—'}</span>
+          </div>
+        </div>
+      )}
       <div
-        className={`fx-verdict${out || (id === 'query' && i >= 1) ? ' fx-verdict--show' : ''} ${
-          trap ? 'fx-verdict--warn' : out || (id === 'query' && i === 1) ? 'fx-verdict--ok' : ''
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          trap ? 'fx-verdict--warn' : verdict ? 'fx-verdict--ok' : ''
         }`}
       >
-        {id === 'decay' && out
-          ? 'decay_t<int&> · int'
-          : id === 'query' && out
-            ? 'is_integral<int*> · false'
-            : id === 'query' && i === 1
-              ? 'is_integral<int> · true'
-              : id === 'parens' && out
-                ? 'decltype((x)) · int&'
-                : id === 'cond' && out
-                  ? 'conditional_t · long'
-                  : ''}
+        {verdict}
       </div>
     </SceneShell>
   )
