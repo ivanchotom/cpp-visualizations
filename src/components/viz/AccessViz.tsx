@@ -84,13 +84,13 @@ class Token { int id_; };  // private`
             ? 'Play n_ =. Derived can write n_. That compiles and couples every derived class to the layout. Prefer private data and protected functions.'
             : 'Play struct vs class. The only language difference is default access (and default inheritance: public vs private). A public struct is a fine DTO.'
       : id === 'priv' && i === 1
-        ? 'The constructor is a private name. Access control does not hide the layout from the ABI — only the names from other TUs’ source.'
+        ? 'The constructor is a private name. Access control does not hide the layout from the ABI — only the names from other TUs’ source. Stations light in place.'
         : id === 'priv' && i === 2
           ? 'Token{1} is ill-formed. Invariants belong in the private section, not in a comment. Use the factory or a public named constructor.'
           : id === 'priv'
             ? 'private does not mean secret. Anyone with the header can read the members’ types. It only means other code cannot name them. t.id() is the public name.'
             : id === 'friend' && i === 1
-              ? 'makeToken may name Token’s private constructor. No one else is. The weld is a hole in the name check, not a flying token.'
+              ? 'makeToken may name Token’s private constructor. No one else is. The hole is a name check, not a flying token.'
               : id === 'friend' && i === 2
                 ? 'The factory returns a Token. Friendship is not inherited by Derived, and Factory’s friends do not become Token’s friends.'
                 : id === 'friend'
@@ -150,80 +150,60 @@ class Token { int id_; };  // private`
       tone={tone}
     >
       {id === 'priv' && (
-        <div className="fx-sh">
-          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ''}${bounce ? ' fx-slot--trap' : ''}`}>
-            <span className="fx-kicker">caller</span>
-            <span className="fx-value">
-              <code>main</code>
-            </span>
-            <span className="fx-note">{privOk ? 't.id()' : 'not a member'}</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${bounce ? ' fx-rank--trap' : ''}${privOk ? ' fx-rank--done' : ''}`}>
+            <code>{'T{1}'}</code>
+            <span className="fx-note">private ctor</span>
+            <span className="fx-note">{privOk ? 'ill' : bounce ? 'ill' : stepped ? 'no' : '—'}</span>
           </div>
-          <div className={`fx-link${bounce ? ' fx-link--dead' : privOk ? ' fx-link--weld' : stepped ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${bounce ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">Token</span>
-            <div className={`fx-slot${bounce ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">private</span>
-              <span className="fx-note">explicit Token(int)</span>
-              <span className="fx-badge fx-badge--lock">private</span>
-            </div>
-            <div className={`fx-slot${privOk ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">public</span>
-              <span className="fx-note">int id() const</span>
-              {privOk && <span className="fx-badge fx-badge--open">API</span>}
-            </div>
+          <div className={`fx-rank${privOk ? ' fx-rank--on' : ''}`}>
+            <code>id()</code>
+            <span className="fx-note">public name</span>
+            <span className="fx-note">{privOk ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'friend' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${won ? ' fx-rank--done' : ''}`}>
-            <span className="fx-note">main</span>
-            <code>Token{'{id}'}</code>
+            <code>main</code>
+            <span className="fx-note">
+              <code>{'Token{id}'}</code>
+            </span>
             <span className="fx-note">{stepped ? 'ill' : '—'}</span>
           </div>
           <div className={`fx-rank${won ? ' fx-rank--on' : ''}`}>
-            <span className="fx-note">friend</span>
-            <code>makeToken</code>
+            <code>make</code>
+            <span className="fx-note">friend fn</span>
             <span className="fx-note">{won ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'prot' && (
-        <div className="fx-sh">
-          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ''}`}>
-            <span className="fx-kicker">Derived</span>
-            <span className="fx-note">is-a Base</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${protTrap && !recap ? ' fx-rank--trap' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>n_</code>
+            <span className="fx-note">{recap ? 'private data' : 'protected'}</span>
+            <span className="fx-note">{recap ? 'priv' : protTrap ? 'ok' : stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-link${protTrap && !recap ? ' fx-link--dead' : recap ? ' fx-link--weld' : stepped ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${protTrap && !recap ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">Base</span>
-            <div className={`fx-slot${protTrap && !recap ? ' fx-slot--trap' : recap ? ' fx-slot--ok' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">{recap ? 'private n_' : 'protected'}</span>
-              <span className="fx-value">
-                <code>n_</code>
-              </span>
-              <span className="fx-note">{recap ? 'bump() is protected' : protTrap ? 'n_ = 1 compiles · coupling' : 'visible to derived'}</span>
-            </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+            <code>Der</code>
+            <span className="fx-note">{recap ? 'bump()' : 'n_ = 1'}</span>
+            <span className="fx-note">{recap ? 'ok' : protTrap ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'st' && (
-        <div className="fx-sh">
-          <div className={`fx-slot${stepped ? ' fx-slot--ok' : ''}`}>
-            <span className="fx-kicker">struct Dto</span>
-            <span className="fx-value">
-              <code>int id</code>
-            </span>
-            <span className="fx-note">default public · fine DTO</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${structOk ? ' fx-rank--done' : ''}`}>
+            <code>Dto</code>
+            <span className="fx-note">struct default</span>
+            <span className="fx-note">{stepped ? 'pub' : '—'}</span>
           </div>
-          <div className={`fx-link${recap ? ' fx-link--on' : ''}`} />
-          <div className={`fx-slot${decided ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">class Token</span>
-            <span className="fx-value">
-              <code>int id_</code>
-            </span>
-            <span className="fx-note">{decided ? 'default private · invariant' : 'same layout, hidden name'}</span>
-            {decided && <span className="fx-badge fx-badge--lock">private</span>}
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+            <code>Tok</code>
+            <span className="fx-note">class default</span>
+            <span className="fx-note">{decided ? 'priv' : '—'}</span>
           </div>
         </div>
       )}

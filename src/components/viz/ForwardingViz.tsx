@@ -76,7 +76,7 @@ sink(std::move(t));`
             ? 'Play wrap(move(x)). An xvalue deduces like a prvalue: T = int, parameter int&&. Forward, do not move, if you must pass through.'
             : 'Play move(t). std::move is always an rvalue cast. On a forwarding reference it steals even when the caller passed an lvalue.'
       : id === 'lval' && i === 1
-        ? 'wrap(x) with x an lvalue. T is deduced as int&. The parameter is not “rvalue only.” void f(Widget&&); would not bind x.'
+        ? 'wrap(x) with x an lvalue. T is deduced as int&. The parameter is not “rvalue only.” void f(Widget&&); would not bind x. Stations light in place.'
         : id === 'lval' && i === 2
           ? 'T&& collapses: int& && → int&. t is a named parameter, so it is still an lvalue.'
           : id === 'lval'
@@ -149,66 +149,72 @@ sink(std::move(t));`
       code={code}
       tone={tone}
     >
-      {(id === 'lval' || id === 'xvalue') && (
+      {id === 'lval' && (
         <div className="fx-ladder">
           <div className={`fx-rank${deduced ? ' fx-rank--on' : ''}${collapsed ? ' fx-rank--done' : ''}`}>
-            <span className="fx-note">T</span>
-            <code>wrap(T&&)</code>
-            <span className="fx-note">{deduced ? t : '—'}</span>
+            <code>T</code>
+            <span className="fx-note">
+              <code>wrap(x)</code>
+            </span>
+            <span className="fx-note">{deduced ? 'int&' : '—'}</span>
           </div>
-          <div className={`fx-rank${collapsed ? ' fx-rank--on' : ''}${id === 'xvalue' && forwarded ? '' : ''}`}>
-            <span className="fx-note">collapse</span>
-            <code>{collapsed ? collapsedTy : 'T&&'}</code>
-            <span className="fx-note">{forwarded ? (id === 'lval' ? 'bind' : 'steal') : collapsed ? 'lval' : '—'}</span>
+          <div className={`fx-rank${collapsed ? ' fx-rank--on' : ''}`}>
+            <code>fwd</code>
+            <span className="fx-note">
+              <code>{collapsed ? collapsedTy : 'T&&'}</code>
+            </span>
+            <span className="fx-note">{forwarded ? 'bind' : collapsed ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'prvalue' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${deduced ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">call</span>
-            <div className={`fx-slot${deduced ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">wrap</span>
-              <span className="fx-value">{deduced ? '42' : '—'}</span>
-              <span className="fx-note">prvalue · T = int</span>
-            </div>
+        <div className="fx-ladder">
+          <div className={`fx-rank${deduced ? ' fx-rank--on' : ''}${forwarded ? ' fx-rank--done' : ''}`}>
+            <code>T</code>
+            <span className="fx-note">
+              <code>wrap(42)</code>
+            </span>
+            <span className="fx-note">{deduced ? 'int' : '—'}</span>
           </div>
-          <div className={`fx-link${forwarded ? ' fx-link--on' : collapsed ? ' fx-link--on' : deduced ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${collapsed ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">sink</span>
-            <div className={`fx-slot${forwarded ? ' fx-slot--ok' : collapsed ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">forward</span>
-              <span className="fx-value">{forwarded ? '&&' : collapsed ? 'int&&' : '—'}</span>
-              <span className="fx-note">{forwarded ? 'may steal' : 'named t is still an lvalue'}</span>
-            </div>
+          <div className={`fx-rank${collapsed ? ' fx-rank--on' : ''}`}>
+            <code>sink</code>
+            <span className="fx-note">forward</span>
+            <span className="fx-note">{forwarded ? 'ok' : collapsed ? '&&' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'xvalue' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${deduced ? ' fx-rank--on' : ''}${collapsed ? ' fx-rank--done' : ''}`}>
+            <code>T</code>
+            <span className="fx-note">
+              <code>wrap(move)</code>
+            </span>
+            <span className="fx-note">{deduced ? 'int' : '—'}</span>
+          </div>
+          <div className={`fx-rank${collapsed ? ' fx-rank--on' : ''}`}>
+            <code>fwd</code>
+            <span className="fx-note">
+              <code>{collapsed ? collapsedTy : 'T&&'}</code>
+            </span>
+            <span className="fx-note">{forwarded ? 'own' : collapsed ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'move' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${deduced ? ' fx-pane--focus' : ''}${trap ? ' fx-pane--gone' : ''}`}>
-            <span className="fx-kicker">caller x</span>
-            <div className="fx-buf-row">
-              <span className={`fx-letter${trap ? ' fx-letter--dead' : deduced ? ' fx-letter--on' : ' fx-letter--empty'}`}>
-                {trap ? '·' : deduced ? 'x' : '·'}
-              </span>
-            </div>
-            <span className="fx-note">{trap ? 'did not ask to give it away' : 'lvalue · T = int&'}</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${deduced ? ' fx-rank--on' : ''}${trap ? ' fx-rank--done' : ''}`}>
+            <code>x</code>
+            <span className="fx-note">lvalue</span>
+            <span className="fx-note">{trap ? 'gone' : deduced ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-link${trap ? ' fx-link--dead' : stealMove ? ' fx-link--on' : deduced ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${collapsed ? ' fx-pane--focus' : ''}${trap ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">sink</span>
-            <div className={`fx-slot${trap ? ' fx-slot--trap' : stealMove ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">move(t)</span>
-              <span className="fx-value">{trap ? 'stole' : collapsed ? '&&' : '—'}</span>
-              <span className="fx-note">{trap ? 'always an rvalue cast' : 'ignores T'}</span>
-            </div>
+          <div className={`fx-rank${collapsed ? ' fx-rank--on' : ''}${trap ? ' fx-rank--trap' : ''}`}>
+            <code>sink</code>
+            <span className="fx-note">
+              <code>move(t)</code>
+            </span>
+            <span className="fx-note">{trap ? 'own' : collapsed ? '&&' : '—'}</span>
           </div>
-        </div>
-      )}
-      {id === 'lval' && (
-        <div className="fx-buf-row">
-          <span className={`fx-letter${deduced ? ' fx-letter--on' : ' fx-letter--empty'}`}>{deduced ? 'x' : '·'}</span>
         </div>
       )}
       <div
