@@ -11,8 +11,6 @@ const MODES: { id: Mode; title: string }[] = [
   { id: 'place', title: 'placement' },
 ]
 
-const CELLS = ['A', 'B', 'C'] as const
-
 export function NewDeleteViz() {
   const [id, setId] = useState<Mode>('scalar')
   const { i, playing, play, reset } = useBeats(4)
@@ -22,51 +20,44 @@ export function NewDeleteViz() {
     setId(next as Mode)
   }
 
-  const allocated = i >= 1
-  const live = i >= 1 && i < 3
-  const cleaned = i >= 3
-  const isArray = id === 'array' || id === 'mismatch'
-  const mismatched = id === 'mismatch' && cleaned
-  const placed = id === 'place'
-  const heapOn = allocated && !(cleaned && id !== 'mismatch')
-  const leftover = mismatched
-  const ptrVal = !allocated ? 'unset' : cleaned && id !== 'mismatch' ? 'dangling' : '0xH0'
-  const weld = live || leftover
+  const stepped = i >= 1
+  const decided = i >= 2
+  const recap = i >= 3
+
+  const live = stepped && !recap
+  const cleaned = recap
+  const mismatched = id === 'mismatch' && recap
+  const trap = mismatched
+  const ok = cleaned && !mismatched
 
   const code =
     id === 'scalar'
-      ? i === 0
-        ? `T* p;  // not yet allocated`
-        : i === 1 || i === 2
-          ? `T* p = new T{7};  // allocate + construct`
-          : `delete p;  // destroy, then deallocate`
+      ? recap
+        ? `delete p;  // destroy, then deallocate`
+        : `T* p = new T{7};  // allocate + construct`
       : id === 'array'
-        ? i === 0
-          ? `T* p;  // not yet allocated`
-          : i === 1 || i === 2
-            ? `T* p = new T[3];  // cookie + 3 objects`
-            : `delete[] p;  // ~T on [2], [1], [0], then free`
+        ? recap
+          ? `delete[] p;  // ~T on [2], [1], [0], then free`
+          : `T* p = new T[3];  // cookie + 3 objects`
         : id === 'mismatch'
-          ? i < 3
-            ? `T* p = new T[3];`
-            : `delete p;  // not delete[]  ← UB`
-          : i === 0
-            ? `alignas(T) unsigned char buf[sizeof(T)];`
-            : i < 3
-              ? `T* p = new (buf) T{7};  // no allocation`
-              : `p->~T();  // you destroy. do not delete`
+          ? recap
+            ? `delete p;  // not delete[]  ← UB`
+            : `T* p = new T[3];`
+          : recap
+            ? `p->~T();  // you destroy. do not delete`
+            : `T* p = new (buf) T{7};  // no allocation`
 
   const caption =
     i === 0
       ? id === 'scalar'
-        ? 'Play new. Allocation and construction are two steps. delete is destruction then deallocation. Prefer make_unique in app code.'
+        ? 'Play new T. Allocation and construction are two steps. delete is destruction then deallocation. Prefer make_unique in app code.'
         : id === 'array'
           ? 'Play new T[n]. The implementation stores a count (a “cookie”) so delete[] can run every destructor.'
           : id === 'mismatch'
-            ? 'Play the trap. new[] paired with scalar delete is undefined behavior — the cookie is not consulted.'
+            ? 'Play delete p. new[] paired with scalar delete is undefined behavior — the cookie is not consulted.'
             : 'Play placement new. The buffer already exists. You construct in place, and you must call the destructor yourself. C++14 has no destroy_at.'
       : id === 'scalar' && i === 1
-        ? 'operator new then T’s constructor. p is an address on the stack. The object lives on the heap. No hop — cells light in place.'
+        ? 'operator new then T’s constructor. p is an address on the stack. The object lives on the heap. Stations light in place.'
         : id === 'scalar' && i === 2
           ? 'Object is live. delete nullptr is safe; this p is not null. One new, one matching delete.'
           : id === 'scalar'
@@ -89,10 +80,26 @@ export function NewDeleteViz() {
                             ? 'The object is live inside the buffer. delete p would free stack memory — also UB. Storage and lifetime are separate.'
                             : 'p->~T() ends the lifetime. The buffer is still there. C++14 has no std::destroy_at; you call the destructor by name.'
 
-  const tone = leftover ? 'trap' : cleaned && id !== 'mismatch' ? 'ok' : 'idle'
-  const linkKind = leftover ? 'dead' : placed && weld ? 'weld' : weld ? 'on' : ''
-  const visible = leftover ? CELLS : isArray ? CELLS : (['T'] as const)
-  const dead = leftover ? ['B', 'C'] : []
+  const tone = trap ? 'trap' : ok ? 'ok' : 'idle'
+  const playLabel =
+    id === 'scalar' ? 'Play new T' : id === 'array' ? 'Play new T[n]' : id === 'mismatch' ? 'Play delete p' : 'Play placement new'
+
+  const verdict =
+    mismatched
+      ? 'delete not delete[] · cookie ignored · UB'
+      : id === 'scalar' && recap
+        ? '~T then operator delete · p dangling'
+        : id === 'array' && recap
+          ? 'delete[] · [2] [1] [0] then free'
+          : id === 'place' && recap
+            ? 'p->~T() · buffer still there'
+            : id === 'place' && live
+              ? 'constructed in buf · no heap'
+              : live && (id === 'array' || id === 'mismatch')
+                ? 'cookie + 3 objects'
+                : live && id === 'scalar'
+                  ? 'allocated + constructed'
+                  : ''
 
   return (
     <SceneShell
@@ -105,7 +112,7 @@ export function NewDeleteViz() {
         reset()
         setId(id)
       }}
-      playLabel="Play new"
+      playLabel={playLabel}
       step={i}
       stepCount={4}
       sig={MODES.find((m) => m.id === id)?.title}
@@ -113,78 +120,68 @@ export function NewDeleteViz() {
       code={code}
       tone={tone}
     >
-      <div className="fx-sh">
-        <div className={`fx-pane${allocated ? ' fx-pane--focus' : ''}${cleaned && !mismatched ? ' fx-pane--gone' : ''}`}>
-          <span className="fx-kicker">{placed ? 'stack buffer' : 'stack'}</span>
-          <span className="fx-value">
-            <code>p</code>
-          </span>
-          <span className="fx-note">{ptrVal}</span>
-          {placed && <span className="fx-badge fx-badge--open">alignas(T) buf</span>}
-          {cleaned && id === 'scalar' && <span className="fx-note">do not use</span>}
+      {id === 'scalar' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${cleaned ? ' fx-rank--done' : ''}`}>
+            <code>new</code>
+            <span className="fx-note">allocate + ctor</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${cleaned ? ' fx-rank--on' : ''}`}>
+            <code>del</code>
+            <span className="fx-note">destroy then free</span>
+            <span className="fx-note">{cleaned ? 'gone' : '—'}</span>
+          </div>
         </div>
-        <div
-          className={`fx-link${linkKind === 'on' ? ' fx-link--on' : ''}${linkKind === 'weld' ? ' fx-link--weld' : ''}${
-            linkKind === 'dead' ? ' fx-link--dead' : ''
-          }`}
-        />
-        <div
-          className={`fx-pane${heapOn || leftover ? ' fx-pane--focus' : ''}${leftover ? ' fx-pane--trap' : ''}${
-            cleaned && id !== 'mismatch' && !placed ? ' fx-pane--gone' : ''
-          }`}
-        >
-          <span className="fx-kicker">{placed ? 'lifetime in buf' : 'heap'}</span>
-          {heapOn || leftover ? (
-            <>
-              <div className="fx-buf-row">
-                {visible.map((c) => (
-                  <span
-                    key={c}
-                    className={`fx-letter${dead.includes(c) ? ' fx-letter--empty fx-letter--pad' : ' fx-letter--on'}`}
-                  >
-                    {isArray ? c : '7'}
-                  </span>
-                ))}
-              </div>
-              <span className="fx-note">
-                {isArray ? (mismatched ? 'cookie unread' : 'N=3') : placed ? 'no operator new' : 'one T'}
-              </span>
-            </>
-          ) : cleaned && placed ? (
-            <>
-              <span className="fx-value">buf</span>
-              <span className="fx-note">raw bytes · storage remains</span>
-            </>
-          ) : cleaned ? (
-            <>
-              <span className="fx-value">freed</span>
-              <span className="fx-note">{id === 'array' ? 'delete[] · dtors reverse' : 'deleted'}</span>
-            </>
-          ) : (
-            <span className="fx-note">no object</span>
-          )}
+      )}
+      {id === 'array' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${cleaned ? ' fx-rank--done' : ''}`}>
+            <code>new[]</code>
+            <span className="fx-note">cookie + 3</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${cleaned ? ' fx-rank--on' : ''}`}>
+            <code>del[]</code>
+            <span className="fx-note">reverse dtors</span>
+            <span className="fx-note">{cleaned ? 'ok' : '—'}</span>
+          </div>
         </div>
-      </div>
+      )}
+      {id === 'mismatch' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${mismatched ? ' fx-rank--done' : ''}`}>
+            <code>new[]</code>
+            <span className="fx-note">cookie + 3</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${mismatched ? ' fx-rank--trap' : decided ? ' fx-rank--on' : ''}`}>
+            <code>del</code>
+            <span className="fx-note">scalar delete</span>
+            <span className="fx-note">{mismatched ? 'ub' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'place' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${cleaned ? ' fx-rank--done' : ''}`}>
+            <code>buf</code>
+            <span className="fx-note">no heap</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${cleaned ? ' fx-rank--on' : ''}`}>
+            <code>~T</code>
+            <span className="fx-note">you destroy</span>
+            <span className="fx-note">{cleaned ? 'ok' : '—'}</span>
+          </div>
+        </div>
+      )}
       <div
-        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
-          leftover ? 'fx-verdict--trap' : cleaned ? 'fx-verdict--ok' : ''
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          trap ? 'fx-verdict--trap' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
-        {leftover
-          ? 'delete not delete[] · cookie ignored · UB'
-          : id === 'scalar' && cleaned
-            ? '~T then operator delete · p dangling'
-            : id === 'array' && cleaned
-              ? 'delete[] · [2] [1] [0] then free'
-              : id === 'place' && cleaned
-                ? 'p->~T() · buffer still there'
-                : id === 'place' && live
-                  ? 'constructed in buf · no heap'
-                  : live && isArray
-                    ? 'cookie + 3 objects'
-                    : live
-                      ? 'allocated + constructed'
-                      : ''}
+        {verdict}
       </div>
     </SceneShell>
   )
