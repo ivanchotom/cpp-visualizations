@@ -1,213 +1,210 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { centerOf, hop, waitNextBeat, type Point } from './motion.ts'
+import { useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
-interface Frame {
-  kind: 'single' | 'multi' | 'diamond' | 'virtual'
-  rows: { label: string; tag: 'base' | 'mid' | 'derived' | 'shared' | 'dup' }[]
-  hopLabel: string | null
-  hint: string
-  code: string
-}
+type Kind = 'single' | 'multi' | 'diamond' | 'virtual'
 
-const FRAMES: Frame[] = [
-  {
-    kind: 'single',
-    rows: [
-      { label: 'vptr + Base members', tag: 'base' },
-      { label: 'Derived members', tag: 'derived' },
-    ],
-    hopLabel: 'D*',
-    hint: 'Public inheritance is is-a. One Base subobject. Derived* converts to Base* with no address tweak.',
-    code: `struct Base { virtual ~Base() = default; };
-struct D : Base {};
-D obj;
-Base* b = &obj;  // same address`,
-  },
-  {
-    kind: 'multi',
-    rows: [
-      { label: 'vptr + BaseA', tag: 'base' },
-      { label: 'vptr + BaseB', tag: 'mid' },
-      { label: 'Derived members', tag: 'derived' },
-    ],
-    hopLabel: 'D*→B*',
-    hint: 'Two base subobjects, two vptrs if both are polymorphic. D* → BaseB* adjusts the address.',
-    code: `struct D : BaseA, BaseB {};
-D obj;
-BaseB* b = &obj;  // pointer offset`,
-  },
-  {
-    kind: 'diamond',
-    rows: [
-      { label: 'Base (via A)', tag: 'dup' },
-      { label: 'A extra', tag: 'mid' },
-      { label: 'Base (via B)', tag: 'dup' },
-      { label: 'B extra', tag: 'mid' },
-      { label: 'Derived', tag: 'derived' },
-    ],
-    hopLabel: 'Base×2',
-    hint: 'Non-virtual diamond: two Base subobjects. Naming a Base member is ambiguous. Almost never what you wanted.',
-    code: `struct A : Base {};
-struct B : Base {};
-struct D : A, B {};  // two Bases`,
-  },
-  {
-    kind: 'virtual',
-    rows: [
-      { label: 'A (vbptr)', tag: 'mid' },
-      { label: 'B (vbptr)', tag: 'mid' },
-      { label: 'Derived extra', tag: 'derived' },
-      { label: 'shared Base', tag: 'shared' },
-    ],
-    hopLabel: 'Base',
-    hint: 'virtual Base: one Base, constructed by the most-derived class. vbptrs locate it. Heavier layout, correct is-a.',
-    code: `struct A : virtual Base {};
-struct B : virtual Base {};
-struct D : A, B {};  // one Base`,
-  },
+const MODES: { id: Kind; title: string }[] = [
+  { id: 'single', title: 'Single' },
+  { id: 'multi', title: 'Multiple' },
+  { id: 'diamond', title: 'Diamond' },
+  { id: 'virtual', title: 'Virtual diamond' },
 ]
 
-const STEP_MS = 1400
-const HOP_MS = 720
-
 export function InheritanceViz() {
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [from, setFrom] = useState<Point>({ x: 80, y: 40 })
-  const [to, setTo] = useState<Point>({ x: 80, y: 140 })
+  const [kind, setKind] = useState<Kind>('single')
+  const { i, playing, play, reset } = useBeats(4)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const srcRef = useRef<HTMLDivElement>(null)
-  const dstRef = useRef<HTMLDivElement>(null)
-
-  const f = FRAMES[Math.min(i, FRAMES.length - 1)]
-
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    if (!stage || !srcRef.current || !dstRef.current) return
-    const origin = stage.getBoundingClientRect()
-    setFrom(centerOf(srcRef.current, origin))
-    setTo(centerOf(dstRef.current, origin))
-  }, [i])
-
-  useEffect(() => {
-    if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
-    }
-    raf = requestAnimationFrame(hopLoop)
-    const stop = waitNextBeat(STEP_MS, () => {
-      if (i >= FRAMES.length - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stop()
-    }
-  }, [playing, i])
-
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
+  function select(next: string) {
+    reset()
+    setKind(next as Kind)
   }
 
-  const pos = hopT < 1 ? hop(from, to, hopT) : null
-  const titles: Record<Frame['kind'], string> = {
-    single: 'Single',
-    multi: 'Multiple',
-    diamond: 'Diamond',
-    virtual: 'Virtual diamond',
-  }
+  const code =
+    kind === 'single'
+      ? `struct Base { virtual ~Base() = default; };
+struct D : Base {};
+D obj;
+Base* b = &obj;  // same address`
+      : kind === 'multi'
+        ? `struct D : BaseA, BaseB {};
+D obj;
+BaseB* b = &obj;  // pointer offset`
+        : kind === 'diamond'
+          ? `struct A : Base {};
+struct B : Base {};
+struct D : A, B {};  // two Bases`
+          : `struct A : virtual Base {};
+struct B : virtual Base {};
+struct D : A, B {};  // one Base`
+
+  const caption =
+    i === 0
+      ? kind === 'single'
+        ? 'Play the layout. Public inheritance is is-a. Slices stack in place — Base, then Derived. No flying D*.'
+        : kind === 'multi'
+          ? 'Play multiple inheritance. Two base subobjects, two vptrs if both are polymorphic. D* → BaseB* adjusts the address.'
+          : kind === 'diamond'
+            ? 'Play the non-virtual diamond. Two Base subobjects. Naming a Base member is ambiguous. Almost never what you wanted.'
+            : 'Play virtual inheritance. One Base, constructed by the most-derived class. vbptrs locate it.'
+      : kind === 'single' && i === 1
+        ? 'Base subobject exists first — members and vptr. Derived has not been laid out yet.'
+        : kind === 'single' && i === 2
+          ? 'Derived members sit after Base. One object, two names. The address of D and Base is the same here.'
+          : kind === 'single'
+            ? 'Base* b = &obj welds to the Base slice. Same address — no offset. That is the single-inheritance is-a.'
+            : kind === 'multi' && i === 1
+              ? 'BaseA occupies the first slice. A D* and a BaseA* share that address.'
+              : kind === 'multi' && i === 2
+                ? 'BaseB is a second subobject. Derived members follow. Two polymorphic bases → two vptrs.'
+                : kind === 'multi'
+                  ? 'BaseB* b = &obj. The weld sits on BaseB, not BaseA. The pointer was adjusted by a compile-time offset.'
+                  : kind === 'diamond' && i === 1
+                    ? 'A brings a Base. That is one complete Base subobject.'
+                    : kind === 'diamond' && i === 2
+                      ? 'B brings a second Base. Two copies, two vptrs. D is both, twice.'
+                      : kind === 'diamond'
+                        ? 'Ambiguous. Which Base? Cast or qualify, or stop using this shape. Prefer virtual Base or composition.'
+                        : i === 1
+                          ? 'A and B carry vbptrs, not a Base of their own. The shared Base is not here yet.'
+                          : i === 2
+                            ? 'Most-derived D adds its extra members. Still one shared Base to construct.'
+                            : 'Most-derived constructs the one Base. Heavier layout, correct is-a. One weld, not two.'
+
+  const tone = kind === 'diamond' && i >= 3 ? 'trap' : kind === 'virtual' && i >= 3 ? 'ok' : kind === 'single' && i >= 3 ? 'ok' : 'idle'
+
+  const showBase = i >= 1
+  const showDerived = i >= 2
+  const bound = i >= 3
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play single then diamond then virtual
-        </button>
-        {FRAMES.map((k, idx) => (
-          <button
-            key={k.kind}
-            className={`chip${i === idx ? ' chip--active' : ''}`}
-            onClick={() => {
-              if (playing) return
-              setI(idx)
-              setHopT(1)
-            }}
-            disabled={playing}
-          >
-            {titles[k.kind]}
-          </button>
-        ))}
-        <button
-          className="chip chip--ghost"
-          onClick={() => {
-            setPlaying(false)
-            setI(0)
-            setHopT(1)
-          }}
-        >
-          reset
-        </button>
-      </div>
-
-      <div ref={stageRef} className={`viz-stage inh-stage viz-stage--live inh-stage--${f.kind}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{FRAMES.length} · {titles[f.kind]}
-        </p>
-        <div className="lf-beats" aria-hidden>
-          {FRAMES.map((_, n) => (
-            <span
-              key={n}
-              className={`lf-beat${n === i ? ' lf-beat--on' : ''}${n < i ? ' lf-beat--done' : ''}${n === 2 ? ' lf-beat--dtor' : ''}`}
+    <SceneShell
+      modes={MODES}
+      mode={kind}
+      onSelect={select}
+      playing={playing}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setKind(kind)
+      }}
+      playLabel="Play layout"
+      step={i}
+      stepCount={4}
+      sig={MODES.find((m) => m.id === kind)?.title}
+      caption={caption}
+      code={code}
+      tone={tone}
+    >
+      <div className="fx-inh">
+        {kind === 'single' && (
+          <>
+            <Slice
+              kicker="Base"
+              note={showBase ? 'vptr + members' : 'not yet'}
+              on={showBase}
+              hot={bound}
+              tag="base"
             />
-          ))}
-        </div>
-        <div ref={srcRef} className="inh-call">
-          <span className="tpl-kicker">most-derived</span>
-          <code>D obj;</code>
-        </div>
-        <div className="inh-stack">
-          {f.rows.map((row, idx) => {
-            const isDst =
-              (f.kind === 'single' && row.tag === 'base') ||
-              (f.kind === 'multi' && row.tag === 'mid') ||
-              (f.kind === 'diamond' && row.tag === 'dup' && idx === 2) ||
-              (f.kind === 'virtual' && row.tag === 'shared')
-            return (
-              <div
-                key={`${f.kind}-${row.label}`}
-                ref={isDst ? dstRef : undefined}
-                className={`inh-row inh-row--${row.tag}${isDst ? ' inh-row--hot' : ''}`}
-              >
-                {row.label}
-              </div>
-            )
-          })}
-        </div>
-        {pos && f.hopLabel && (
-          <span className={`inh-flyer${f.kind === 'diamond' ? ' inh-flyer--dup' : ''}${f.kind === 'virtual' ? ' inh-flyer--shared' : ''}`} style={{ left: pos.x, top: pos.y }}>
-            {f.hopLabel}
-          </span>
+            <Slice
+              kicker="Derived"
+              note={showDerived ? 'D members' : 'not yet'}
+              on={showDerived}
+              dim={!showDerived}
+              tag="derived"
+            />
+          </>
         )}
-        {f.kind === 'diamond' && <span className="ct-flag">ambiguous</span>}
-        {f.kind === 'virtual' && <span className="ex-caught-flag">one Base</span>}
+        {kind === 'multi' && (
+          <>
+            <Slice kicker="BaseA" note={showBase ? 'vptr + A' : 'not yet'} on={showBase} tag="base" />
+            <Slice
+              kicker="BaseB"
+              note={showDerived ? 'vptr + B · offset from D*' : 'not yet'}
+              on={showDerived}
+              hot={bound}
+              tag="mid"
+            />
+            <Slice kicker="Derived" note={showDerived ? 'D members' : 'not yet'} on={showDerived} tag="derived" />
+          </>
+        )}
+        {kind === 'diamond' && (
+          <>
+            <Slice kicker="Base via A" note={showBase ? 'first Base' : 'not yet'} on={showBase} dup={bound} tag="dup" />
+            <Slice kicker="A extra" note={showBase ? 'A members' : 'not yet'} on={showBase} tag="mid" />
+            <Slice
+              kicker="Base via B"
+              note={showDerived ? 'second Base' : 'not yet'}
+              on={showDerived}
+              dup={bound}
+              hot={bound}
+              tag="dup"
+            />
+            <Slice kicker="B extra" note={showDerived ? 'B members' : 'not yet'} on={showDerived} tag="mid" />
+            <Slice kicker="Derived" note={showDerived ? 'D members' : 'not yet'} on={showDerived} tag="derived" />
+          </>
+        )}
+        {kind === 'virtual' && (
+          <>
+            <Slice kicker="A" note={showBase ? 'vbptr' : 'not yet'} on={showBase} tag="mid" />
+            <Slice kicker="B" note={showBase ? 'vbptr' : 'not yet'} on={showBase} tag="mid" />
+            <Slice kicker="Derived extra" note={showDerived ? 'D members' : 'not yet'} on={showDerived} tag="derived" />
+            <Slice
+              kicker="shared Base"
+              note={bound ? 'constructed by D' : showDerived ? 'not yet — most-derived will' : 'not yet'}
+              on={bound}
+              hot={bound}
+              tag="shared"
+            />
+          </>
+        )}
       </div>
+      <div
+        className={`fx-verdict${i >= 3 ? ' fx-verdict--show' : ''} ${
+          kind === 'diamond' && i >= 3 ? 'fx-verdict--trap' : i >= 3 ? 'fx-verdict--ok' : ''
+        }`}
+      >
+        {i < 3
+          ? ''
+          : kind === 'single'
+            ? 'Base* = D* · same address'
+            : kind === 'multi'
+              ? 'BaseB* = D* + offset'
+              : kind === 'diamond'
+                ? 'ambiguous · two Base subobjects'
+                : 'one Base · most-derived constructed it'}
+      </div>
+    </SceneShell>
+  )
+}
 
-      <pre className="code-block sh-code">
-        <code>{f.code}</code>
-      </pre>
-      <p className="layout-hint">{f.hint}</p>
+function Slice({
+  kicker,
+  note,
+  on,
+  hot,
+  dim,
+  dup,
+  tag,
+}: {
+  kicker: string
+  note: string
+  on: boolean
+  hot?: boolean
+  dim?: boolean
+  dup?: boolean
+  tag: 'base' | 'mid' | 'derived' | 'dup' | 'shared'
+}) {
+  return (
+    <div
+      className={`fx-slice fx-slice--${tag}${on ? ' fx-slice--on' : ' fx-slice--off'}${hot ? ' fx-slice--hot' : ''}${
+        dim ? ' fx-slice--dim' : ''
+      }${dup ? ' fx-slice--dup' : ''}`}
+    >
+      <span className="fx-kicker">{kicker}</span>
+      <span className="fx-note">{note}</span>
+      {hot && <span className="fx-badge fx-badge--open">bound</span>}
+      {dup && <span className="fx-badge fx-badge--lock">copy</span>}
     </div>
   )
 }
