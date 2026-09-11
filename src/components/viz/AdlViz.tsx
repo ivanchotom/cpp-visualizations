@@ -1,158 +1,30 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { hop, waitNextBeat, type Point } from './motion.ts'
+import { useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'swap' | 'stream' | 'friend' | 'parens'
 
-const MODES: { id: Mode; title: string; sig: string }[] = [
-  { id: 'swap', title: 'swap', sig: 'swap(a, b)' },
-  { id: 'stream', title: 'stream', sig: 'cout << x' },
-  { id: 'friend', title: 'friend', sig: 'operator==' },
-  { id: 'parens', title: 'parens', sig: '(std::min)(a, b)' },
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'swap', title: 'swap' },
+  { id: 'stream', title: 'stream' },
+  { id: 'friend', title: 'hidden friend' },
+  { id: 'parens', title: 'parens' },
 ]
-
-const STEP_MS = 1300
-const HOP_MS = 700
 
 export function AdlViz() {
   const [id, setId] = useState<Mode>('swap')
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [from, setFrom] = useState<Point>({ x: 80, y: 90 })
-  const [to, setTo] = useState<Point>({ x: 360, y: 90 })
+  const { i, playing, play, reset } = useBeats(4)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const srcRef = useRef<HTMLDivElement>(null)
-  const midRef = useRef<HTMLDivElement>(null)
-  const rightRef = useRef<HTMLDivElement>(null)
-
-  const stepCount = 4
-  const bounce = id === 'parens' && i >= 2
-  const trapped = id === 'parens' && i >= 2
-  const won = (id === 'swap' && i >= 2) || (id === 'stream' && i >= 2) || (id === 'friend' && i >= 2)
-
-  const useRight = i >= 2
-
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    const srcEl = srcRef.current
-    const dstEl = useRight ? rightRef.current : midRef.current
-    if (!stage || !srcEl || !dstEl) return
-    const origin = stage.getBoundingClientRect()
-    const a = srcEl.getBoundingClientRect()
-    const b = dstEl.getBoundingClientRect()
-    const src = { x: a.left - origin.left + a.width / 2, y: a.top - origin.top + a.height / 2 }
-    const dst = { x: b.left - origin.left + b.width / 2, y: b.top - origin.top + b.height / 2 }
-    if (bounce) {
-      setFrom(dst)
-      setTo(src)
-    } else {
-      setFrom(src)
-      setTo(dst)
-    }
-  }, [id, i, bounce, useRight])
-
-  useEffect(() => {
-    if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
-    }
-    raf = requestAnimationFrame(hopLoop)
-    const stopBeat = waitNextBeat(STEP_MS, () => {
-      if (i >= stepCount - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stopBeat()
-    }
-  }, [playing, i, stepCount])
-
-  function select(next: Mode) {
-    setPlaying(false)
-    setId(next)
-    setI(0)
-    setHopT(1)
+  function select(next: string) {
+    reset()
+    setId(next as Mode)
   }
 
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
-  }
-
-  const pos = hopT < 1 && i >= 1 ? hop(from, to, hopT) : null
-  const flyerText =
-    id === 'swap'
-      ? i === 1
-        ? 'using'
-        : 'swap'
-      : id === 'stream'
-        ? i === 1
-          ? 'cout'
-          : '<<'
-        : id === 'friend'
-          ? i === 1
-            ? 'a == b'
-            : 'ADL'
-          : i === 1
-            ? 'std::min'
-            : 'N::min'
-
-  const leftName =
-    id === 'swap' ? 'N::Item' : id === 'stream' ? 'ostream' : id === 'friend' ? 'Item' : 'call site'
-  const leftVal =
-    id === 'swap' ? 'a, b' : id === 'stream' ? 'std::cout' : id === 'friend' ? 'hidden ==' : 'qualified'
-  const midName =
-    id === 'swap' ? 'lookup' : id === 'stream' ? 'operator<<' : id === 'friend' ? 'ordinary' : 'std::'
-  const midVal =
-    id === 'swap' && i >= 1
-      ? 'using + ADL'
-      : id === 'stream' && i >= 1
-        ? 'ns std'
-        : id === 'friend' && i >= 1
-          ? 'not visible'
-          : id === 'parens' && i >= 1
-            ? 'no ADL'
-            : '—'
-  const midNote =
-    id === 'swap' ? 'two-step idiom' : id === 'stream' ? 'associated ns' : id === 'friend' ? 'not in scope' : 'parens kill ADL'
-  const rightName =
-    id === 'swap' ? 'N::swap' : id === 'stream' ? 'std::<<' : id === 'friend' ? 'hidden friend' : 'user min'
-  const rightVal =
-    id === 'swap' && i >= 2
-      ? 'picked'
-      : id === 'stream' && i >= 2
-        ? 'found'
-        : id === 'friend' && i >= 2
-          ? 'found'
-          : id === 'parens' && i >= 2
-            ? 'skipped'
-            : '—'
-  const rightNote =
-    id === 'swap' && won
-      ? 'better than std::swap'
-      : id === 'swap'
-        ? 'associated ns of Item'
-        : id === 'stream' && won
-          ? 'why << works'
-          : id === 'stream'
-            ? 'Koenig lookup'
-            : id === 'friend' && won
-              ? 'ADL only'
-              : id === 'friend'
-                ? 'compare two Items'
-                : bounce
-                  ? 'that is the point'
-                  : 'or min<int>'
+  const looked = i >= 1
+  const found = i >= 2
+  const recap = i >= 3
+  const won = (id === 'swap' || id === 'stream' || id === 'friend') && found
+  const killed = id === 'parens' && found
 
   const code =
     id === 'swap'
@@ -197,94 +69,161 @@ std::min<int>(a, b);        // no ADL
             ? 'Play friend. friend operator== defined inside the class is not visible to ordinary lookup. ADL finds it when you compare two objects of that type.'
             : 'Play parens. (std::min)(a, b) or std::min<int>(a, b) suppress ADL. Useful around Windows min/max macros too.'
       : id === 'swap' && i === 1
-        ? 'using std::swap hops into the overload set. Ordinary lookup now sees std::swap. That is not the whole set.'
+        ? 'using std::swap enters the overload set. Ordinary lookup now sees std::swap. That is not the whole set.'
         : id === 'swap' && i === 2
-          ? 'swap(a, b) hops to N::swap. Item’s associated namespace is N. ADL adds N::swap. The two-step idiom is how you write a generic swap.'
+          ? 'swap(a, b) picks N::swap. Item’s associated namespace is N. ADL adds N::swap. The two-step idiom is how you write a generic swap.'
           : id === 'swap'
             ? 'std::swap(a, b) with qualification never considers N::swap. If Item is expensive to move, you just called the wrong function.'
             : id === 'stream' && i === 1
-              ? 'cout hops in. Its type is std::ostream, associated namespace std. Unqualified << is a function call in disguise.'
+              ? 'cout’s type is std::ostream, associated namespace std. Unqualified << is a function call in disguise.'
               : id === 'stream' && i === 2
-                ? '<< hops into std::operator<<. That is why the insertion operators live next to the stream types. Your type’s << should live next to your type.'
+                ? 'ADL finds std::operator<<. Insertion operators live next to the stream types. Your type’s << should live next to your type.'
                 : id === 'stream'
                   ? 'A using namespace std plus ADL can make the overload set enormous. Prefer using-declarations, or qualify when you mean a specific function.'
                   : id === 'friend' && i === 1
-                    ? 'a == b hops. Ordinary lookup in this scope does not see the friend. The name is hidden on purpose.'
+                    ? 'Ordinary lookup in this scope does not see the friend. The name is hidden on purpose.'
                     : id === 'friend' && i === 2
                       ? 'ADL searches Item’s namespace (and the class itself for friends). The hidden friend is found. That keeps == out of other overload sets.'
                       : id === 'friend'
                         ? 'Hidden friends are the usual C++11 spelling for operator==. They are not a C++20 invention; C++20 just generates them.'
                         : i === 1
-                          ? '(std::min) hops as a parenthesized id-expression. That is not an unqualified function call, so ADL does not run.'
+                          ? '(std::min) is a parenthesized id-expression. That is not an unqualified function call, so ADL does not run.'
                           : i === 2
                             ? 'N::min is skipped. If a macro named min exists, the parens also stop expansion. std::min<int> is the other ADL kill-switch.'
                             : 'Unqualified begin/end on a mix of arrays and containers is another ADL footgun — std::begin is the portable one.'
 
-  const m = MODES.find((x) => x.id === id) ?? MODES[0]
-  const stageKind = trapped ? 'ad-stage--reject' : won ? 'ad-stage--win' : ''
+  const tone = killed ? 'warn' : won ? 'ok' : 'idle'
+  const playLabel =
+    id === 'swap'
+      ? 'Play swap(a, b)'
+      : id === 'stream'
+        ? 'Play cout << x'
+        : id === 'friend'
+          ? 'Play a == b'
+          : 'Play (std::min)'
+
+  const inName = id === 'swap' ? 'N::Item' : id === 'stream' ? 'ostream' : id === 'friend' ? 'Item' : 'call site'
+  const inVal = id === 'swap' ? 'a, b' : id === 'stream' ? 'std::cout' : id === 'friend' ? 'a == b' : '(std::min)'
+  const midName = id === 'swap' ? 'lookup' : id === 'stream' ? 'associated ns' : id === 'friend' ? 'ordinary' : 'id-expr'
+  const midVal =
+    id === 'swap' && looked
+      ? 'using std::swap'
+      : id === 'stream' && looked
+        ? 'namespace std'
+        : id === 'friend' && looked
+          ? 'not visible'
+          : id === 'parens' && looked
+            ? 'no ADL'
+            : '—'
+  const outName = id === 'swap' ? 'N::swap' : id === 'stream' ? 'operator<<' : id === 'friend' ? 'hidden friend' : 'N::min'
+  const outVal =
+    id === 'swap' && found
+      ? 'picked'
+      : id === 'stream' && found
+        ? 'found'
+        : id === 'friend' && found
+          ? 'found'
+          : killed
+            ? 'skipped'
+            : '—'
+
+  const leftLink = looked ? 'fx-link--on' : ''
+  const rightLink = killed ? 'fx-link--dead' : won ? 'fx-link--weld' : found ? 'fx-link--on' : ''
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        {MODES.map((x) => (
-          <button
-            key={x.id}
-            className={`chip${id === x.id ? ' chip--active' : ''}`}
-            onClick={() => select(x.id)}
-            disabled={playing}
-          >
-            {x.title}
-          </button>
-        ))}
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play ADL
-        </button>
-        <button className="chip chip--ghost" onClick={() => select(id)}>
-          reset
-        </button>
-      </div>
-
-      <div ref={stageRef} className={`viz-stage ad-stage viz-stage--live ${stageKind}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{stepCount} · <code>{m.sig}</code>
-        </p>
-        <div className="ad-row">
-          <div ref={srcRef} className={`own-card${i >= 1 ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">in</span>
-            <span className="own-name">{leftName}</span>
-            <span className="mem-val">{leftVal}</span>
-            <span className="mem-note">arguments</span>
-          </div>
-          <div ref={midRef} className={`own-card${i >= 1 && !useRight ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">lookup</span>
-            <span className="own-name">{midName}</span>
-            <span className="mem-val">{midVal}</span>
-            <span className="mem-note">{midNote}</span>
-          </div>
-          <div
-            ref={rightRef}
-            className={`own-card${won ? ' own-card--unique' : ''}${trapped ? ' nd-card--ub' : ''}`}
-          >
-            <span className="lf-tag">out</span>
-            <span className="own-name">{rightName}</span>
-            <span className="mem-val">{rightVal}</span>
-            <span className="mem-note">{rightNote}</span>
+    <SceneShell
+      modes={MODES}
+      mode={id}
+      onSelect={select}
+      playing={playing}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setId(id)
+      }}
+      playLabel={playLabel}
+      step={i}
+      stepCount={4}
+      sig={MODES.find((m) => m.id === id)?.title}
+      caption={caption}
+      code={code}
+      tone={tone}
+    >
+      <div className="fx-own">
+        <div className={`fx-pane${looked ? ' fx-pane--focus' : ''}`}>
+          <span className="fx-kicker">arguments</span>
+          <div className={`fx-slot${looked ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+            <span className="fx-kicker">{inName}</span>
+            <span className="fx-value">{inVal}</span>
+            <span className="fx-note">{id === 'parens' ? 'parenthesized' : 'associated types'}</span>
           </div>
         </div>
-        {pos && (
-          <span
-            className={`ptr-pulse ad-flyer${trapped || bounce ? ' ad-flyer--trap' : ''}`}
-            style={{ left: pos.x, top: pos.y }}
+        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
+        <div className={`fx-pane${looked ? ' fx-pane--focus' : ''}`}>
+          <span className="fx-kicker">lookup</span>
+          <div
+            className={`fx-slot${
+              id === 'friend' && looked && !found
+                ? ' fx-slot--dim'
+                : looked
+                  ? ' fx-slot--focus'
+                  : ' fx-slot--dim'
+            }`}
           >
-            {flyerText}
-          </span>
-        )}
+            <span className="fx-kicker">{midName}</span>
+            <span className="fx-value">{midVal}</span>
+            <span className="fx-note">
+              {id === 'swap'
+                ? 'two-step idiom'
+                : id === 'stream'
+                  ? 'Koenig'
+                  : id === 'friend'
+                    ? 'not in scope'
+                    : 'parens kill ADL'}
+            </span>
+          </div>
+        </div>
+        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
+        <div className={`fx-pane${found ? ' fx-pane--focus' : ''}`}>
+          <span className="fx-kicker">chosen</span>
+          <div
+            className={`fx-slot${
+              killed ? ' fx-slot--trap' : won ? ' fx-slot--ok' : ' fx-slot--dim'
+            }`}
+          >
+            <span className="fx-kicker">{outName}</span>
+            <span className="fx-value">{outVal}</span>
+            <span className="fx-note">
+              {id === 'swap' && won
+                ? 'better than std::swap'
+                : id === 'stream' && won
+                  ? 'why << works'
+                  : id === 'friend' && won
+                    ? 'ADL only'
+                    : killed
+                      ? 'that is the point'
+                      : 'waiting'}
+            </span>
+          </div>
+        </div>
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{code}</code>
-      </pre>
-      <p className="layout-hint">{caption}</p>
-    </div>
+      <div
+        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
+          killed ? 'fx-verdict--warn' : won ? 'fx-verdict--ok' : ''
+        }`}
+      >
+        {id === 'swap' && found
+          ? recap
+            ? 'qualify std::swap and you skip N'
+            : 'ADL · N::swap wins'
+          : id === 'stream' && found
+            ? 'ADL · operator<< in std'
+            : id === 'friend' && found
+              ? 'hidden friend · ADL only'
+              : killed
+                ? 'parens · ADL off'
+                : ''}
+      </div>
+    </SceneShell>
   )
 }
