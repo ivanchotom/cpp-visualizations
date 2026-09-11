@@ -4,48 +4,12 @@ import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'zero' | 'dtor' | 'five' | 'del'
 
-type SlotKind = 'gen' | 'user' | 'absent' | 'deleted' | 'idle'
-
-const SLOTS = [
-  { key: 'dtor', label: '~T()' },
-  { key: 'copy', label: 'T(const T&)' },
-  { key: 'cassign', label: 'T& operator=' },
-  { key: 'move', label: 'T(T&&)' },
-  { key: 'massign', label: 'T& operator= &&' },
-] as const
-
 const MODES: { id: Mode; title: string }[] = [
   { id: 'zero', title: 'Rule of Zero' },
   { id: 'dtor', title: 'user ~T()' },
   { id: 'five', title: 'Rule of Five' },
   { id: 'del', title: 'move-only' },
 ]
-
-function slotState(mode: Mode, i: number, key: (typeof SLOTS)[number]['key']): SlotKind {
-  if (i === 0) return 'idle'
-  if (mode === 'zero') return 'gen'
-  if (mode === 'dtor') {
-    if (key === 'dtor') return i >= 1 ? 'user' : 'idle'
-    if (key === 'move' || key === 'massign') return i >= 2 ? 'absent' : 'gen'
-    return 'gen'
-  }
-  if (mode === 'five') {
-    if (key === 'dtor') return i >= 1 ? 'user' : 'idle'
-    if (key === 'copy' || key === 'cassign') return i >= 2 ? 'user' : 'idle'
-    return i >= 3 ? 'user' : 'idle'
-  }
-  if (key === 'copy' || key === 'cassign') return i >= 2 ? 'deleted' : 'idle'
-  if (key === 'dtor' || key === 'move' || key === 'massign') return i >= 1 ? 'user' : 'idle'
-  return 'idle'
-}
-
-function slotLabel(st: SlotKind): string {
-  if (st === 'idle') return '—'
-  if (st === 'gen') return 'generated'
-  if (st === 'user') return 'user'
-  if (st === 'deleted') return '= delete'
-  return 'absent'
-}
 
 export function SpecialMembersViz() {
   const [id, setId] = useState<Mode>('zero')
@@ -61,8 +25,8 @@ export function SpecialMembersViz() {
   const recap = i >= 3
   const copied = id === 'dtor' && recap
   const stolen = (id === 'zero' || id === 'del') && recap
-  const trap = copied
-  const ok = stolen || (id === 'five' && recap)
+  const trap = copied || (id === 'del' && decided && !recap)
+  const ok = (id === 'zero' && recap) || (id === 'five' && recap) || (id === 'del' && recap)
 
   const code =
     id === 'zero'
@@ -77,11 +41,9 @@ export function SpecialMembersViz() {
         ? recap
           ? `Handle b = std::move(a);  // copies
 // implicit moves are gone (C++14)`
-          : i === 1
-            ? `~Handle();  // user-declared`
-            : i === 2
-              ? `// implicit moves are gone (C++14)`
-              : `class Handle { /* compiler five */ };`
+          : `class Handle {
+  ~Handle();  // user-declared
+};`
         : id === 'five'
           ? recap
             ? `// define or delete all five.`
@@ -99,14 +61,14 @@ Handle& operator=(const Handle&) = delete;`
   const caption =
     i === 0
       ? id === 'zero'
-        ? 'Play move. If every resource is already a member that knows copy/move/destroy, write nothing. That is the Rule of Zero.'
+        ? 'Play T b = std::move(a). If every resource is already a member that knows copy/move/destroy, write nothing. That is the Rule of Zero.'
         : id === 'dtor'
-          ? 'Play a user destructor. In C++14 a user-declared destructor suppresses implicit moves. Your class silently starts copying.'
+          ? 'Play user ~T(). In C++14 a user-declared destructor suppresses implicit moves. Your class silently starts copying.'
           : id === 'five'
             ? 'Play the five. If you manage a raw resource, define or delete destructor, both copies, and both moves.'
-            : 'Play delete. Delete the copy to make a type move-only. unique_ptr is this shape.'
+            : 'Play = delete copy. Delete the copy to make a type move-only. unique_ptr is this shape.'
       : id === 'zero' && i === 1
-        ? 'string and unique_ptr already know the five. The compiler’s memberwise special members do the right thing.'
+        ? 'string and unique_ptr already know the five. The compiler’s memberwise special members do the right thing. Stations light in place.'
         : id === 'zero' && i === 2
           ? 'All five stay generated. No user dtor, no user copy, no user move — the compiler may write moves.'
           : id === 'zero'
@@ -118,9 +80,9 @@ Handle& operator=(const Handle&) = delete;`
                 : id === 'dtor'
                   ? 'T b = std::move(a) copies. The source is unchanged. A type that owned a raw pointer would now double-free on destroy.'
                   : id === 'five' && i === 1
-                    ? 'Once you touch one, look at all of them. The grid is the checklist, not a suggestion.'
+                    ? 'Once you touch one, look at all of them. The two stations are the checklist, not a five-wide grid of flying tiles.'
                     : id === 'five' && i === 2
-                      ? 'Copies are user-provided. Moves still pending. The class is not done until the row is full.'
+                      ? 'Copies are user-provided. Moves still pending. The class is not done until both copies and both moves are named.'
                       : id === 'five'
                         ? 'All five are user-provided. A polymorphic base is the deliberate exception: virtual ~Base() = default, then default or delete the rest.'
                         : i === 1
@@ -133,36 +95,31 @@ Handle& operator=(const Handle&) = delete;`
   const playLabel =
     id === 'zero' ? 'Play T b = std::move(a)' : id === 'dtor' ? 'Play user ~T()' : id === 'five' ? 'Play the five' : 'Play = delete copy'
 
-  const aOn = stepped
-  const bOn = recap
-  const aEmpty = stolen
-  const linkKind = stolen ? 'weld' : copied ? 'on' : decided && id === 'del' ? 'dead' : stepped ? 'on' : ''
-
   const verdict =
-    id === 'zero' && i === 1
-      ? 'all five generated'
-      : id === 'zero' && i === 2
+    id === 'zero' && recap
+      ? 'members moved · you wrote nothing'
+      : id === 'zero' && decided
         ? 'members manage · no specials'
-        : stolen && id === 'zero'
-          ? 'members moved · you wrote nothing'
-          : id === 'dtor' && i === 1
-            ? 'user dtor · even empty'
-            : id === 'dtor' && i === 2
-              ? 'moves absent · C++14 trap'
-              : copied
-                ? 'std::move copied · source unchanged'
-                : id === 'five' && i === 1
-                  ? 'dtor user · look at the rest'
-                  : id === 'five' && i === 2
+        : id === 'zero' && stepped
+          ? 'all five generated'
+          : copied
+            ? 'std::move copied · source ok'
+            : id === 'dtor' && decided
+              ? 'moves absent · C++14'
+              : id === 'dtor' && stepped
+                ? 'user dtor · even empty'
+                : id === 'five' && recap
+                  ? 'all five user · define or delete'
+                  : id === 'five' && decided
                     ? 'copies user · moves pending'
-                    : id === 'five' && recap
-                      ? 'all five user · define or delete'
-                      : id === 'del' && i === 1
-                        ? 'dtor + moves · copy pending'
-                        : id === 'del' && decided && !recap
-                          ? 'copy = delete · move-only'
-                          : stolen && id === 'del'
-                            ? 'move-only · a empty'
+                    : id === 'five' && stepped
+                      ? 'dtor user · look at the rest'
+                      : stolen && id === 'del'
+                        ? 'move-only · a gone'
+                        : id === 'del' && decided
+                          ? 'copy = delete'
+                          : id === 'del' && stepped
+                            ? 'dtor + moves'
                             : ''
 
   return (
@@ -184,46 +141,59 @@ Handle& operator=(const Handle&) = delete;`
       code={code}
       tone={tone}
     >
-      <div className="fx-five">
-        {SLOTS.map((s) => {
-          const st = slotState(id, i, s.key)
-          return (
-            <div key={s.key} className={`fx-sm fx-sm--${st}`}>
-              <span className="fx-kicker">{s.label}</span>
-              <span className="fx-note">{slotLabel(st)}</span>
-            </div>
-          )
-        })}
-      </div>
-      {id !== 'five' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${aOn ? ' fx-pane--focus' : ''}${aEmpty ? ' fx-pane--gone' : ''}`}>
-            <span className="fx-kicker">a</span>
-            <div className={`fx-slot${aOn && !aEmpty ? ' fx-slot--focus' : ' fx-slot--dim'}${copied ? ' fx-slot--ok' : ''}`}>
-              <span className="fx-kicker">Handle</span>
-              <div className="fx-buf-row">
-                <span className={`fx-letter${aOn && !aEmpty ? ' fx-letter--on' : ' fx-letter--empty'}`}>
-                  {aOn && !aEmpty ? 'H' : '·'}
-                </span>
-              </div>
-              <span className="fx-note">{aEmpty ? 'moved-from / empty' : aOn ? 'owns' : 'not in the scene yet'}</span>
-              {aOn && !aEmpty && <span className="fx-badge fx-badge--owner">owner</span>}
-            </div>
+      {id === 'zero' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${stolen ? ' fx-rank--done' : ''}`}>
+            <code>a</code>
+            <span className="fx-note">members</span>
+            <span className="fx-note">{stolen ? 'gone' : stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-link${linkKind ? ` fx-link--${linkKind}` : ''}`} />
-          <div className={`fx-pane${bOn ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">b</span>
-            <div className={`fx-slot${bOn ? (stolen ? ' fx-slot--weld' : copied ? ' fx-slot--ok' : ' fx-slot--focus') : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">Handle</span>
-              <div className="fx-buf-row">
-                <span className={`fx-letter${bOn ? (stolen ? ' fx-letter--move' : ' fx-letter--on') : ' fx-letter--empty'}`}>
-                  {bOn ? 'H' : '·'}
-                </span>
-              </div>
-              <span className="fx-note">{copied ? 'copy of a' : stolen ? 'stole a' : 'not yet'}</span>
-              {copied && <span className="fx-badge fx-badge--open">copy</span>}
-              {stolen && <span className="fx-badge fx-badge--owner">owner</span>}
-            </div>
+          <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : decided ? ' fx-rank--on' : ''}`}>
+            <code>b</code>
+            <span className="fx-note">steal</span>
+            <span className="fx-note">{stolen ? 'ok' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'dtor' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${copied ? ' fx-rank--trap' : ''}`}>
+            <code>~T</code>
+            <span className="fx-note">user</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${copied ? ' fx-rank--trap' : ''}`}>
+            <code>mv</code>
+            <span className="fx-note">T&&</span>
+            <span className="fx-note">{copied ? 'copy' : decided ? 'no' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'five' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>~T</code>
+            <span className="fx-note">dtor</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>mv</code>
+            <span className="fx-note">five</span>
+            <span className="fx-note">{recap ? 'ok' : decided ? 'pend' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'del' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${decided ? ' fx-rank--on' : stepped ? ' fx-rank--on' : ''}${decided ? ' fx-rank--trap' : ''}`}>
+            <code>cp</code>
+            <span className="fx-note">copy</span>
+            <span className="fx-note">{decided ? 'ill' : '—'}</span>
+          </div>
+          <div className={`fx-rank${stolen ? ' fx-rank--on fx-rank--done' : ''}`}>
+            <code>a</code>
+            <span className="fx-note">steal</span>
+            <span className="fx-note">{stolen ? 'gone' : '—'}</span>
           </div>
         </div>
       )}
