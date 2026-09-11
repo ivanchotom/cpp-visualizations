@@ -1,305 +1,307 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { hop, waitNextBeat, type Point } from './motion.ts'
+import { useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'plus' | 'sso' | 'cstr' | 'reserve'
 
-const MODES: { id: Mode; title: string; sig: string }[] = [
-  { id: 'plus', title: 's + x', sig: 's = s + x' },
-  { id: 'sso', title: 'SSO', sig: 's = "hi"' },
-  { id: 'cstr', title: 'c_str', sig: 'p = s.c_str()' },
-  { id: 'reserve', title: 'reserve', sig: 's.reserve(64)' },
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'plus', title: 's + x' },
+  { id: 'sso', title: 'SSO' },
+  { id: 'cstr', title: 'c_str' },
+  { id: 'reserve', title: 'reserve' },
 ]
 
-const STEP_MS = 1300
-const HOP_MS = 700
+function Letters({ chars, cls }: { chars: readonly string[]; cls: (n: number, ch: string) => string }) {
+  return (
+    <div className="fx-buf-row">
+      {chars.map((ch, n) => (
+        <span key={n} className={`fx-letter ${cls(n, ch)}`}>
+          {ch}
+        </span>
+      ))}
+    </div>
+  )
+}
 
 export function StringViz() {
   const [id, setId] = useState<Mode>('plus')
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [from, setFrom] = useState<Point>({ x: 80, y: 90 })
-  const [to, setTo] = useState<Point>({ x: 360, y: 90 })
+  const { i, playing, play, reset } = useBeats(4)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const srcRef = useRef<HTMLDivElement>(null)
-  const midRef = useRef<HTMLDivElement>(null)
-  const rightRef = useRef<HTMLDivElement>(null)
-
-  const stepCount = 4
-  const bounce = id === 'cstr' && i >= 3
-  const trapped = (id === 'plus' && i >= 2 && i < 3) || (id === 'cstr' && i >= 2)
-  const won = (id === 'plus' && i >= 3) || (id === 'sso' && i === 1) || (id === 'reserve' && i >= 2)
-
-  const useRight =
-    (id === 'plus' && i >= 2) ||
-    (id === 'sso' && i >= 2) ||
-    (id === 'cstr' && i >= 2) ||
-    (id === 'reserve' && i >= 2)
-
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    const srcEl = srcRef.current
-    const dstEl = useRight ? rightRef.current : midRef.current
-    if (!stage || !srcEl || !dstEl) return
-    const origin = stage.getBoundingClientRect()
-    const a = srcEl.getBoundingClientRect()
-    const b = dstEl.getBoundingClientRect()
-    const src = { x: a.left - origin.left + a.width / 2, y: a.top - origin.top + a.height / 2 }
-    const dst = { x: b.left - origin.left + b.width / 2, y: b.top - origin.top + b.height / 2 }
-    if (bounce) {
-      setFrom(dst)
-      setTo(src)
-    } else {
-      setFrom(src)
-      setTo(dst)
-    }
-  }, [id, i, bounce, useRight])
-
-  useEffect(() => {
-    if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
-    }
-    raf = requestAnimationFrame(hopLoop)
-    const stopBeat = waitNextBeat(STEP_MS, () => {
-      if (i >= stepCount - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stopBeat()
-    }
-  }, [playing, i, stepCount])
-
-  function select(next: Mode) {
-    setPlaying(false)
-    setId(next)
-    setI(0)
-    setHopT(1)
+  function select(next: string) {
+    reset()
+    setId(next as Mode)
   }
 
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
-  }
-
-  const pos = hopT < 1 && i >= 1 ? hop(from, to, hopT) : null
-  const flyerText =
-    id === 'plus'
-      ? i === 1
-        ? '"ab"'
-        : i === 2
-          ? 'copy all'
-          : '+='
-      : id === 'sso'
-        ? i === 1
-          ? '"hi"'
-          : 'heap'
-        : id === 'cstr'
-          ? i === 1
-            ? 'p'
-            : i === 2
-              ? 'realloc'
-              : 'dangle'
-          : i === 1
-            ? 'reserve'
-            : '+='
-
-  const leftName = 'std::string s'
-  const leftVal =
-    id === 'plus'
-      ? i >= 3
-        ? '"abc"'
-        : '"ab"'
-      : id === 'sso'
-        ? i >= 2
-          ? '"a long string…"'
-          : '"hi"'
-        : id === 'cstr'
-          ? i >= 2
-            ? 'grew'
-            : '"hello"'
-          : i >= 1
-            ? 'cap 64'
-            : 'cap 0'
-  const midName =
-    id === 'plus' ? 's + x' : id === 'sso' ? 'inline SSO' : id === 'cstr' ? 'const char* p' : 'capacity'
-  const midVal =
-    id === 'plus' && i >= 1
-      ? 'new string'
-      : id === 'sso' && i === 1
-        ? 'in the object'
-        : id === 'cstr' && i >= 1
-          ? i >= 2
-            ? 'stale'
-            : '&buf[0]'
-          : id === 'reserve' && i >= 1
-            ? '64'
-            : '—'
-  const midNote =
-    id === 'plus'
-      ? 'always allocates a result'
-      : id === 'sso'
-        ? 'implementation-defined size'
-        : id === 'cstr'
-          ? 'points into s'
-          : 'paid up front'
-  const rightName =
-    id === 'plus' ? 's += x' : id === 'sso' ? 'heap buffer' : id === 'cstr' ? 's += "…"' : 'append'
-  const rightVal =
-    id === 'plus' && i >= 3
-      ? 'one buffer'
-      : id === 'sso' && i >= 2
-        ? 'allocated'
-        : id === 'cstr' && i >= 2
-          ? 'new buf'
-          : id === 'reserve' && i >= 2
-            ? 'no realloc'
-            : '—'
-  const rightNote =
-    id === 'plus' && i >= 3
-      ? 'append in place'
-      : id === 'plus'
-        ? 'loops go quadratic'
-        : id === 'sso' && i >= 2
-          ? 'too big for SSO'
-          : id === 'sso'
-            ? 'long strings leave'
-            : id === 'cstr' && i >= 2
-              ? 'p is dangling'
-              : id === 'cstr'
-                ? 'may reallocate'
-                : 'then += is cheap'
+  const stepped = i >= 1
+  const decided = i >= 2
+  const recap = i >= 3
+  const plusCopy = id === 'plus' && stepped && !recap
+  const plusFix = id === 'plus' && recap
+  const ssoInline = id === 'sso' && i === 1
+  const ssoHeap = id === 'sso' && decided
+  const cstrLive = id === 'cstr' && i === 1
+  const cstrDangle = id === 'cstr' && decided
+  const reserved = id === 'reserve' && stepped
+  const appendOk = id === 'reserve' && decided
 
   const code =
     id === 'plus'
-      ? i < 3
-        ? `std::string s = "ab";
-s = s + "c";   // new string, copy all
-s = s + "d";   // again`
-        : `s += "c";
+      ? recap
+        ? `s += "c";
 s.append("d");
 // or reserve, then += in a loop`
+        : `std::string s = "ab";
+s = s + "c";   // new string, copy all
+s = s + "d";   // again`
       : id === 'sso'
         ? `std::string a = "hi";      // often inline
 std::string b = "a long string…";
 // SSO size is implementation-defined`
         : id === 'cstr'
-          ? i < 2
-            ? `const char* p = s.c_str();
-// p points at s’s buffer, always \\0`
-            : `s += "........";  // may realloc
+          ? decided
+            ? `s += "........";  // may realloc
 // p dangles. Hold a string, not a pointer.`
-          : `std::string s;
+            : `const char* p = s.c_str();
+// p points at s’s buffer, always \\0`
+          : recap
+            ? `s += "id=";
+s += std::to_string(42);
+// size grew; capacity already paid`
+            : `std::string s;
 s.reserve(64);
-s += "id=";
-s += std::to_string(42);`
+// size still 0; capacity is 64 (or more)`
 
   const caption =
     i === 0
       ? id === 'plus'
-        ? 'Play s = s + x. Each + builds a new string and copies the old characters. In a loop that is quadratic. Prefer += / append / reserve.'
+        ? 'Play s = s + x. Each + builds a new string and copies every old character. In a loop that is quadratic. Prefer += / append / reserve.'
         : id === 'sso'
           ? 'Play SSO. Short strings often live inside the object — no heap. The threshold is implementation-defined. Do not write code that depends on the exact size.'
           : id === 'cstr'
             ? 'Play c_str(). It is cheap because std::string already keeps a terminating \\0. The pointer is into s — a later mutation that reallocates dangles it.'
             : 'Play reserve. size() is length; capacity() is allocated. reserve() is how you avoid repeated growth when you know the bound.'
       : id === 'plus' && i === 1
-        ? '"ab" is copied into a brand-new string, then "c" is appended there. The old s is then replaced.'
+        ? '"ab" is copied into a brand-new string, then "c" is appended there. The old s is then replaced. Cells light in the result — they do not hop.'
         : id === 'plus' && i === 2
           ? 'Do it again and you copy "abc". n appends via + copy ~ n² characters. That is the loop bug.'
           : id === 'plus'
-            ? '+= / append write into the existing buffer when capacity allows. reserve first if you know the final size.'
+            ? '+= / append write into the existing buffer when capacity allows. The spare slot fills in place. reserve first if you know the final size.'
             : id === 'sso' && i === 1
               ? '"hi" stays in the object. Small-string optimization. c_str() still works — the \\0 is in that inline buffer.'
               : id === 'sso' && i === 2
-                ? 'A long string hops to the heap. The object now holds a pointer. SSO did not fail; the string just outgrew it.'
+                ? 'A long string does not fit. Inline slots empty; the heap buffer lights. SSO did not fail; the string just outgrew it.'
                 : id === 'sso'
                   ? 'std::string is bytes, not glyphs. length() is char count, not UTF-8 code points. Encoding is a convention in C++14.'
                   : id === 'cstr' && i === 1
-                    ? 'p = s.c_str(). Valid until s dies or mutates in a way that reallocates (or you call a non-const mutator).'
+                    ? 'p = s.c_str(). Valid until s dies or mutates in a way that reallocates. The green weld is an alias into the buffer, not a copy.'
                     : id === 'cstr' && i === 2
-                      ? 's += more. If capacity was tight, the buffer moves. p still holds the old address.'
+                      ? 's += more. If capacity was tight, the buffer moves. p still holds the old address. The weld dies.'
                       : id === 'cstr'
                         ? 'Dangling. Keep the std::string (or copy). string_view in C++17 has the same lifetime trap — the view does not own.'
                         : i === 1
-                          ? 'reserve(64) allocates once. size is still 0. Capacity is 64 (or more).'
+                          ? 'reserve(64) allocates once. size is still 0. Empty slots are capacity — paid up front, not characters yet.'
                           : i === 2
                             ? '+= now writes in place. No new buffer, no iterator invalidation from growth.'
                             : 'to_string(42) is C++11. Build text with reserve + +=, not a chain of + in a loop.'
 
-  const m = MODES.find((x) => x.id === id) ?? MODES[0]
-  const stageKind = trapped || bounce ? 'st-stage--reject' : won ? 'st-stage--win' : ''
+  const tone = plusCopy && i === 2 ? 'warn' : cstrDangle ? 'trap' : plusFix || ssoInline || appendOk ? 'ok' : 'idle'
+  const playLabel =
+    id === 'plus' ? 'Play s = s + x' : id === 'sso' ? 'Play SSO' : id === 'cstr' ? 'Play c_str()' : 'Play reserve(64)'
+
+  const sPlus = plusFix ? ['a', 'b', 'c', '·'] : ['a', 'b', '·', '·']
+  const plusResult =
+    i === 1 ? ['a', 'b', 'c', '·'] : i === 2 ? ['a', 'b', 'c', 'd'] : ['·', '·', '·', '·']
+  const ssoObj = ssoInline ? ['h', 'i', '\\0'] : ['·', '·', '·']
+  const ssoHeapChars = ssoHeap ? ['a', ' ', 'l', 'o', 'n', 'g', '…', '\\0'] : ['·', '·', '·', '·', '·', '·', '·', '·']
+  const cstrS = cstrDangle ? ['h', 'e', 'l', 'l', 'o', '!', '!', '\\0'] : ['h', 'e', 'l', 'l', 'o', '\\0']
+  const reserveSlots = reserved
+    ? appendOk
+      ? recap
+        ? ['i', 'd', '=', '4', '2', '·', '·', '·']
+        : ['i', 'd', '=', '·', '·', '·', '·', '·']
+      : ['·', '·', '·', '·', '·', '·', '·', '·']
+    : []
+
+  const leftLink = stepped ? (cstrLive ? 'fx-link--weld' : cstrDangle ? 'fx-link--dead' : ssoHeap ? 'fx-link--on' : 'fx-link--on') : ''
+  const rightLink = plusFix ? 'fx-link--weld' : plusCopy ? 'fx-link--on' : appendOk ? 'fx-link--weld' : ''
+
+  const verdict =
+    id === 'plus' && i === 2
+      ? 's + x · copies n² chars'
+      : plusFix
+        ? '+= · one buffer'
+        : ssoInline
+          ? 'SSO · lives in the object'
+          : ssoHeap
+            ? 'too big · heap buffer'
+            : cstrLive
+              ? 'c_str() · alias into s'
+              : cstrDangle
+                ? 'realloc · p dangling'
+                : id === 'reserve' && i === 1
+                  ? 'reserve · capacity paid'
+                  : appendOk
+                    ? '+= · no realloc'
+                    : ''
+
+  const showVerdict = Boolean(verdict)
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        {MODES.map((x) => (
-          <button
-            key={x.id}
-            className={`chip${id === x.id ? ' chip--active' : ''}`}
-            onClick={() => select(x.id)}
-            disabled={playing}
-          >
-            {x.title}
-          </button>
-        ))}
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play string
-        </button>
-        <button className="chip chip--ghost" onClick={() => select(id)}>
-          reset
-        </button>
-      </div>
-
-      <div ref={stageRef} className={`viz-stage st-stage viz-stage--live ${stageKind}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{stepCount} · <code>{m.sig}</code>
-        </p>
-        <div className="st-row">
-          <div ref={srcRef} className={`own-card${i >= 1 ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">s</span>
-            <span className="own-name">{leftName}</span>
-            <span className="mem-val">{leftVal}</span>
-            <span className="mem-note">owns the buffer</span>
+    <SceneShell
+      modes={MODES}
+      mode={id}
+      onSelect={select}
+      playing={playing}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setId(id)
+      }}
+      playLabel={playLabel}
+      step={i}
+      stepCount={4}
+      sig={MODES.find((m) => m.id === id)?.title}
+      caption={caption}
+      code={code}
+      tone={tone}
+    >
+      {id === 'sso' || id === 'cstr' ? (
+        <div className="fx-sh">
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">{id === 'sso' ? 'std::string object' : 'std::string s'}</span>
+            <Letters
+              chars={id === 'sso' ? ssoObj : cstrS}
+              cls={(_n, ch) =>
+                id === 'sso'
+                  ? ssoInline && ch !== '·'
+                    ? ch === '\\0'
+                      ? 'fx-letter--pad'
+                      : 'fx-letter--on'
+                    : 'fx-letter--empty'
+                  : ch === '\\0'
+                    ? 'fx-letter--pad'
+                    : 'fx-letter--on'
+              }
+            />
+            {ssoHeap && <span className="fx-badge">ptr + size</span>}
+            <span className="fx-note">
+              {id === 'sso'
+                ? ssoHeap
+                  ? 'now a pointer + size'
+                  : 'inline SSO buffer'
+                : 'owns the buffer · always \\0'}
+            </span>
           </div>
-          <div ref={midRef} className={`own-card${i >= 1 && !useRight ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">{id === 'cstr' ? 'ptr' : 'op'}</span>
-            <span className="own-name">{midName}</span>
-            <span className="mem-val">{midVal}</span>
-            <span className="mem-note">{midNote}</span>
-          </div>
+          <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
           <div
-            ref={rightRef}
-            className={`own-card${won ? ' own-card--unique' : ''}${trapped || bounce ? ' nd-card--ub' : ''}`}
+            className={`fx-pane${ssoHeap || cstrLive || cstrDangle ? ' fx-pane--focus' : ''}${
+              cstrDangle ? ' fx-pane--trap' : ''
+            }${id === 'sso' && !ssoHeap ? ' fx-pane--gone' : ''}`}
           >
-            <span className="lf-tag">{id === 'cstr' ? 'mut' : 'alt'}</span>
-            <span className="own-name">{rightName}</span>
-            <span className="mem-val">{rightVal}</span>
-            <span className="mem-note">{rightNote}</span>
+            <span className="fx-kicker">{id === 'sso' ? 'heap buffer' : 'const char* p'}</span>
+            {id === 'sso' ? (
+              <>
+                <Letters
+                  chars={ssoHeapChars}
+                  cls={(_n, ch) => (ssoHeap && ch !== '·' ? 'fx-letter--move' : 'fx-letter--empty')}
+                />
+                <span className="fx-note">{ssoHeap ? 'too big for SSO' : 'no allocation yet'}</span>
+              </>
+            ) : (
+              <div className={`fx-slot${cstrDangle ? ' fx-slot--trap' : cstrLive ? ' fx-slot--weld' : ' fx-slot--dim'}`}>
+                <span className="fx-kicker">p</span>
+                <span className="fx-value">{cstrLive ? '&s[0]' : cstrDangle ? 'stale' : '—'}</span>
+                <span className="fx-note">{cstrDangle ? 'old address' : cstrLive ? 'alias, not a copy' : 'not yet'}</span>
+              </div>
+            )}
           </div>
         </div>
-        {pos && (
-          <span className={`ptr-pulse st-flyer${trapped || bounce ? ' st-flyer--trap' : ''}`} style={{ left: pos.x, top: pos.y }}>
-            {flyerText}
-          </span>
-        )}
+      ) : (
+        <div className="fx-own">
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">std::string s</span>
+            <Letters
+              chars={id === 'plus' ? sPlus : reserveSlots.length ? reserveSlots : ['·']}
+              cls={(n, ch) =>
+                ch === '·'
+                  ? 'fx-letter--empty'
+                  : id === 'plus' && plusFix && n === 2
+                    ? 'fx-letter--on'
+                    : id === 'reserve' && appendOk
+                      ? 'fx-letter--on'
+                      : 'fx-letter--on'
+              }
+            />
+            <span className="fx-note">
+              {id === 'plus'
+                ? plusFix
+                  ? 'append in place'
+                  : 'owns "ab"'
+                : reserved
+                  ? appendOk
+                    ? recap
+                      ? 'size 5 · cap 8'
+                      : 'size 3 · cap 8'
+                    : 'size 0 · cap 8'
+                  : 'size 0 · cap 0'}
+            </span>
+          </div>
+          <div className={`fx-link${leftLink && id === 'plus' && plusCopy ? ` ${leftLink}` : reserved ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${plusCopy || reserved ? ' fx-pane--focus' : ''}${id === 'plus' && i === 2 ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">{id === 'plus' ? 's + x' : 'capacity'}</span>
+            {id === 'plus' ? (
+              <>
+                <Letters
+                  chars={plusResult}
+                  cls={(_n, ch) => (plusCopy && ch !== '·' ? 'fx-letter--on' : 'fx-letter--empty')}
+                />
+                <span className="fx-note">{plusCopy ? 'always a new string' : 'waiting'}</span>
+              </>
+            ) : (
+              <>
+                <span className="fx-value">{reserved ? '64' : '0'}</span>
+                <span className="fx-note">{reserved ? 'paid up front' : 'no allocation'}</span>
+              </>
+            )}
+          </div>
+          <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
+          <div className={`fx-pane${plusFix || appendOk ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">{id === 'plus' ? 's += x' : 'append'}</span>
+            {id === 'plus' ? (
+              <>
+                <Letters
+                  chars={plusFix ? ['a', 'b', 'c', '·'] : ['·', '·', '·', '·']}
+                  cls={(_n, ch) => (plusFix && ch !== '·' ? 'fx-letter--on' : 'fx-letter--empty')}
+                />
+                <span className="fx-note">{plusFix ? 'one buffer' : 'loops go quadratic'}</span>
+              </>
+            ) : (
+              <div className={`fx-slot${appendOk ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+                <span className="fx-kicker">+=</span>
+                <span className="fx-value">{appendOk ? 'in place' : '—'}</span>
+                <span className="fx-note">{appendOk ? 'no realloc' : 'not yet'}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      <div
+        className={`fx-verdict${showVerdict ? ' fx-verdict--show' : ''} ${
+          cstrDangle
+            ? 'fx-verdict--trap'
+            : plusCopy && i === 2
+              ? 'fx-verdict--warn'
+              : plusFix || ssoInline || appendOk
+                ? 'fx-verdict--ok'
+                : ssoHeap || (id === 'reserve' && i === 1)
+                  ? 'fx-verdict--ok'
+                  : cstrLive
+                    ? 'fx-verdict--ok'
+                    : ''
+        }`}
+      >
+        {verdict}
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{code}</code>
-      </pre>
-      <p className="layout-hint">{caption}</p>
-    </div>
+    </SceneShell>
   )
 }
