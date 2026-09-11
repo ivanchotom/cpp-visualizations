@@ -3,19 +3,12 @@ import { SceneShell } from './scene/SceneShell.tsx'
 import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'lv' | 'pr' | 'xv' | 'named'
-type Cat = 'lvalue' | 'xvalue' | 'prvalue'
 
 const MODES: { id: Mode; title: string }[] = [
   { id: 'lv', title: 'x' },
   { id: 'pr', title: '42' },
   { id: 'xv', title: 'std::move(x)' },
   { id: 'named', title: 'named T&&' },
-]
-
-const TAXONOMY: { cat: Cat; aka: string; steal: string; identity: string }[] = [
-  { cat: 'lvalue', aka: 'glvalue', steal: 'no (copy)', identity: 'yes' },
-  { cat: 'xvalue', aka: 'glvalue + rvalue', steal: 'yes (move)', identity: 'yes (expiring)' },
-  { cat: 'prvalue', aka: 'rvalue', steal: 'yes (init / move)', identity: 'no' },
 ]
 
 export function ValueCategoriesViz() {
@@ -30,13 +23,10 @@ export function ValueCategoriesViz() {
   const stepped = i >= 1
   const decided = i >= 2
   const recap = i >= 3
-
-  const cat: Cat = id === 'pr' ? 'prvalue' : id === 'xv' && decided ? 'xvalue' : 'lvalue'
-  const expr = id === 'lv' ? 'x' : id === 'pr' ? '42' : id === 'xv' ? 'std::move(x)' : 't'
-  const namedTrap = id === 'named' && decided && !recap
-  const namedFix = id === 'named' && recap
-  const maySteal = cat === 'xvalue' || (id === 'pr' && recap)
-  const canAddr = cat === 'lvalue' || cat === 'xvalue'
+  const namedTrap = id === 'named' && decided
+  const prTrap = id === 'pr' && decided
+  const trap = namedTrap || prTrap
+  const ok = (id === 'lv' && recap) || (id === 'xv' && recap)
 
   const code =
     id === 'lv'
@@ -74,7 +64,7 @@ x;          // lvalue`
             ? 'Play std::move(x). An unconditional cast to T&&. It does not move; it marks the expression as an xvalue.'
             : 'Play named t. A named T&& is still an lvalue. wrap must call std::move (or std::forward) — the name killed the xvalue.'
       : id === 'lv' && i === 1
-        ? 'The expression is the object x. glvalue: you can, in spirit, take its address. The cyan slot is identity.'
+        ? 'The expression is the object x. glvalue: you can take its address. Stations light in place.'
         : id === 'lv' && i === 2
           ? 'lvalue ∪ xvalue = glvalue. rvalue = xvalue ∪ prvalue. x is glvalue and not rvalue — copy, do not steal.'
           : id === 'lv'
@@ -82,7 +72,7 @@ x;          // lvalue`
             : id === 'pr' && i === 1
               ? '42 has no name and no address. You cannot write &42. The slot is a value, not an object with identity.'
               : id === 'pr' && i === 2
-                ? 'prvalues initialize. int n = 42; materializes (C++14: the temporary is the initializer).'
+                ? '&42 is ill-formed. prvalues initialize: int n = 42; materializes (C++14: the temporary is the initializer).'
                 : id === 'pr'
                   ? 'x++ is also a prvalue: a temporary copy of the old value. The object x is still an lvalue.'
                   : id === 'xv' && i === 1
@@ -97,30 +87,36 @@ x;          // lvalue`
                             ? 'The name t makes it an lvalue. take(t) will not bind to take(string&&). That is the classic trap.'
                             : 'take(std::move(t)) restores the xvalue. On a forwarding reference write std::forward<T>(t) instead.'
 
-  const tone = namedTrap ? 'trap' : cat === 'xvalue' || namedFix ? 'warn' : recap ? 'ok' : 'idle'
+  const tone = trap ? 'trap' : id === 'xv' && decided ? 'warn' : ok ? 'ok' : 'idle'
   const playLabel =
     id === 'lv' ? 'Play x' : id === 'pr' ? 'Play 42' : id === 'xv' ? 'Play std::move(x)' : 'Play named t'
 
   const verdict =
-    id === 'named' && namedFix
+    namedTrap && recap
       ? 'name killed the xvalue · move(t)'
       : namedTrap
         ? 't is an lvalue · take(t) fails'
         : id === 'named' && stepped
           ? 'T&& param · still needs a name check'
-          : !stepped
-            ? ''
-            : cat === 'lvalue'
-              ? recap
-                ? 'x · identity · copy, do not steal'
-                : 'lvalue · glvalue'
-              : cat === 'xvalue'
-                ? recap
-                  ? 'move(x) · identity, expiring · may steal'
-                  : 'xvalue · cast, not a move'
-                : recap
+          : id === 'lv' && recap
+            ? 'x · identity · copy, do not steal'
+            : id === 'lv' && decided
+              ? 'lvalue · glvalue'
+              : id === 'lv' && stepped
+                ? 'x · has identity'
+                : prTrap && recap
                   ? '42 · no identity · initializes'
-                  : 'prvalue · no address'
+                  : prTrap
+                    ? '&42 · ill-formed'
+                    : id === 'pr' && stepped
+                      ? 'prvalue · no address'
+                      : id === 'xv' && recap
+                        ? 'move(x) · identity, expiring · may steal'
+                        : id === 'xv' && decided
+                          ? 'xvalue · cast, not a move'
+                          : id === 'xv' && stepped
+                            ? 'same object · now expiring'
+                            : ''
 
   return (
     <SceneShell
@@ -141,34 +137,65 @@ x;          // lvalue`
       code={code}
       tone={tone}
     >
-      <div className="fx-cat-expr">
-        <span className="fx-kicker">expression</span>
-        <span className={`fx-value${stepped ? '' : ''}`}>
-          <code>{expr}</code>
-        </span>
-        <span className="fx-note">{stepped ? cat : 'waiting'}</span>
-      </div>
-      <div className="fx-cat-row">
-        {TAXONOMY.map((t) => {
-          const on = stepped && t.cat === cat
-          return (
-            <div
-              key={t.cat}
-              className={`fx-slot${on ? ' fx-slot--focus' : ' fx-slot--dim'}${
-                on && t.cat === 'prvalue' ? ' fx-slot--ok' : ''
-              }${on && t.cat === 'xvalue' ? ' fx-slot--weld' : ''}${namedTrap && t.cat === 'lvalue' ? ' fx-slot--trap' : ''}`}
-            >
-              <span className="fx-kicker">{t.cat}</span>
-              <span className="fx-note">{t.aka}</span>
-              <span className="fx-note">identity: {on ? (canAddr && t.cat !== 'prvalue' ? 'yes' : t.identity) : t.identity}</span>
-              <span className="fx-note">move from: {on && maySteal && t.cat !== 'lvalue' ? t.steal : t.steal}</span>
-            </div>
-          )
-        })}
-      </div>
+      {id === 'lv' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>id</code>
+            <span className="fx-note">addr</span>
+            <span className="fx-note">{stepped ? 'yes' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>st</code>
+            <span className="fx-note">steal</span>
+            <span className="fx-note">{decided ? 'no' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'pr' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+            <code>id</code>
+            <span className="fx-note">addr</span>
+            <span className="fx-note">{stepped ? 'no' : '—'}</span>
+          </div>
+          <div className={`fx-rank${prTrap ? ' fx-rank--trap' : ''}`}>
+            <code>ad</code>
+            <span className="fx-note">&42</span>
+            <span className="fx-note">{prTrap ? 'ill' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'xv' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>id</code>
+            <span className="fx-note">addr</span>
+            <span className="fx-note">{stepped ? 'yes' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>st</code>
+            <span className="fx-note">steal</span>
+            <span className="fx-note">{decided ? 'yes' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'named' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+            <code>t</code>
+            <span className="fx-note">named</span>
+            <span className="fx-note">{stepped ? 'lv' : '—'}</span>
+          </div>
+          <div className={`fx-rank${namedTrap ? ' fx-rank--trap' : ''}`}>
+            <code>tk</code>
+            <span className="fx-note">take</span>
+            <span className="fx-note">{namedTrap ? 'ill' : '—'}</span>
+          </div>
+        </div>
+      )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
-          namedTrap ? 'fx-verdict--trap' : cat === 'xvalue' || namedFix ? 'fx-verdict--warn' : verdict ? 'fx-verdict--ok' : ''
+          trap ? 'fx-verdict--trap' : id === 'xv' && decided ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
         {verdict}
