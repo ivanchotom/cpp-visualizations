@@ -23,32 +23,10 @@ export function OwnershipViz() {
   const stepped = i >= 1
   const decided = i >= 2
   const recap = i >= 3
-
-  const uniqueLive = kind === 'unique' && stepped && !recap
-  const uniqueGone = kind === 'unique' && recap
-  const pOwnsUnique = uniqueLive
-  const qOwnsMove = kind === 'move' && decided
-  const pOwnsMove = kind === 'move' && stepped && !decided
-  const pShared = kind === 'shared' && !recap
-  const qShared = kind === 'shared' && i === 1
-  const pWeakOwner = kind === 'weak' && !decided
-  const wLive = kind === 'weak' && stepped
   const lockFail = kind === 'weak' && recap
-
-  const useCount =
-    kind === 'shared' ? (i === 1 ? 2 : i === 0 || i === 2 ? 1 : 0) : kind === 'weak' ? (pWeakOwner ? 1 : 0) : pOwnsUnique || pOwnsMove || qOwnsMove ? 1 : 0
-  const weakCount = kind === 'weak' && stepped ? 1 : 0
-  const heapOn =
-    kind === 'unique'
-      ? uniqueLive
-      : kind === 'move'
-        ? stepped
-        : kind === 'shared'
-          ? !recap
-          : kind === 'weak' && !decided
-  const ctrlLive = kind === 'shared' ? !recap : kind === 'weak' && stepped
   const trap = lockFail
-  const ok = uniqueGone || (kind === 'shared' && recap) || (kind === 'move' && recap)
+  const ok =
+    (kind === 'unique' && recap) || (kind === 'move' && recap) || (kind === 'shared' && recap)
 
   const code =
     kind === 'unique'
@@ -63,19 +41,14 @@ export function OwnershipViz() {
           : `auto p = std::make_unique<T>(42);
 auto q = std::move(p);`
         : kind === 'shared'
-          ? i === 0
-            ? `auto p = std::make_shared<T>(42);
-// use_count == 1`
-            : i === 1
-              ? `auto q = p;  // use_count == 2`
-              : i === 2
-                ? `q.reset();  // use_count == 1`
-                : `p.reset();  // use_count == 0, ~T`
+          ? recap
+            ? `p.reset();  // use_count == 0, ~T`
+            : `auto p = std::make_shared<T>(42);
+auto q = p;  // use_count == 2`
           : recap
             ? `auto locked = w.lock();  // empty`
-            : decided
-              ? `p.reset();  // T destroyed, weak still here`
-              : `std::weak_ptr<T> w = p;  // use=1, weak=1`
+            : `std::weak_ptr<T> w = p;
+p.reset();  // T destroyed, weak still here`
 
   const caption =
     i === 0
@@ -87,9 +60,9 @@ auto q = std::move(p);`
             ? 'Play copy. shared_ptr copies share one T. The control block holds use_count. T is not cloned.'
             : 'Play lock(). weak_ptr observes without bumping use_count. lock() either promotes to shared_ptr or returns empty.'
       : kind === 'unique' && i === 1
-        ? 'p is on the stack. T is on the heap. The cyan bar is the stored address — exclusive, not a raw observer.'
+        ? 'p is on the stack. T is on the heap. Exclusive, not a raw observer. Stations light in place.'
         : kind === 'unique' && i === 2
-          ? 'Green weld: exclusive. You cannot copy a unique_ptr. The copy constructor is deleted. Move would steal this bar.'
+          ? 'You cannot copy a unique_ptr. The copy constructor is deleted. Move would steal the stored address.'
           : kind === 'unique'
             ? 'p left scope. Destructor ran delete. No leak, no leftover pointer. That is RAII for the heap.'
             : kind === 'move' && i === 1
@@ -99,15 +72,15 @@ auto q = std::move(p);`
                 : kind === 'move'
                   ? 'Copy is deleted. unique_ptr encodes exclusive ownership in the type. After the steal, only q may delete T.'
                   : kind === 'shared' && i === 1
-                    ? 'q is a second owner. use_count fills in place to 2. T is not cloned — both names share it.'
+                    ? 'q is a second owner. use_count is 2. T is not cloned — both names share it.'
                     : kind === 'shared' && i === 2
                       ? 'q dropped. Count falls to 1. T stays alive — last owner still holds it.'
                       : kind === 'shared'
                         ? 'Last shared_ptr died. T is destroyed. That is the shared-ownership contract.'
                         : i === 1
-                          ? 'w observes p. use_count stays 1. weak_count is 1. T stays alive because of p, not because of w.'
+                          ? 'w observes p. use_count stays 1. T stays alive because of p, not because of w.'
                           : i === 2
-                            ? 'Last shared_ptr dropped. T is gone even though the weak observer remains. The control block stays for the weaks.'
+                            ? 'Last shared_ptr dropped. T is gone even though the weak observer remains.'
                             : 'w.lock() returns an empty shared_ptr. The control block lives until weaks are gone too.'
 
   const tone = trap ? 'trap' : ok ? 'ok' : 'idle'
@@ -120,36 +93,32 @@ auto q = std::move(p);`
           ? 'Play copy'
           : 'Play lock()'
 
-  const uniqueLink = uniqueGone ? '' : uniqueLive && decided ? 'weld' : uniqueLive ? 'on' : ''
-
   const verdict =
-    kind === 'unique' && uniqueGone
+    kind === 'unique' && recap
       ? '~unique_ptr deleted T'
-      : kind === 'unique' && uniqueLive && decided
+      : kind === 'unique' && decided
         ? 'exclusive · copy is deleted'
-        : kind === 'unique' && uniqueLive
+        : kind === 'unique' && stepped
           ? 'p → heap T'
           : kind === 'move' && recap
             ? 'copy deleted · q stole T'
-            : kind === 'move' && qOwnsMove
+            : kind === 'move' && decided
               ? 'p empty · q exclusive'
-              : kind === 'move' && pOwnsMove
+              : kind === 'move' && stepped
                 ? 'p exclusive · q not yet'
                 : kind === 'shared' && recap
                   ? 'last owner gone · ~T'
-                  : kind === 'shared' && i === 1
-                    ? 'use_count = 2 · same T'
-                    : kind === 'shared' && i === 2
-                      ? 'use_count = 1 · T lives'
-                      : kind === 'shared'
-                        ? 'use_count = 1'
-                        : lockFail
-                          ? 'lock() → empty shared_ptr'
-                          : kind === 'weak' && decided
-                            ? 'T gone · weak remains'
-                            : kind === 'weak' && stepped
-                              ? 'weak observes · use still 1'
-                              : ''
+                  : kind === 'shared' && decided
+                    ? 'use_count = 1 · T lives'
+                    : kind === 'shared' && stepped
+                      ? 'use_count = 2 · same T'
+                      : lockFail
+                        ? 'lock() → empty shared_ptr'
+                        : kind === 'weak' && decided
+                          ? 'T gone · weak remains'
+                          : kind === 'weak' && stepped
+                            ? 'weak observes · use still 1'
+                            : ''
 
   return (
     <SceneShell
@@ -165,119 +134,66 @@ auto q = std::move(p);`
       playLabel={playLabel}
       step={i}
       stepCount={4}
-      sig={
-        kind === 'unique'
-          ? 'unique_ptr'
-          : kind === 'move'
-            ? 'move-only'
-            : kind === 'shared'
-              ? `use = ${useCount}`
-              : `use = ${useCount} · weak = ${weakCount}`
-      }
+      sig={MODES.find((m) => m.id === kind)?.title}
       caption={caption}
       code={code}
       tone={tone}
     >
-      {kind === 'unique' ? (
-        <div className="fx-sh">
-          <div className={`fx-pane${pOwnsUnique ? ' fx-pane--focus' : ''}${uniqueGone ? ' fx-pane--gone' : ''}`}>
-            <span className="fx-kicker">stack</span>
-            <div
-              className={`fx-slot${pOwnsUnique && decided ? ' fx-slot--weld' : pOwnsUnique ? ' fx-slot--focus' : ' fx-slot--dim'}${
-                uniqueGone ? ' fx-pane--gone' : ''
-              }`}
-            >
-              <span className="fx-kicker">unique_ptr</span>
-              <span className="fx-value">
-                <code>p</code>
-              </span>
-              <span className="fx-note">{pOwnsUnique ? 'exclusive owner' : uniqueGone ? 'destroyed' : 'no owner yet'}</span>
-              {pOwnsUnique && <span className="fx-badge fx-badge--owner">owner</span>}
-            </div>
-          </div>
-          <div className={`fx-link${uniqueLink ? ` fx-link--${uniqueLink}` : ''}`} />
-          <div className={`fx-pane${heapOn ? ' fx-pane--focus' : ''}${uniqueGone ? ' fx-pane--gone' : ''}`}>
-            <span className="fx-kicker">heap</span>
-            <div className={`fx-slot${heapOn ? '' : ' fx-slot--dim'}${uniqueGone ? ' fx-pane--gone' : ''}`}>
-              <span className="fx-kicker">T</span>
-              <span className="fx-value">{heapOn ? '42' : uniqueGone ? 'gone' : '—'}</span>
-              <span className="fx-note">{heapOn ? 'one owner, zero overhead' : uniqueGone ? 'deleted' : 'not allocated'}</span>
-            </div>
-          </div>
-        </div>
-      ) : kind === 'move' ? (
-        <>
-          <div className="fx-sh">
-            <div className={`fx-pane${pOwnsMove ? ' fx-pane--focus' : ''}${qOwnsMove ? ' fx-pane--gone' : ''}`}>
-              <span className="fx-kicker">p</span>
-              <div className={`fx-slot${pOwnsMove ? ' fx-slot--weld' : qOwnsMove ? ' fx-slot--dim' : ' fx-slot--dim'}`}>
-                <span className="fx-kicker">unique_ptr</span>
-                <span className="fx-value">
-                  <code>p</code>
-                </span>
-                <span className="fx-note">{pOwnsMove ? 'exclusive' : qOwnsMove ? 'empty after move' : 'no owner yet'}</span>
-                {pOwnsMove && <span className="fx-badge fx-badge--owner">owner</span>}
-              </div>
-            </div>
-            <div className={`fx-link${pOwnsMove ? ' fx-link--weld' : qOwnsMove ? ' fx-link--dead' : ''}`} />
-            <div className={`fx-pane${qOwnsMove ? ' fx-pane--focus' : ''}`}>
-              <span className="fx-kicker">q</span>
-              <div className={`fx-slot${qOwnsMove ? ' fx-slot--weld' : ' fx-slot--dim'}`}>
-                <span className="fx-kicker">unique_ptr</span>
-                <span className="fx-value">
-                  <code>q</code>
-                </span>
-                <span className="fx-note">{qOwnsMove ? 'stole the pointer' : 'not yet'}</span>
-                {qOwnsMove && <span className="fx-badge fx-badge--owner">owner</span>}
-              </div>
-            </div>
-          </div>
-          <div className="fx-buf-row" style={{ justifyContent: 'center' }}>
-            <span className={`fx-letter${heapOn ? ' fx-letter--on' : ' fx-letter--empty'}`}>{heapOn ? 'T' : '·'}</span>
-          </div>
-        </>
-      ) : (
-        <>
+      {kind === 'unique' && (
         <div className="fx-ladder">
-          <div
-            className={`fx-rank${kind === 'shared' ? (pShared ? ' fx-rank--on' : '') : pWeakOwner ? ' fx-rank--on' : ''}${
-              kind === 'shared' && !pShared ? ' fx-rank--done' : ''
-            }${kind === 'weak' && !pWeakOwner ? ' fx-rank--done' : ''}`}
-          >
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>p</code>
-            <span className="fx-note">shared</span>
-            <span className="fx-note">{kind === 'shared' ? (pShared ? 'on' : 'off') : pWeakOwner ? 'on' : 'off'}</span>
+            <span className="fx-note">unique</span>
+            <span className="fx-note">{recap ? 'gone' : stepped ? 'own' : '—'}</span>
           </div>
-          <div
-            className={`fx-rank${kind === 'shared' ? (qShared ? ' fx-rank--on' : '') : wLive ? ' fx-rank--on' : ''}${
-              lockFail ? ' fx-rank--trap' : ''
-            }${kind === 'shared' && i >= 2 ? ' fx-rank--done' : ''}`}
-          >
-            <code>{kind === 'shared' ? 'q' : 'w'}</code>
-            <span className="fx-note">{kind === 'shared' ? 'copy' : 'weak'}</span>
-            <span className="fx-note">
-              {kind === 'shared' ? (qShared ? 'on' : i === 0 ? '—' : 'off') : lockFail ? 'empty' : wLive ? 'obs' : '—'}
-            </span>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>T</code>
+            <span className="fx-note">heap</span>
+            <span className="fx-note">{recap ? 'ok' : decided ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${ctrlLive || useCount > 0 ? ' fx-rank--on' : ''}${kind === 'shared' && recap ? ' fx-rank--done' : ''}`}>
+        </div>
+      )}
+      {kind === 'move' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${decided ? ' fx-rank--trap' : ''}`}>
+            <code>p</code>
+            <span className="fx-note">unique</span>
+            <span className="fx-note">{decided ? 'gone' : stepped ? 'own' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>q</code>
+            <span className="fx-note">unique</span>
+            <span className="fx-note">{decided ? 'own' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {kind === 'shared' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>n</code>
             <span className="fx-note">use</span>
-            <div className="fx-count">
-              {[0, 1].map((n) => (
-                <span key={n} className={`fx-count-pip${n < useCount ? ' fx-count-pip--on' : ''}`} />
-              ))}
-            </div>
-            <span className="fx-note">
-              {useCount}
-              {kind === 'weak' ? `/${weakCount}` : ''}
-            </span>
+            <span className="fx-note">{recap ? '0' : decided ? '1' : stepped ? '2' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>T</code>
+            <span className="fx-note">heap</span>
+            <span className="fx-note">{recap ? 'gone' : decided ? 'ok' : '—'}</span>
           </div>
         </div>
-        <div className="fx-buf-row" style={{ justifyContent: 'center' }}>
-          <span className={`fx-letter${heapOn ? ' fx-letter--on' : recap || lockFail ? ' fx-letter--dead' : ' fx-letter--empty'}`}>
-            {heapOn ? 'T' : recap || lockFail ? '·' : '·'}
-          </span>
+      )}
+      {kind === 'weak' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${decided ? ' fx-rank--trap' : ''}`}>
+            <code>T</code>
+            <span className="fx-note">heap</span>
+            <span className="fx-note">{decided ? 'gone' : stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${lockFail ? ' fx-rank--trap' : ''}`}>
+            <code>lk</code>
+            <span className="fx-note">lock</span>
+            <span className="fx-note">{lockFail ? 'no' : '—'}</span>
+          </div>
         </div>
-        </>
       )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
