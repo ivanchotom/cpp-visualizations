@@ -1,165 +1,30 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { hop, waitNextBeat, type Point } from './motion.ts'
+import { useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'decay' | 'query' | 'parens' | 'cond'
 
-const MODES: { id: Mode; title: string; sig: string }[] = [
-  { id: 'decay', title: 'decay_t', sig: 'decay_t<int&>' },
-  { id: 'query', title: 'is_integral', sig: 'is_integral<T>' },
-  { id: 'parens', title: 'decltype', sig: 'decltype((x))' },
-  { id: 'cond', title: 'conditional', sig: 'conditional_t<…>' },
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'decay', title: 'decay_t' },
+  { id: 'query', title: 'is_integral' },
+  { id: 'parens', title: 'decltype' },
+  { id: 'cond', title: 'conditional_t' },
 ]
-
-const STEP_MS = 1300
-const HOP_MS = 700
 
 export function TypeTraitsViz() {
   const [id, setId] = useState<Mode>('decay')
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [from, setFrom] = useState<Point>({ x: 80, y: 90 })
-  const [to, setTo] = useState<Point>({ x: 360, y: 90 })
+  const { i, playing, play, reset } = useBeats(4)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const srcRef = useRef<HTMLDivElement>(null)
-  const midRef = useRef<HTMLDivElement>(null)
-  const rightRef = useRef<HTMLDivElement>(null)
-
-  const stepCount = 4
-  const trap = id === 'parens' && i >= 2
-  const won = (id === 'decay' && i >= 2) || (id === 'cond' && i >= 2) || (id === 'query' && i === 1)
-
-  const useRight =
-    (id === 'decay' && i >= 2) ||
-    (id === 'query' && i >= 2) ||
-    (id === 'parens' && i >= 2) ||
-    (id === 'cond' && i >= 2)
-
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    const srcEl = srcRef.current
-    const dstEl = useRight ? rightRef.current : midRef.current
-    if (!stage || !srcEl || !dstEl) return
-    const origin = stage.getBoundingClientRect()
-    const a = srcEl.getBoundingClientRect()
-    const b = dstEl.getBoundingClientRect()
-    const src = { x: a.left - origin.left + a.width / 2, y: a.top - origin.top + a.height / 2 }
-    const dst = { x: b.left - origin.left + b.width / 2, y: b.top - origin.top + b.height / 2 }
-    setFrom(src)
-    setTo(dst)
-  }, [id, i, useRight])
-
-  useEffect(() => {
-    if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
-    }
-    raf = requestAnimationFrame(hopLoop)
-    const stopBeat = waitNextBeat(STEP_MS, () => {
-      if (i >= stepCount - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stopBeat()
-    }
-  }, [playing, i, stepCount])
-
-  function select(next: Mode) {
-    setPlaying(false)
-    setId(next)
-    setI(0)
-    setHopT(1)
+  function select(next: string) {
+    reset()
+    setId(next as Mode)
   }
 
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
-  }
-
-  const pos = hopT < 1 && i >= 1 ? hop(from, to, hopT) : null
-  const flyerText =
-    id === 'decay'
-      ? i === 1
-        ? 'int&'
-        : 'int'
-      : id === 'query'
-        ? i === 1
-          ? 'int'
-          : 'int*'
-        : id === 'parens'
-          ? i === 1
-            ? 'x'
-            : '(x)'
-          : i === 1
-            ? 'sizeof==8'
-            : 'long'
-
-  const leftName =
-    id === 'decay' ? 'int&' : id === 'query' ? (i >= 2 ? 'int*' : 'int') : id === 'parens' ? 'int x' : 'pred'
-  const leftVal =
-    id === 'decay' ? 'x' : id === 'query' ? (i >= 2 ? 'ptr' : '42') : id === 'parens' ? '1' : 'sizeof(void*)'
-  const midName =
-    id === 'decay'
-      ? 'remove_reference_t'
-      : id === 'query'
-        ? 'is_integral<T>'
-        : id === 'parens'
-          ? 'decltype(x)'
-          : 'conditional_t'
-  const midVal = id === 'decay' && i >= 1 ? 'int' : id === 'parens' && i >= 1 ? 'int' : id === 'query' && i === 1 ? 'true' : '—'
-  const midNote =
-    id === 'decay'
-      ? 'strip &'
-      : id === 'query'
-        ? '::value  (not _v)'
-        : id === 'parens'
-          ? 'the type of the name'
-          : 'C++14 alias of ::type'
-  const rightName =
-    id === 'decay'
-      ? 'decay_t<int&>'
-      : id === 'query'
-        ? i >= 2
-          ? 'false_type'
-          : 'true_type'
-        : id === 'parens'
-          ? 'decltype((x))'
-          : 'then / else'
-  const rightVal =
-    id === 'decay' && i >= 2
-      ? 'int'
-      : id === 'query' && i >= 2
-        ? 'false'
-        : id === 'parens' && i >= 2
-          ? 'int&'
-          : id === 'cond' && i >= 2
-            ? 'long'
-            : '—'
-  const rightNote =
-    id === 'decay' && won
-      ? 'is_same with int'
-      : id === 'decay'
-        ? 'also arrays → pointers'
-        : id === 'query' && i >= 2
-          ? 'pointers are not integral'
-          : id === 'query'
-            ? '::value is a bool'
-            : id === 'parens' && i >= 2
-              ? 'extra parens → lvalue'
-              : id === 'parens'
-                ? 'decltype of an expression'
-                : 'LP64: pointer is 8'
+  const stepped = i >= 1
+  const out = i >= 2
+  const recap = i >= 3
+  const trap = id === 'parens' && out
+  const won = (id === 'decay' && out) || (id === 'cond' && out) || (id === 'query' && i === 1)
 
   const code =
     id === 'decay'
@@ -204,7 +69,7 @@ using A = decltype(x);     // int`
             : id === 'query' && i === 1
               ? 'is_integral<int>::value is true. true_type / false_type are the tag types; ::value is the bool you static_assert.'
               : id === 'query' && i === 2
-                ? 'int* hops in. A pointer is not an integral type. The same trait, a different answer — no runtime branch.'
+                ? 'int* is not an integral type. The same trait, a different answer — no runtime branch.'
                 : id === 'query'
                   ? 'Incomplete types are often ill-formed here. Test the operation you will actually perform, not a nearby trait name.'
                   : id === 'parens' && i === 1
@@ -216,74 +81,147 @@ using A = decltype(x);     // int`
                         : i === 1
                           ? 'sizeof(void*) == 8 on LP64. The predicate is a compile-time bool, not an if.'
                           : i === 2
-                            ? 'conditional_t<true, long, int> is long. The unused branch is not instantiated in a way that has to be valid… except it still must be a valid type name.'
+                            ? 'conditional_t<true, long, int> is long. The unused branch must still be a valid type name.'
                             : 'C++14: decay_t, enable_if_t, remove_reference_t, conditional_t. C++17 adds if constexpr for the body; this page is the type-level if.'
 
-  const m = MODES.find((x) => x.id === id) ?? MODES[0]
-  const stageKind = trap ? 'tt-stage--reject' : won ? 'tt-stage--win' : ''
+  const tone = trap ? 'warn' : won || (id === 'query' && out) ? 'ok' : 'idle'
+  const playLabel =
+    id === 'decay'
+      ? 'Play decay_t<int&>'
+      : id === 'query'
+        ? 'Play is_integral'
+        : id === 'parens'
+          ? 'Play decltype((x))'
+          : 'Play conditional_t'
+
+  const inName = id === 'decay' ? 'int&' : id === 'query' ? (out ? 'int*' : 'int') : id === 'parens' ? 'int x' : 'pred'
+  const inVal = id === 'decay' ? 'x' : id === 'query' ? (out ? 'ptr' : '42') : id === 'parens' ? '1' : 'sizeof(void*)'
+  const midName =
+    id === 'decay'
+      ? 'remove_reference_t'
+      : id === 'query'
+        ? 'is_integral<T>'
+        : id === 'parens'
+          ? 'decltype(x)'
+          : 'conditional_t'
+  const midVal =
+    id === 'decay' && stepped
+      ? 'int'
+      : id === 'parens' && stepped
+        ? 'int'
+        : id === 'query' && i === 1
+          ? 'true'
+          : id === 'query' && out
+            ? 'false'
+            : id === 'cond' && stepped
+              ? 'sizeof==8'
+              : '—'
+  const outName =
+    id === 'decay'
+      ? 'decay_t<int&>'
+      : id === 'query'
+        ? out
+          ? 'false_type'
+          : 'true_type'
+        : id === 'parens'
+          ? 'decltype((x))'
+          : 'then / else'
+  const outVal =
+    id === 'decay' && out
+      ? 'int'
+      : id === 'query' && out
+        ? 'false'
+        : id === 'parens' && out
+          ? 'int&'
+          : id === 'cond' && out
+            ? 'long'
+            : '—'
+
+  const leftLink = stepped ? 'fx-link--on' : ''
+  const rightLink = trap ? 'fx-link--dead' : out ? (id === 'query' && recap ? 'fx-link--on' : 'fx-link--weld') : ''
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        {MODES.map((x) => (
-          <button
-            key={x.id}
-            className={`chip${id === x.id ? ' chip--active' : ''}`}
-            onClick={() => select(x.id)}
-            disabled={playing}
-          >
-            {x.title}
-          </button>
-        ))}
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play trait
-        </button>
-        <button className="chip chip--ghost" onClick={() => select(id)}>
-          reset
-        </button>
-      </div>
-
-      <div ref={stageRef} className={`viz-stage tt-stage viz-stage--live ${stageKind}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{stepCount} · <code>{m.sig}</code>
-        </p>
-        <div className="tt-row">
-          <div ref={srcRef} className={`own-card${i >= 1 ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">in</span>
-            <span className="own-name">{leftName}</span>
-            <span className="mem-val">{leftVal}</span>
-            <span className="mem-note">type argument</span>
-          </div>
-          <div
-            ref={midRef}
-            className={`own-card${id !== 'cond' && i >= 1 && i < 2 ? ' own-card--unique' : ''}`}
-          >
-            <span className="lf-tag">trait</span>
-            <span className="own-name">{midName}</span>
-            <span className="mem-val">{midVal}</span>
-            <span className="mem-note">{midNote}</span>
-          </div>
-          <div
-            ref={rightRef}
-            className={`own-card${won ? ' own-card--unique' : ''}${trap ? ' nd-card--ub' : ''}`}
-          >
-            <span className="lf-tag">out</span>
-            <span className="own-name">{rightName}</span>
-            <span className="mem-val">{rightVal}</span>
-            <span className="mem-note">{rightNote}</span>
+    <SceneShell
+      modes={MODES}
+      mode={id}
+      onSelect={select}
+      playing={playing}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setId(id)
+      }}
+      playLabel={playLabel}
+      step={i}
+      stepCount={4}
+      sig={MODES.find((m) => m.id === id)?.title}
+      caption={caption}
+      code={code}
+      tone={tone}
+    >
+      <div className="fx-own">
+        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+          <span className="fx-kicker">in</span>
+          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+            <span className="fx-kicker">{inName}</span>
+            <span className="fx-value">{inVal}</span>
+            <span className="fx-note">type argument</span>
           </div>
         </div>
-        {pos && (
-          <span className={`ptr-pulse tt-flyer${trap ? ' tt-flyer--trap' : ''}`} style={{ left: pos.x, top: pos.y }}>
-            {flyerText}
-          </span>
-        )}
+        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
+        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+          <span className="fx-kicker">trait</span>
+          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+            <span className="fx-kicker">{midName}</span>
+            <span className="fx-value">{midVal}</span>
+            <span className="fx-note">
+              {id === 'decay'
+                ? 'strip &'
+                : id === 'query'
+                  ? '::value  (not _v)'
+                  : id === 'parens'
+                    ? 'the type of the name'
+                    : 'C++14 alias of ::type'}
+            </span>
+          </div>
+        </div>
+        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
+        <div className={`fx-pane${out ? ' fx-pane--focus' : ''}`}>
+          <span className="fx-kicker">out</span>
+          <div className={`fx-slot${trap ? ' fx-slot--trap' : out ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+            <span className="fx-kicker">{outName}</span>
+            <span className="fx-value">{outVal}</span>
+            <span className="fx-note">
+              {id === 'decay' && out
+                ? 'is_same with int'
+                : id === 'query' && out
+                  ? 'pointers are not integral'
+                  : id === 'parens' && out
+                    ? 'extra parens → lvalue'
+                    : id === 'cond' && out
+                      ? 'LP64: pointer is 8'
+                      : 'waiting'}
+            </span>
+          </div>
+        </div>
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{code}</code>
-      </pre>
-      <p className="layout-hint">{caption}</p>
-    </div>
+      <div
+        className={`fx-verdict${out || (id === 'query' && i >= 1) ? ' fx-verdict--show' : ''} ${
+          trap ? 'fx-verdict--warn' : out || (id === 'query' && i === 1) ? 'fx-verdict--ok' : ''
+        }`}
+      >
+        {id === 'decay' && out
+          ? 'decay_t<int&> · int'
+          : id === 'query' && out
+            ? 'is_integral<int*> · false'
+            : id === 'query' && i === 1
+              ? 'is_integral<int> · true'
+              : id === 'parens' && out
+                ? 'decltype((x)) · int&'
+                : id === 'cond' && out
+                  ? 'conditional_t · long'
+                  : ''}
+      </div>
+    </SceneShell>
   )
 }
