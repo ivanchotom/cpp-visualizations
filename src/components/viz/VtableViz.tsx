@@ -163,15 +163,6 @@ delete p;  // ~Dog then ~Animal`
           })}
         </div>
       </div>
-      {id === 'derived' && recap ? (
-        <div className="fx-buf-row" style={{ justifyContent: 'center' }}>
-          {['w', 'o', 'o', 'f'].map((ch, n) => (
-            <span key={n} className="fx-letter fx-letter--on">
-              {ch}
-            </span>
-          ))}
-        </div>
-      ) : null}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${trap ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''}`}
       >
