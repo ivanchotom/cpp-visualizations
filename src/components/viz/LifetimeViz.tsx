@@ -170,23 +170,23 @@ export function LifetimeViz() {
         <div className="fx-inh">
           <div className={`fx-slice${baseOn ? ' fx-slice--on' : ' fx-slice--off'}${id === 'ctor' && i === 1 ? ' fx-slice--hot' : ''}`}>
             <span className="fx-kicker">Base</span>
-            <span className="fx-note">{baseOn ? (id === 'dtor' && recap ? 'destroyed' : 'alive') : 'not yet'}</span>
+            <span className="fx-note">{baseOn ? 'alive' : id === 'dtor' || (id === 'throw' && recap) ? 'destroyed' : 'not yet'}</span>
           </div>
           <div
-            className={`fx-slice${m1On ? ' fx-slice--on' : ' fx-slice--off'}${id === 'ctor' && i === 2 ? ' fx-slice--hot' : ''}${
-              id === 'throw' && recap ? ' fx-slice--off' : ''
-            }`}
+            className={`fx-slice${m1On ? ' fx-slice--on' : ' fx-slice--off'}${id === 'ctor' && i === 2 ? ' fx-slice--hot' : ''}`}
           >
             <span className="fx-kicker">m1</span>
-            <span className="fx-note">{m1On ? 'alive' : id === 'throw' && recap ? 'unwound' : 'not yet'}</span>
+            <span className="fx-note">{m1On ? 'alive' : id === 'dtor' || (id === 'throw' && recap) ? 'destroyed' : 'not yet'}</span>
           </div>
           <div className={`fx-slice${m2On ? ' fx-slice--on' : ' fx-slice--off'}${m2Trap ? ' fx-slice--dup' : ''}`}>
             <span className="fx-kicker">m2</span>
-            <span className="fx-note">{m2Trap ? 'threw' : m2On ? 'alive' : 'not yet'}</span>
+            <span className="fx-note">{m2Trap ? 'threw' : m2On ? 'alive' : id === 'dtor' ? 'destroyed' : 'not yet'}</span>
           </div>
           <div className={`fx-slice fx-slice--derived${bodyOn ? ' fx-slice--on fx-slice--hot' : ' fx-slice--off'}`}>
             <span className="fx-kicker">Derived body</span>
-            <span className="fx-note">{bodyOn ? 'runs last' : id === 'throw' ? 'never' : id === 'dtor' && i === 0 ? 'first to go' : 'not yet'}</span>
+            <span className="fx-note">
+              {bodyOn ? 'runs last' : id === 'throw' ? 'never' : id === 'dtor' ? (i === 0 ? 'first to go' : 'done') : 'not yet'}
+            </span>
           </div>
         </div>
       )}
