@@ -23,13 +23,10 @@ export function UnionViz() {
   const stepped = i >= 1
   const decided = i >= 2
   const recap = i >= 3
-  const iLive = (id === 'active' || id === 'pun') && stepped
   const punTrap = id === 'pun' && decided
-  const bitsOn = id === 'bits' && stepped
   const noAddr = id === 'bits' && decided
-  const prefixOk = id === 'cis' && decided
-  const trap = punTrap || (id === 'bits' && decided && !recap)
-  const ok = (id === 'active' && recap) || (id === 'cis' && recap) || (id === 'bits' && recap)
+  const trap = punTrap || noAddr
+  const ok = (id === 'active' && recap) || (id === 'cis' && recap)
 
   const code =
     id === 'active'
@@ -47,11 +44,16 @@ std::memcpy(&x, &s.i, sizeof x);
           : `s.i = 1;
 float x = s.f;   // UB in C++`
         : id === 'bits'
-          ? `struct F {
+          ? recap
+            ? `struct F {
   unsigned a : 3;
   unsigned b : 5;
 };
 // no &f.a`
+            : `struct F {
+  unsigned a : 3;
+  unsigned b : 5;
+};`
           : recap
             ? `// after u.b = …
 int t = u.a.tag;  // allowed prefix
@@ -70,7 +72,7 @@ int t = u.a.tag;  // allowed prefix
             ? 'Play a : 3. Adjacent fields pack into a word. Layout is implementation-defined. Do not take their address.'
             : 'Play prefix. Two structs in a union may share a prefix of compatible members. That prefix is the portable overlap.'
       : id === 'active' && i === 1
-        ? 's.i = 1. Those four bytes now mean int. The float name is inactive — not “the other view”.'
+        ? 's.i = 1. Those four bytes now mean int. The float name is inactive — not “the other view”. Stations light in place.'
         : id === 'active'
           ? 'Writing s.f would start the float’s lifetime and end i’s. One name at a time.'
           : id === 'pun' && i === 1
@@ -92,25 +94,29 @@ int t = u.a.tag;  // allowed prefix
   const verdict =
     id === 'active' && recap
       ? 'one name at a time'
-      : id === 'active' && stepped
+      : id === 'active' && decided
         ? 'i is active · f is not a view'
-        : punTrap
-          ? 'read of inactive member · UB'
-          : id === 'pun' && stepped
-            ? 'i active · bytes are not float'
-            : noAddr && recap
-              ? 'packed · do not take the address'
-              : bitsOn && decided
-                ? 'no & on a bit-field'
-                : prefixOk && recap
-                  ? 'prefix ok · rest is not'
-                  : prefixOk
-                    ? 'common initial sequence'
-                    : id === 'cis' && stepped
-                      ? 'shared tag · compatible prefix'
-                      : ''
-
-  const bytes = ['0', '0', '0', '1']
+        : id === 'active' && stepped
+          ? 's.i = 1'
+          : punTrap && recap
+            ? 'memcpy the bits · not s.f'
+            : punTrap
+              ? 'read of inactive · UB'
+              : id === 'pun' && stepped
+                ? 'i active · not float'
+                : noAddr && recap
+                  ? 'packed · no address'
+                  : noAddr
+                    ? 'no & on a bit-field'
+                    : id === 'bits' && stepped
+                      ? 'a : 3 · b : 5'
+                      : id === 'cis' && recap
+                        ? 'prefix ok · rest is not'
+                        : id === 'cis' && decided
+                          ? 'common initial sequence'
+                          : id === 'cis' && stepped
+                            ? 'shared tag'
+                            : ''
 
   return (
     <SceneShell
@@ -131,62 +137,61 @@ int t = u.a.tag;  // allowed prefix
       code={code}
       tone={tone}
     >
-      {id === 'bits' ? (
-        <>
-          <span className="fx-kicker">one word</span>
-          <div className="fx-bitrow" style={{ marginTop: 10 }}>
-            {Array.from({ length: 8 }, (_, n) => (
-              <span
-                key={n}
-                className={`fx-bit${bitsOn && n < 3 ? ' fx-bit--a' : ''}${bitsOn && n >= 3 && n < 8 ? ' fx-bit--b' : ''}`}
-              >
-                {bitsOn && n < 3 ? 'a' : bitsOn ? 'b' : ''}
-              </span>
-            ))}
-          </div>
-          <span className="fx-note" style={{ marginTop: 8 }}>
-            {noAddr ? 'no & on a bit-field · layout is impl-defined' : 'a : 3  then  b : 5'}
-          </span>
-        </>
-      ) : id === 'cis' ? (
+      {id === 'active' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${prefixOk ? ' fx-rank--on' : ''}`}>
-            <span className="fx-note">tag</span>
-            <code>A / B</code>
-            <span className="fx-note">{prefixOk ? 'ok' : stepped ? 'same' : '—'}</span>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>i</code>
+            <span className="fx-note">int</span>
+            <span className="fx-note">{stepped ? 'on' : '—'}</span>
           </div>
-          <div className={`fx-rank${prefixOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+            <code>f</code>
+            <span className="fx-note">float</span>
+            <span className="fx-note">{stepped ? 'off' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'pun' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+            <code>i</code>
+            <span className="fx-note">int</span>
+            <span className="fx-note">{stepped ? 'on' : '—'}</span>
+          </div>
+          <div className={`fx-rank${punTrap ? ' fx-rank--trap' : ''}`}>
+            <code>f</code>
+            <span className="fx-note">float</span>
+            <span className="fx-note">{punTrap ? 'ub' : 'off'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'bits' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>a</code>
+            <span className="fx-note">:3</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${noAddr ? ' fx-rank--trap' : ''}`}>
+            <code>&a</code>
+            <span className="fx-note">address</span>
+            <span className="fx-note">{noAddr ? 'ill' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'cis' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>tag</code>
+            <span className="fx-note">prefix</span>
+            <span className="fx-note">{decided ? 'ok' : stepped ? 'same' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>rst</code>
             <span className="fx-note">rest</span>
-            <code>not cis</code>
             <span className="fx-note">{recap ? 'no' : '—'}</span>
           </div>
         </div>
-      ) : (
-        <>
-          <span className="fx-kicker">shared storage</span>
-          <div className="fx-buf-row" style={{ justifyContent: 'center', marginTop: 10 }}>
-            {bytes.map((ch, n) => (
-              <span
-                key={n}
-                className={`fx-letter${punTrap ? ' fx-letter--dead' : iLive ? ' fx-letter--on' : ' fx-letter--empty'}`}
-              >
-                {iLive ? ch : '·'}
-              </span>
-            ))}
-          </div>
-          <div className="fx-ladder" style={{ marginTop: 12 }}>
-            <div className={`fx-rank${iLive ? ' fx-rank--on' : ''}${punTrap ? ' fx-rank--done' : ''}`}>
-              <code>i</code>
-              <span className="fx-note">int</span>
-              <span className="fx-note">{iLive ? 'on' : '—'}</span>
-            </div>
-            <div className={`fx-rank${punTrap ? ' fx-rank--trap' : ''}`}>
-              <code>f</code>
-              <span className="fx-note">float</span>
-              <span className="fx-note">{punTrap ? 'ub' : 'off'}</span>
-            </div>
-          </div>
-        </>
       )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${

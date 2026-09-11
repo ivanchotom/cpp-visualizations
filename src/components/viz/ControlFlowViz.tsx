@@ -11,13 +11,6 @@ const MODES: { id: Mode; title: string }[] = [
   { id: 'skip', title: 'continue' },
 ]
 
-const VEC = ['1', '2', '3']
-const ITEMS = [
-  { label: 'a', skip: true },
-  { label: 'b', skip: false },
-  { label: 'c', skip: false },
-]
-
 export function ControlFlowViz() {
   const [id, setId] = useState<Mode>('copy')
   const { i, playing, play, reset } = useBeats(4)
@@ -27,29 +20,45 @@ export function ControlFlowViz() {
     setId(next as Mode)
   }
 
-  const idx = Math.max(0, i - 1)
-  const wrote = id === 'ref' && i >= 3
-  const letters = wrote ? ['2', '2', '3'] : VEC
-  const xVal = id === 'copy' ? (i >= 1 ? VEC[idx] : '—') : id === 'ref' ? (i >= 1 ? letters[0] : '—') : '—'
-  const copyOn = id === 'copy' && i >= 1
-  const weldOn = id === 'ref' && i >= 1
+  const stepped = i >= 1
+  const decided = i >= 2
+  const recap = i >= 3
+  const wrote = id === 'ref' && recap
+  const ok = (id === 'copy' && recap) || wrote || (id === 'fall' && recap) || (id === 'skip' && recap)
+  const xCopy = i === 1 ? '1' : i === 2 ? '2' : recap ? '3' : '—'
 
   const code =
     id === 'copy'
-      ? `std::vector<int> v{1, 2, 3};
+      ? recap
+        ? `for (auto x : v) { use(x); }
+// v is still {1, 2, 3}`
+        : `std::vector<int> v{1, 2, 3};
 for (auto x : v) { use(x); }`
       : id === 'ref'
-        ? `for (auto& x : v) {
+        ? recap
+          ? `for (auto& x : v) {
+  ++x;
+}
+// v is {2, 2, 3}`
+          : `for (auto& x : v) {
   ++x;
 }`
         : id === 'fall'
-          ? `switch (kind) {
+          ? recap
+            ? `// C++14: no [[fallthrough]]
+// comment the intent, then break`
+            : `switch (kind) {
   case Kind::A:
   case Kind::B:
     handleAB();
     break;
 }`
-          : `for (const auto& item : items) {
+          : recap
+            ? `for (const auto& item : items) {
+  if (item.skip) continue;
+  use(item);
+}`
+            : `for (const auto& item : items) {
   if (item.skip) continue;
   use(item);
 }`
@@ -59,12 +68,12 @@ for (auto x : v) { use(x); }`
       ? id === 'copy'
         ? 'Play auto x. Range-for with auto x copies each element. The vector cells stay put. C++14: no if-init, no [[fallthrough]].'
         : id === 'ref'
-          ? 'Play auto&. x is a name welded to the element. ++x writes through. const auto& if you only read.'
+          ? 'Play auto& x. x is a name welded to the element. ++x writes through. const auto& if you only read.'
           : id === 'fall'
-            ? 'Play fallthrough. The program counter walks down the cases. A missing break is a defect unless you mark it.'
+            ? 'Play fallthrough. case A has no break, so control falls into B. C++14 has no [[fallthrough]]; comment the intent.'
             : 'Play continue. The counter skips the rest of this iteration. The container is not modified.'
       : id === 'copy' && i === 1
-        ? 'x holds a copy of 1. Mutating x would not change v[0]. The original cell stays lit, not emptied.'
+        ? 'x holds a copy of 1. Mutating x would not change v[0]. Stations light in place.'
         : id === 'copy' && i === 2
           ? 'A fresh x holds 2. Range-for is sugar over begin/end. Three copies for three elements.'
           : id === 'copy'
@@ -84,24 +93,39 @@ for (auto x : v) { use(x); }`
                         : i === 1
                           ? 'item a has skip. continue jumps to the next iteration. use() is not called.'
                           : i === 2
-                            ? 'item b is used. The PC sits on use().'
+                            ? 'item b is used. a was skipped, not erased.'
                             : 'item c is used. continue did not erase a — it only skipped the body.'
 
-  const pcTop = id === 'fall' || id === 'skip' ? 12 + Math.min(i, 3) * 48 : 12
-  const tone = wrote || (id === 'copy' && i >= 3) ? 'ok' : 'idle'
+  const tone = ok ? 'ok' : 'idle'
   const playLabel =
     id === 'copy' ? 'Play auto x' : id === 'ref' ? 'Play auto& x' : id === 'fall' ? 'Play fallthrough' : 'Play continue'
 
   const verdict =
-    id === 'copy' && i >= 3
+    id === 'copy' && recap
       ? 'three copies · v unchanged'
-      : id === 'ref' && wrote
-        ? 'v[0] is 2 · write-through'
-        : id === 'fall' && i >= 3
-          ? 'A fell into B · then break'
-          : id === 'skip' && i >= 3
-            ? 'a skipped · b and c used'
-            : ''
+      : id === 'copy' && decided
+        ? 'x · copy of 2'
+        : id === 'copy' && stepped
+          ? 'x · copy of 1'
+          : wrote
+            ? 'v[0] is 2 · write-through'
+            : id === 'ref' && decided
+              ? 'x · still welded'
+              : id === 'ref' && stepped
+                ? 'x · alias'
+                : id === 'fall' && recap
+                  ? 'A fell into B · then break'
+                  : id === 'fall' && decided
+                    ? 'fall into B'
+                    : id === 'fall' && stepped
+                      ? 'case A · no break'
+                      : id === 'skip' && recap
+                        ? 'a skipped · b and c used'
+                        : id === 'skip' && decided
+                          ? 'b · use()'
+                          : id === 'skip' && stepped
+                            ? 'a · continue'
+                            : ''
 
   return (
     <SceneShell
@@ -122,71 +146,60 @@ for (auto x : v) { use(x); }`
       code={code}
       tone={tone}
     >
-      {(id === 'copy' || id === 'ref') && (
-        <div className="fx-sh">
-          <div className={`fx-pane${i >= 1 ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">v</span>
-            <div className="fx-buf-row">
-              {letters.map((ch, n) => {
-                const isCopy = id === 'copy' && i >= 1 && n === idx
-                const isWeld = id === 'ref' && i >= 1 && n === 0
-                return (
-                  <span
-                    key={n}
-                    className={`fx-letter${
-                      isWeld && wrote
-                        ? ' fx-letter--write'
-                        : isWeld
-                          ? ' fx-letter--it'
-                          : isCopy
-                            ? ' fx-letter--read'
-                            : i >= 1
-                              ? ' fx-letter--on'
-                              : ' fx-letter--empty'
-                    }`}
-                  >
-                    {ch}
-                  </span>
-                )
-              })}
-            </div>
-            <span className="fx-note">{wrote ? 'v[0] written' : 'elements stay'}</span>
+      {id === 'copy' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>x</code>
+            <span className="fx-note">copy</span>
+            <span className="fx-note">{stepped ? xCopy : '—'}</span>
           </div>
-          <div className={`fx-link${weldOn ? ' fx-link--weld' : copyOn ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${i >= 1 ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">{id === 'ref' ? 'auto& x' : 'auto x'}</span>
-            <div className={`fx-slot${weldOn ? ' fx-slot--weld' : copyOn ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">{id === 'ref' ? 'alias' : 'copy'}</span>
-              <span className="fx-value">{xVal}</span>
-              <span className="fx-note">{id === 'ref' ? (wrote ? 'same object' : 'welded name') : 'distinct object'}</span>
-            </div>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>v</code>
+            <span className="fx-note">cells</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'ref' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${wrote ? ' fx-rank--done' : ''}`}>
+            <code>x</code>
+            <span className="fx-note">auto&</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${wrote ? ' fx-rank--on fx-rank--done' : decided ? ' fx-rank--on' : ''}`}>
+            <code>v0</code>
+            <span className="fx-note">write</span>
+            <span className="fx-note">{wrote ? '2' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'fall' && (
-        <div className="fx-flow">
-          <div className="fx-rail" />
-          <div className="fx-pc" style={{ top: pcTop }} />
-          <div className={`fx-node${i >= 1 ? ' fx-node--on' : ''}${i >= 2 ? ' fx-node--done' : ''}`}>case A</div>
-          <div className={`fx-node${i >= 2 ? ' fx-node--on' : ''}`}>case B · handleAB()</div>
-          <div className={`fx-node${i >= 3 ? ' fx-node--on' : ''}`}>break</div>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>A</code>
+            <span className="fx-note">case</span>
+            <span className="fx-note">{decided ? 'fall' : stepped ? 'on' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>B</code>
+            <span className="fx-note">handle</span>
+            <span className="fx-note">{decided ? 'ok' : '—'}</span>
+          </div>
         </div>
       )}
       {id === 'skip' && (
-        <div className="fx-flow">
-          <div className="fx-rail" />
-          <div className="fx-pc" style={{ top: pcTop }} />
-          {ITEMS.map((it, n) => (
-            <div
-              key={it.label}
-              className={`fx-node${i === n + 1 ? ' fx-node--on' : ''}${it.skip && i >= 1 && n === 0 ? ' fx-node--skip' : ''}${
-                !it.skip && i > n + 1 ? ' fx-node--done' : ''
-              }`}
-            >
-              {it.label}
-              {it.skip ? ' · continue' : ' · use()'}
-            </div>
-          ))}
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>a</code>
+            <span className="fx-note">skip</span>
+            <span className="fx-note">{stepped ? 'no' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>bc</code>
+            <span className="fx-note">use</span>
+            <span className="fx-note">{decided ? 'ok' : '—'}</span>
+          </div>
         </div>
       )}
       <div className={`fx-verdict${verdict ? ' fx-verdict--show fx-verdict--ok' : ''}`}>{verdict}</div>
