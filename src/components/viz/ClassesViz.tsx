@@ -20,7 +20,8 @@ export function ClassesViz() {
     setId(next as Mode)
   }
 
-  const bounced = id === 'access' && i >= 2
+  const bounced = id === 'access' && i === 2
+  const apiOk = id === 'access' && i >= 3
   const threw = id === 'inv' && i >= 2
   const constThis = id === 'thisc' && i >= 1
   const writeBlocked = id === 'thisc' && i >= 2
@@ -91,7 +92,7 @@ struct D : Base { void speak(); };`
                             ? 'Base::speak. D’s vtable slot is not active. Calling a pure virtual here is UB. Don’t virtual-dispatch in ctor/dtor.'
                             : 'D() body has not run. Members of D are not constructed. This is why factories after full construction exist.'
 
-  const tone = bounced || threw || writeBlocked ? 'trap' : wrongSpeak && i >= 3 ? 'warn' : i >= 3 ? 'ok' : 'idle'
+  const tone = bounced || threw || writeBlocked ? 'trap' : wrongSpeak ? 'warn' : apiOk ? 'ok' : 'idle'
 
   const playLabel =
     id === 'access' ? 'Play r.den_' : id === 'inv' ? 'Play Ratio(1, 0)' : id === 'thisc' ? 'Play num() const' : 'Play speak() in ctor'
@@ -122,9 +123,9 @@ struct D : Base { void speak(); };`
             <span className="fx-value">
               <code>r</code>
             </span>
-            <span className="fx-note">{i >= 3 ? 'r.den()' : i >= 1 ? 'wants r.den_' : 'outside the class'}</span>
+            <span className="fx-note">{apiOk ? 'r.den()' : i >= 1 ? 'wants r.den_' : 'outside the class'}</span>
           </div>
-          <div className={`fx-link${bounced ? ' fx-link--dead' : i >= 3 ? ' fx-link--weld' : i >= 1 ? ' fx-link--on' : ''}`} />
+          <div className={`fx-link${bounced ? ' fx-link--dead' : apiOk ? ' fx-link--weld' : i >= 1 ? ' fx-link--on' : ''}`} />
           <div className={`fx-pane${i >= 1 ? ' fx-pane--focus' : ''}${bounced ? ' fx-pane--trap' : ''}`}>
             <span className="fx-kicker">Ratio</span>
             <div className={`fx-slot${bounced ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
@@ -134,10 +135,10 @@ struct D : Base { void speak(); };`
               </span>
               <span className="fx-badge fx-badge--lock">private</span>
             </div>
-            <div className={`fx-slot${i >= 3 ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+            <div className={`fx-slot${apiOk ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
               <span className="fx-kicker">public</span>
               <span className="fx-note">int den() const</span>
-              {i >= 3 && <span className="fx-badge fx-badge--open">API</span>}
+              {apiOk && <span className="fx-badge fx-badge--open">API</span>}
             </div>
           </div>
         </div>
@@ -212,9 +213,9 @@ struct D : Base { void speak(); };`
           bounced || threw || writeBlocked ? 'fx-verdict--trap' : wrongSpeak ? 'fx-verdict--warn' : i >= 3 ? 'fx-verdict--ok' : ''
         }`}
       >
-        {id === 'access' && bounced && i < 3
+        {id === 'access' && bounced
           ? 'r.den_ · private · ill-formed'
-          : id === 'access' && i >= 3
+          : apiOk
             ? 'r.den() · the API'
             : threw
               ? 'throw · no Ratio exists'
