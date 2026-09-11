@@ -102,58 +102,6 @@ int r = a / b;     // 0`
   const playLabel =
     id === 'parse' ? 'Play Widget w()' : id === 'slice' ? 'Play slicing' : id === 'ns' ? 'Play using ns' : 'Play 1/2'
 
-  const inName = id === 'parse' ? 'source' : id === 'slice' ? 'Derived d' : id === 'ns' ? 'header.h' : 'ints'
-  const inVal =
-    id === 'parse'
-      ? recap
-        ? 'Widget w{}'
-        : 'Widget w()'
-      : id === 'slice'
-        ? 'extra fields'
-        : id === 'ns'
-          ? '#include'
-          : '1 and 2'
-  const midName = id === 'parse' ? 'parser' : id === 'slice' ? 'f(Base b)' : id === 'ns' ? 'std::' : 'operator/'
-  const midVal =
-    id === 'parse' && recap
-      ? 'brace-init'
-      : id === 'parse' && stepped
-        ? 'function decl'
-        : id === 'slice' && recap
-          ? 'Base&'
-          : id === 'slice' && decided
-            ? 'Base only'
-            : id === 'slice' && stepped
-              ? 'copy'
-              : id === 'ns' && stepped
-                ? 'leaks names'
-                : id === 'div' && recap
-                  ? '1.0 / 2'
-                  : id === 'div' && stepped
-                    ? 'integer /'
-                    : '—'
-  const outName = id === 'parse' ? 'object' : id === 'slice' ? 'derived part' : id === 'ns' ? 'collision' : 'ratio'
-  const outVal = parseTrap
-    ? 'none'
-    : parseFix
-      ? 'Widget'
-      : sliceTrap
-        ? 'dropped'
-        : sliceFix
-          ? 'kept'
-          : nsTrap
-            ? 'min / size'
-            : nsFix
-              ? 'local using'
-              : divTrap
-                ? '0'
-                : divFix
-                  ? '0.5'
-                  : '—'
-
-  const leftLink = stepped ? (trap ? 'fx-link--dead' : ok ? 'fx-link--weld' : 'fx-link--on') : ''
-  const rightLink = trap ? 'fx-link--dead' : ok ? 'fx-link--weld' : ''
-
   const verdict =
     id === 'parse' && i === 1
       ? 'w() · function declaration'
@@ -200,64 +148,14 @@ int r = a / b;     // 0`
       code={code}
       tone={tone}
     >
-      <div className="fx-own">
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">in</span>
-          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{inName}</span>
-            <span className="fx-value">{inVal}</span>
-            <span className="fx-note">written</span>
-          </div>
-        </div>
-        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${trap ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">meaning</span>
-          <div
-            className={`fx-slot${
-              trap ? ' fx-slot--trap' : ok ? ' fx-slot--weld' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'
-            }`}
-          >
-            <span className="fx-kicker">{midName}</span>
-            <span className="fx-value">{midVal}</span>
-            <span className="fx-note">
-              {id === 'parse' ? 'most vexing' : id === 'slice' ? 'by value' : id === 'ns' ? 'never here' : 'truncates'}
-            </span>
-          </div>
-        </div>
-        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
-        <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}${trap ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">out</span>
-          <div className={`fx-slot${trap ? ' fx-slot--trap' : ok ? ' fx-slot--weld' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{outName}</span>
-            <span className="fx-value">{outVal}</span>
-            <span className="fx-note">
-              {parseTrap
-                ? 'use Widget w{}'
-                : parseFix
-                  ? 'brace-init'
-                  : sliceTrap
-                    ? 'pass Base&'
-                    : sliceFix
-                      ? 'dynamic type kept'
-                      : nsTrap
-                        ? 'keep it local'
-                        : nsFix
-                          ? 'in a .cpp maybe'
-                          : divTrap
-                            ? '1.0 / 2'
-                            : divFix
-                              ? 'not 0.5 until a float'
-                              : 'result'}
-            </span>
-          </div>
-        </div>
-      </div>
-      {id === 'parse' && stepped ? (
+      {id === 'parse' && (
         <div className="fx-sh">
-          <div className={`fx-pane${parseTrap ? ' fx-pane--trap' : ' fx-pane--focus'}`}>
+          <div className={`fx-pane${stepped && !parseFix ? ' fx-pane--focus' : ''}${parseTrap ? ' fx-pane--trap' : ''}`}>
             <span className="fx-kicker">function</span>
             <div className="fx-buf-row">
-              <span className={`fx-letter${parseTrap || !recap ? ' fx-letter--dead' : ' fx-letter--empty'}`}>f</span>
+              <span className={`fx-letter${parseTrap || (stepped && !parseFix) ? ' fx-letter--dead' : ' fx-letter--empty'}`}>
+                f
+              </span>
             </div>
             <span className="fx-note">
               <code>w();</code>
@@ -274,8 +172,8 @@ int r = a / b;     // 0`
             </span>
           </div>
         </div>
-      ) : null}
-      {id === 'slice' && stepped ? (
+      )}
+      {id === 'slice' && (
         <div className="fx-inh">
           <div className={`fx-slice fx-slice--on${sliceFix ? ' fx-slice--hot' : ''}`}>
             <span className="fx-kicker">Base</span>
@@ -290,26 +188,52 @@ int r = a / b;     // 0`
             <span className="fx-note">{sliceTrap ? 'sliced away' : 'int extra'}</span>
           </div>
         </div>
-      ) : null}
-      {id === 'ns' && stepped ? (
-        <div className="fx-buf-row" style={{ justifyContent: 'center' }}>
-          {['min', 'max', 'size'].map((ch) => (
-            <span key={ch} className={`fx-letter${nsTrap ? ' fx-letter--dead' : nsFix ? ' fx-letter--empty' : ' fx-letter--on'}`}>
-              {ch === 'min' ? 'm' : ch === 'max' ? 'M' : 's'}
-            </span>
-          ))}
+      )}
+      {id === 'ns' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${stepped && !nsFix ? ' fx-pane--focus' : ''}${nsTrap ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">header</span>
+            <div className="fx-buf-row">
+              {['m', 'M', 's'].map((ch) => (
+                <span key={ch} className={`fx-letter${nsTrap ? ' fx-letter--dead' : stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>
+                  {stepped ? ch : '·'}
+                </span>
+              ))}
+            </div>
+            <span className="fx-note">using namespace std</span>
+          </div>
+          <div className={`fx-link${nsFix ? ' fx-link--weld' : nsTrap ? ' fx-link--dead' : stepped ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${nsFix ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">.cpp</span>
+            <div className={`fx-slot${nsFix ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">using</span>
+              <span className="fx-value">{nsFix ? 'str' : '—'}</span>
+              <span className="fx-note">{nsFix ? 'using std::string' : 'keep it local'}</span>
+            </div>
+          </div>
         </div>
-      ) : null}
-      {id === 'div' && stepped ? (
-        <div className="fx-buf-row" style={{ justifyContent: 'center' }}>
-          <span className="fx-letter fx-letter--on">1</span>
-          <span className="fx-letter fx-letter--pad">/</span>
-          <span className="fx-letter fx-letter--on">2</span>
-          <span className={`fx-letter${divFix ? ' fx-letter--on' : divTrap ? ' fx-letter--dead' : ' fx-letter--empty'}`}>
-            {divFix ? '.5' : divTrap ? '0' : '·'}
-          </span>
+      )}
+      {id === 'div' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${stepped && !divFix ? ' fx-pane--focus' : ''}${divTrap ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">int / int</span>
+            <div className={`fx-slot${divTrap ? ' fx-slot--trap' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">1 / 2</span>
+              <span className="fx-value">{divTrap || stepped ? '0' : '—'}</span>
+              <span className="fx-note">truncates toward 0</span>
+            </div>
+          </div>
+          <div className={`fx-link${divFix ? ' fx-link--weld' : divTrap ? ' fx-link--dead' : stepped ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${divFix ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">float</span>
+            <div className={`fx-slot${divFix ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">1.0 / 2</span>
+              <span className="fx-value">{divFix ? '0.5' : '—'}</span>
+              <span className="fx-note">{divFix ? 'a ratio' : 'need a floating operand'}</span>
+            </div>
+          </div>
         </div>
-      ) : null}
+      )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
           trap ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''

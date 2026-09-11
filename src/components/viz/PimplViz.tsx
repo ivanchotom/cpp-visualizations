@@ -61,6 +61,8 @@ export function PimplViz() {
   const abiOk = id === 'abi' && decided
   const trap = dtorTrap || movesGone
   const showSlots = id === 'dtor' || id === 'moves'
+  const implLetters =
+    id === 'abi' && recap ? ['n', 's'] : id === 'abi' && stepped ? ['n'] : id === 'firewall' && stepped ? ['n'] : id === 'dtor' && dtorFix ? ['n'] : []
 
   const code =
     id === 'firewall'
@@ -150,56 +152,6 @@ public:
   const playLabel =
     id === 'firewall' ? 'Play firewall' : id === 'dtor' ? 'Play dtor' : id === 'moves' ? 'Play moves' : 'Play ABI'
 
-  const inName = id === 'firewall' ? 'widget.hpp' : id === 'dtor' ? 'header' : id === 'moves' ? 'header' : 'Widget'
-  const inVal =
-    id === 'firewall'
-      ? 'struct Impl; ptr'
-      : id === 'dtor'
-        ? recap
-          ? '~Widget();'
-          : '~Widget() = default'
-        : id === 'moves'
-          ? recap
-            ? 'moves declared'
-            : '~Widget();'
-          : 'unique_ptr<Impl>'
-  const midName = id === 'firewall' ? 'widget.cpp' : id === 'dtor' ? 'unique_ptr' : id === 'moves' ? 'C++14' : 'Impl'
-  const midVal =
-    id === 'firewall' && stepped
-      ? 'Impl complete'
-      : id === 'dtor' && recap
-        ? 'complete in .cpp'
-        : id === 'dtor' && stepped
-          ? 'needs complete T'
-          : id === 'moves' && recap
-            ? 'moves declared'
-            : id === 'moves' && decided
-              ? 'moves suppressed'
-              : id === 'moves' && stepped
-                ? 'dtor declared'
-                : id === 'abi' && recap
-                  ? 'n + string'
-                  : id === 'abi' && stepped
-                    ? '+ extra field'
-                    : '—'
-  const outName = id === 'firewall' ? 'client TU' : id === 'dtor' ? 'compile' : id === 'moves' ? 'Widget(Widget&&)' : 'sizeof'
-  const outVal = fireOk
-    ? 'no rebuild'
-    : dtorTrap
-      ? 'ill-formed'
-      : dtorFix
-        ? 'ok in .cpp'
-        : movesOk
-          ? 'defined'
-          : movesGone
-            ? 'suppressed'
-            : abiOk
-              ? 'one pointer'
-              : '—'
-
-  const leftLink = stepped ? (trap ? 'fx-link--dead' : fireOk || dtorFix || movesOk || abiOk ? 'fx-link--weld' : 'fx-link--on') : ''
-  const rightLink = trap ? 'fx-link--dead' : fireOk || dtorFix || movesOk || abiOk ? 'fx-link--weld' : ''
-
   const verdict =
     id === 'firewall' && i === 1
       ? 'Impl in .cpp · header opaque'
@@ -225,8 +177,7 @@ public:
                           ? 'stable ABI · pay an allocation'
                           : ''
 
-  const implLetters =
-    id === 'abi' && recap ? ['n', 's'] : id === 'abi' && stepped ? ['n'] : id === 'firewall' && stepped ? ['n'] : []
+  const linkKind = dtorTrap || movesGone ? 'dead' : fireOk || dtorFix || movesOk || abiOk ? 'weld' : stepped ? 'on' : ''
 
   return (
     <SceneShell
@@ -260,91 +211,53 @@ public:
           })}
         </div>
       ) : null}
-      <div className="fx-own">
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">in</span>
-          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{inName}</span>
-            <span className="fx-value">{inVal}</span>
-            <span className="fx-note">public</span>
+      <div className="fx-sh">
+        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${dtorTrap ? ' fx-pane--trap' : ''}`}>
+          <span className="fx-kicker">Widget</span>
+          <div className="fx-buf-row">
+            <span className={`fx-letter${stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>p</span>
           </div>
+          <span className="fx-note">
+            {dtorTrap
+              ? '~Widget() = default in hpp'
+              : dtorFix
+                ? '~Widget(); in hpp'
+                : abiOk
+                  ? 'sizeof unchanged'
+                  : 'one unique_ptr'}
+          </span>
         </div>
-        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${trap ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">impl</span>
-          <div
-            className={`fx-slot${
-              trap ? ' fx-slot--trap' : fireOk || dtorFix || abiOk ? ' fx-slot--weld' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'
-            }`}
-          >
-            <span className="fx-kicker">{midName}</span>
-            <span className="fx-value">{midVal}</span>
-            <span className="fx-note">
-              {id === 'firewall'
-                ? 'clients never see n'
-                : id === 'dtor'
-                  ? 'dtor runs delete'
-                  : id === 'moves'
-                    ? 'user dtor kills moves'
-                    : 'private layout'}
-            </span>
+        <div className={`fx-link${linkKind ? ` fx-link--${linkKind}` : ''}`} />
+        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${dtorTrap || movesGone ? ' fx-pane--trap' : ''}`}>
+          <span className="fx-kicker">Impl</span>
+          <div className="fx-buf-row">
+            {implLetters.length ? (
+              implLetters.map((ch) => (
+                <span key={ch} className="fx-letter fx-letter--on">
+                  {ch}
+                </span>
+              ))
+            ) : (
+              <span className={`fx-letter${dtorTrap ? ' fx-letter--dead' : ' fx-letter--empty'}`}>
+                {dtorTrap ? '?' : '·'}
+              </span>
+            )}
           </div>
-        </div>
-        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
-        <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}${trap ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">out</span>
-          <div
-            className={`fx-slot${
-              trap ? ' fx-slot--trap' : fireOk || dtorFix || movesOk || abiOk ? ' fx-slot--weld' : ' fx-slot--dim'
-            }`}
-          >
-            <span className="fx-kicker">{outName}</span>
-            <span className="fx-value">{outVal}</span>
-            <span className="fx-note">
-              {fireOk
-                ? 'stable header'
-                : dtorTrap
-                  ? 'Impl incomplete'
-                  : dtorFix
-                    ? 'define after Impl'
-                    : movesOk
-                      ? 'declare, define later'
-                      : movesGone
-                        ? 'implicit move gone'
-                        : abiOk
-                          ? 'add fields freely'
-                          : 'client'}
-            </span>
-          </div>
+          <span className="fx-note">
+            {dtorTrap
+              ? 'incomplete'
+              : dtorFix
+                ? 'complete in .cpp'
+                : movesGone
+                  ? 'moves suppressed'
+                  : movesOk
+                    ? 'steal the unique_ptr'
+                    : id === 'abi' && recap
+                      ? 'n + string'
+                      : 'private'}
+          </span>
         </div>
       </div>
-      {id === 'firewall' || id === 'abi' ? (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">Widget</span>
-            <div className="fx-buf-row">
-              <span className={`fx-letter${stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>p</span>
-            </div>
-            <span className="fx-note">{abiOk ? 'sizeof unchanged' : 'one unique_ptr'}</span>
-          </div>
-          <div className={`fx-link${fireOk || abiOk ? ' fx-link--weld' : stepped ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">Impl</span>
-            <div className="fx-buf-row">
-              {implLetters.length ? (
-                implLetters.map((ch) => (
-                  <span key={ch} className="fx-letter fx-letter--on">
-                    {ch}
-                  </span>
-                ))
-              ) : (
-                <span className="fx-letter fx-letter--empty">·</span>
-              )}
-            </div>
-            <span className="fx-note">{id === 'abi' && recap ? 'n + string' : 'private'}</span>
-          </div>
-        </div>
-      ) : null}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
           trap ? 'fx-verdict--warn' : fireOk || dtorFix || movesOk || abiOk ? 'fx-verdict--ok' : ''
