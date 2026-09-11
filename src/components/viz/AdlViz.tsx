@@ -102,33 +102,26 @@ std::min<int>(a, b);        // no ADL
           ? 'Play a == b'
           : 'Play (std::min)'
 
-  const inName = id === 'swap' ? 'N::Item' : id === 'stream' ? 'ostream' : id === 'friend' ? 'Item' : 'call site'
-  const inVal = id === 'swap' ? 'a, b' : id === 'stream' ? 'std::cout' : id === 'friend' ? 'a == b' : '(std::min)'
-  const midName = id === 'swap' ? 'lookup' : id === 'stream' ? 'associated ns' : id === 'friend' ? 'ordinary' : 'id-expr'
-  const midVal =
-    id === 'swap' && looked
-      ? 'using std::swap'
-      : id === 'stream' && looked
-        ? 'namespace std'
-        : id === 'friend' && looked
-          ? 'not visible'
-          : id === 'parens' && looked
-            ? 'no ADL'
-            : '—'
-  const outName = id === 'swap' ? 'N::swap' : id === 'stream' ? 'operator<<' : id === 'friend' ? 'hidden friend' : 'N::min'
-  const outVal =
+  const verdict =
     id === 'swap' && found
-      ? 'picked'
+      ? recap
+        ? 'qualify std::swap and you skip N'
+        : 'ADL · N::swap wins'
       : id === 'stream' && found
-        ? 'found'
+        ? 'ADL · operator<< in std'
         : id === 'friend' && found
-          ? 'found'
+          ? 'hidden friend · ADL only'
           : killed
-            ? 'skipped'
-            : '—'
-
-  const leftLink = looked ? 'fx-link--on' : ''
-  const rightLink = killed ? 'fx-link--dead' : won ? 'fx-link--weld' : found ? 'fx-link--on' : ''
+            ? 'parens · ADL off'
+            : id === 'swap' && looked
+              ? 'using std::swap · not the whole set'
+              : id === 'stream' && looked
+                ? 'associated ns · std'
+                : id === 'friend' && looked
+                  ? 'ordinary lookup · empty'
+                  : id === 'parens' && looked
+                    ? 'parenthesized id · no ADL'
+                    : ''
 
   return (
     <SceneShell
@@ -149,80 +142,75 @@ std::min<int>(a, b);        // no ADL
       code={code}
       tone={tone}
     >
-      <div className="fx-own">
-        <div className={`fx-pane${looked ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">arguments</span>
-          <div className={`fx-slot${looked ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{inName}</span>
-            <span className="fx-value">{inVal}</span>
-            <span className="fx-note">{id === 'parens' ? 'parenthesized' : 'associated types'}</span>
+      {id === 'swap' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${looked ? ' fx-rank--on' : ''}${found ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">ordinary</span>
+            <code>std::swap</code>
+            <span className="fx-note">{looked ? 'in set' : '—'}</span>
+          </div>
+          <div className={`fx-rank${found ? ' fx-rank--on' : ''}`}>
+            <span className="fx-note">ADL</span>
+            <code>N::swap</code>
+            <span className="fx-note">{found ? 'wins' : '—'}</span>
           </div>
         </div>
-        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
-        <div className={`fx-pane${looked ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">lookup</span>
-          <div
-            className={`fx-slot${
-              id === 'friend' && looked && !found
-                ? ' fx-slot--dim'
-                : looked
-                  ? ' fx-slot--focus'
-                  : ' fx-slot--dim'
-            }`}
-          >
-            <span className="fx-kicker">{midName}</span>
-            <span className="fx-value">{midVal}</span>
-            <span className="fx-note">
-              {id === 'swap'
-                ? 'two-step idiom'
-                : id === 'stream'
-                  ? 'Koenig'
-                  : id === 'friend'
-                    ? 'not in scope'
-                    : 'parens kill ADL'}
-            </span>
+      )}
+      {id === 'stream' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${looked ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">cout</span>
+            <div className={`fx-slot${looked ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">ostream</span>
+              <span className="fx-value">{looked ? 'std' : '—'}</span>
+              <span className="fx-note">associated namespace</span>
+            </div>
+          </div>
+          <div className={`fx-link${won ? ' fx-link--weld' : looked ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${found ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">unqualified</span>
+            <div className={`fx-slot${won ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">operator</span>
+              <span className="fx-value">{found ? '<<' : '—'}</span>
+              <span className="fx-note">{found ? 'found in std' : 'waiting'}</span>
+            </div>
           </div>
         </div>
-        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
-        <div className={`fx-pane${found ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">chosen</span>
-          <div
-            className={`fx-slot${
-              killed ? ' fx-slot--trap' : won ? ' fx-slot--ok' : ' fx-slot--dim'
-            }`}
-          >
-            <span className="fx-kicker">{outName}</span>
-            <span className="fx-value">{outVal}</span>
-            <span className="fx-note">
-              {id === 'swap' && won
-                ? 'better than std::swap'
-                : id === 'stream' && won
-                  ? 'why << works'
-                  : id === 'friend' && won
-                    ? 'ADL only'
-                    : killed
-                      ? 'that is the point'
-                      : 'waiting'}
-            </span>
+      )}
+      {id === 'friend' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${looked ? ' fx-rank--on' : ''}${found ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">ordinary</span>
+            <code>operator==</code>
+            <span className="fx-note">{looked ? 'hidden' : '—'}</span>
+          </div>
+          <div className={`fx-rank${found ? ' fx-rank--on' : ''}`}>
+            <span className="fx-note">ADL</span>
+            <code>friend ==</code>
+            <span className="fx-note">{found ? 'found' : '—'}</span>
           </div>
         </div>
-      </div>
+      )}
+      {id === 'parens' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${looked ? ' fx-rank--on' : ''}${killed ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">id-expr</span>
+            <code>(std::min)</code>
+            <span className="fx-note">{looked ? 'no ADL' : '—'}</span>
+          </div>
+          <div className={`fx-rank${killed ? ' fx-rank--on fx-rank--trap' : ''}`}>
+            <span className="fx-note">N::min</span>
+            <code>skipped</code>
+            <span className="fx-note">{killed ? 'off' : '—'}</span>
+          </div>
+        </div>
+      )}
       <div
-        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
           killed ? 'fx-verdict--warn' : won ? 'fx-verdict--ok' : ''
         }`}
       >
-        {id === 'swap' && found
-          ? recap
-            ? 'qualify std::swap and you skip N'
-            : 'ADL · N::swap wins'
-          : id === 'stream' && found
-            ? 'ADL · operator<< in std'
-            : id === 'friend' && found
-              ? 'hidden friend · ADL only'
-              : killed
-                ? 'parens · ADL off'
-                : ''}
+        {verdict}
       </div>
     </SceneShell>
   )

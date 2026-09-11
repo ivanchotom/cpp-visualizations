@@ -107,33 +107,26 @@ id(42);             // T = int`
           ? 'Play add(1, 2.0)'
           : 'Play [](auto x)'
 
-  const inName = id === 'decay' ? 'argument' : id === 'fwd' ? 'lvalue x' : id === 'clash' ? 'add(T, T)' : 'generic λ'
-  const inVal = id === 'decay' ? 'const int&' : id === 'fwd' ? 'int x' : id === 'clash' ? '1, 2.0' : '[](auto x)'
-  const midName = id === 'decay' ? 'param T' : id === 'fwd' ? 'param T&&' : id === 'clash' ? 'T from 1' : 'operator()'
-  const midVal =
-    id === 'decay' && looked
-      ? 'by value'
-      : id === 'fwd' && looked
-        ? 'forwarding ref'
-        : id === 'clash' && looked
-          ? 'T = int'
-          : id === 'lambda' && looked
-            ? 'template'
-            : '—'
-  const outName = id === 'clash' ? 'T from 2.0' : 'T'
-  const outVal =
+  const verdict =
     id === 'decay' && deduced
-      ? 'int'
-      : id === 'fwd' && deduced
-        ? 'int&'
-        : clash
-          ? 'double ≠ int'
-          : id === 'lambda' && deduced
-            ? 'int'
-            : '—'
-
-  const leftLink = looked ? 'fx-link--on' : ''
-  const rightLink = clash ? 'fx-link--dead' : won ? 'fx-link--weld' : deduced ? 'fx-link--on' : ''
+      ? 'T = int · cv and & decay'
+      : id === 'decay' && looked
+        ? 'const int& · strip for T'
+        : id === 'fwd' && deduced
+          ? 'T = int& · forwarding ref'
+          : id === 'fwd' && looked
+            ? 'lvalue into T&&'
+            : clash
+              ? recap
+                ? 'give T · add<double>(1, 2)'
+                : 'T clash · ill-formed'
+              : id === 'clash' && looked
+                ? 'T = int from 1'
+                : id === 'lambda' && deduced
+                  ? '[](auto x) · operator()<int>'
+                  : id === 'lambda' && looked
+                    ? 'auto x · a template param'
+                    : ''
 
   return (
     <SceneShell
@@ -154,64 +147,89 @@ id(42);             // T = int`
       code={code}
       tone={tone}
     >
-      <div className="fx-own">
-        <div className={`fx-pane${looked ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">call</span>
-          <div className={`fx-slot${looked ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{inName}</span>
-            <span className="fx-value">{inVal}</span>
-            <span className="fx-note">argument</span>
+      {id === 'decay' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${looked ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">argument</span>
+            <div className={`fx-slot${looked ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">x</span>
+              <span className="fx-value">{looked ? 'int&' : '—'}</span>
+              <span className="fx-note">const int&</span>
+            </div>
+          </div>
+          <div className={`fx-link${won ? ' fx-link--weld' : looked ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${deduced ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">T</span>
+            <div className={`fx-slot${won ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">by value</span>
+              <span className="fx-value">{deduced ? 'int' : '—'}</span>
+              <span className="fx-note">{deduced ? 'cv and & gone' : 'waiting'}</span>
+            </div>
           </div>
         </div>
-        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
-        <div className={`fx-pane${looked ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">param</span>
-          <div className={`fx-slot${looked ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{midName}</span>
-            <span className="fx-value">{midVal}</span>
-            <span className="fx-note">
-              {id === 'decay' ? 'cv and & drop' : id === 'fwd' ? 'T deduced' : id === 'clash' ? 'first argument' : 'C++14'}
-            </span>
+      )}
+      {id === 'fwd' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${looked ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">lvalue x</span>
+            <div className={`fx-slot${looked ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">arg</span>
+              <span className="fx-value">{looked ? 'x' : '—'}</span>
+              <span className="fx-note">named int</span>
+            </div>
+          </div>
+          <div className={`fx-link${won ? ' fx-link--weld' : looked ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${deduced ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">T&&</span>
+            <div className={`fx-slot${won ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">T</span>
+              <span className="fx-value">{deduced ? 'int&' : '—'}</span>
+              <span className="fx-note">{deduced ? 'int& && → int&' : 'forwarding ref'}</span>
+            </div>
           </div>
         </div>
-        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
-        <div className={`fx-pane${deduced ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">result</span>
-          <div className={`fx-slot${clash ? ' fx-slot--trap' : won ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{outName}</span>
-            <span className="fx-value">{outVal}</span>
-            <span className="fx-note">
-              {id === 'decay' && won
-                ? 'decayed'
-                : id === 'fwd' && won
-                  ? 'keeps lvalue'
-                  : clash
-                    ? 'must agree'
-                    : won
-                      ? recap
-                        ? 'stamped operator()'
-                        : 'call operator'
-                      : 'waiting'}
-            </span>
+      )}
+      {id === 'clash' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${looked ? ' fx-rank--on' : ''}${clash ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">from 1</span>
+            <code>T</code>
+            <span className="fx-note">{looked ? 'int' : '—'}</span>
+          </div>
+          <div className={`fx-rank${clash ? ' fx-rank--on fx-rank--trap' : ''}`}>
+            <span className="fx-note">from 2.0</span>
+            <code>T</code>
+            <span className="fx-note">{clash ? 'dbl' : '—'}</span>
           </div>
         </div>
-      </div>
+      )}
+      {id === 'lambda' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${looked ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">lambda</span>
+            <div className={`fx-slot${looked ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">auto x</span>
+              <span className="fx-value">{looked ? '42' : '—'}</span>
+              <span className="fx-note">generic call op</span>
+            </div>
+          </div>
+          <div className={`fx-link${won ? ' fx-link--weld' : looked ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${deduced ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">stamp</span>
+            <div className={`fx-slot${won ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">T</span>
+              <span className="fx-value">{deduced ? 'int' : '—'}</span>
+              <span className="fx-note">{deduced ? 'operator()<int>' : 'waiting'}</span>
+            </div>
+          </div>
+        </div>
+      )}
       <div
-        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
           clash ? 'fx-verdict--trap' : won ? 'fx-verdict--ok' : ''
         }`}
       >
-        {id === 'decay' && deduced
-          ? 'T = int · cv and & decay'
-          : id === 'fwd' && deduced
-            ? 'T = int& · forwarding ref'
-            : clash
-              ? recap
-                ? 'give T · add<double>(1, 2)'
-                : 'T clash · ill-formed'
-              : id === 'lambda' && deduced
-                ? '[](auto x) · operator()<int>'
-                : ''}
+        {verdict}
       </div>
     </SceneShell>
   )
