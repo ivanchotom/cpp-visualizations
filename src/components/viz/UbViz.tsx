@@ -178,7 +178,7 @@ int n = *reinterpret_cast<int*>(&f);  // UB`
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${signedTrap ? ' fx-rank--trap' : ''}${unsignedOk ? ' fx-rank--done' : ''}`}>
             <code>n</code>
             <span className="fx-note">signed int</span>
-            <span className="fx-note">{signedTrap ? 'ub' : stepped ? 'max' : '—'}</span>
+            <span className="fx-note">{signedTrap || unsignedOk ? 'ub' : stepped ? 'max' : '—'}</span>
           </div>
           <div className={`fx-rank${unsignedOk ? ' fx-rank--on' : ''}`}>
             <code>u</code>

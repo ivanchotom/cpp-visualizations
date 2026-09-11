@@ -197,7 +197,7 @@ int r = a / b;     // 0`
           <div className={`fx-rank${stepped && !divFix ? ' fx-rank--on' : ''}${divTrap ? ' fx-rank--trap' : ''}${divFix ? ' fx-rank--done' : ''}`}>
             <code>1/2</code>
             <span className="fx-note">int / int</span>
-            <span className="fx-note">{divTrap || (stepped && !divFix) ? '0' : '—'}</span>
+            <span className="fx-note">{stepped ? '0' : '—'}</span>
           </div>
           <div className={`fx-rank${divFix ? ' fx-rank--on' : ''}`}>
             <code>1.0</code>
