@@ -25,7 +25,7 @@ export function ConstCorrectViz() {
   const recap = i >= 3
   const readOk = id === 'observer' && i === 1
   const writeTrap = id === 'observer' && decided
-  const constFind = id === 'find' && i === 1
+  const constFind = id === 'find' && stepped
   const mutFind = id === 'find' && decided
   const moveBlocked = id === 'byval' && decided && !recap
   const returnT = id === 'byval' && recap
@@ -119,64 +119,6 @@ public:
           ? 'Play const T'
           : 'Play ++g_hits'
 
-  const inName = id === 'observer' ? 'const Bag&' : id === 'find' ? 'caller' : id === 'byval' ? 'return' : 'this const'
-  const inVal =
-    id === 'observer'
-      ? 'read-only this'
-      : id === 'find'
-        ? mutFind
-          ? 'Bag&'
-          : 'const Bag&'
-        : id === 'byval'
-          ? recap
-            ? 'T'
-            : 'const T'
-          : 'empty() const'
-  const midName = id === 'observer' ? 'items_' : id === 'find' ? 'find(id)' : id === 'byval' ? 'temporary' : 'g_hits'
-  const midVal =
-    id === 'observer' && writeTrap
-      ? 'this is const'
-      : id === 'observer' && stepped
-        ? 'size() == 0'
-        : id === 'find' && mutFind
-          ? 'Item*'
-          : id === 'find' && stepped
-            ? 'const Item*'
-            : id === 'byval' && recap
-              ? 'movable'
-              : id === 'byval' && stepped
-                ? 'const-qualified'
-                : id === 'lie' && lieTrap
-                  ? String(i >= 2 ? 1 : 0)
-                  : id === 'lie' && stepped
-                    ? '0'
-                    : '—'
-  const outName = id === 'observer' ? 'write' : id === 'find' ? 'mutate *p' : id === 'byval' ? 'std::move' : 'threads'
-  const outVal = writeTrap
-    ? 'ill-formed'
-    : readOk
-      ? 'read ok'
-      : mutFind
-        ? 'n = 1'
-        : constFind
-          ? 'no write'
-          : moveBlocked
-            ? 'blocked'
-            : returnT
-              ? 'moves'
-              : lieTrap
-                ? 'data race'
-                : '—'
-
-  const leftLink = stepped
-    ? writeTrap || lieTrap || moveBlocked
-      ? 'fx-link--dead'
-      : readOk || constFind || mutFind || returnT
-        ? 'fx-link--weld'
-        : 'fx-link--on'
-    : ''
-  const rightLink = writeTrap || lieTrap || moveBlocked ? 'fx-link--dead' : mutFind || returnT ? 'fx-link--weld' : constFind ? 'fx-link--on' : ''
-
   const verdict =
     id === 'observer' && i === 1
       ? 'empty() · read ok'
@@ -184,7 +126,7 @@ public:
         ? 'clear() · ill-formed'
         : writeTrap
           ? 'observers const · compiles catch writes'
-          : constFind
+          : constFind && !mutFind
             ? 'const Bag& · const Item*'
             : mutFind && !recap
               ? 'Bag& · Item* write-through'
@@ -203,9 +145,6 @@ public:
                           : lieTrap
                             ? 'const is not a mutex'
                             : ''
-
-  const ada = id === 'byval' && stepped
-  const items = id === 'observer' && stepped
 
   return (
     <SceneShell
@@ -226,118 +165,102 @@ public:
       code={code}
       tone={tone}
     >
-      <div className="fx-own">
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">this</span>
-          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{inName}</span>
-            <span className="fx-value">{inVal}</span>
-            <span className="fx-note">handle</span>
+      {id === 'observer' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${writeTrap ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">empty() const</span>
+            <div className={`fx-slot${writeTrap ? ' fx-slot--trap' : readOk ? ' fx-slot--weld' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">this</span>
+              <span className="fx-value">{stepped ? 'Bag' : '—'}</span>
+              <span className="fx-note">{writeTrap ? 'clear() ill-formed' : 'const Bag*'}</span>
+            </div>
+          </div>
+          <div className={`fx-link${writeTrap ? ' fx-link--dead' : readOk ? ' fx-link--weld' : ''}`} />
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">items_</span>
+            <div className="fx-buf-row">
+              {['a', 'b', 'c'].map((ch) => (
+                <span
+                  key={ch}
+                  className={`fx-letter${writeTrap ? ' fx-letter--on' : readOk ? ' fx-letter--read' : ' fx-letter--empty'}`}
+                >
+                  {stepped ? ch : '·'}
+                </span>
+              ))}
+            </div>
+            <span className="fx-note">{writeTrap ? 'unchanged' : 'read, not write'}</span>
           </div>
         </div>
-        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${trap ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">body</span>
-          <div
-            className={`fx-slot${
-              trap
-                ? ' fx-slot--trap'
-                : readOk || constFind
-                  ? ' fx-slot--weld'
-                  : mutFind
-                    ? ' fx-slot--flash-ref'
-                    : stepped
-                      ? ' fx-slot--focus'
-                      : ' fx-slot--dim'
-            }`}
-          >
-            <span className="fx-kicker">{midName}</span>
-            <span className="fx-value">{midVal}</span>
-            <span className="fx-note">
-              {id === 'observer'
-                ? 'member'
-                : id === 'find'
-                  ? 'overload set'
-                  : id === 'byval'
-                    ? 'by value'
-                    : 'not a member'}
-            </span>
+      )}
+      {id === 'find' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${constFind ? ' fx-rank--on' : ''}${mutFind ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">const</span>
+            <code>const Item*</code>
+            <span className="fx-note">{constFind ? 'read' : '—'}</span>
+          </div>
+          <div className={`fx-rank${mutFind ? ' fx-rank--on' : ''}`}>
+            <span className="fx-note">Bag&</span>
+            <code>Item*</code>
+            <span className="fx-note">{mutFind ? 'write' : '—'}</span>
           </div>
         </div>
-        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
-        <div className={`fx-pane${decided || readOk || constFind ? ' fx-pane--focus' : ''}${trap ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">out</span>
-          <div
-            className={`fx-slot${
-              trap
-                ? ' fx-slot--trap'
-                : mutFind || returnT || readOk
-                  ? ' fx-slot--weld'
-                  : constFind
-                    ? ' fx-slot--focus'
-                    : ' fx-slot--dim'
-            }`}
-          >
-            <span className="fx-kicker">{outName}</span>
-            <span className="fx-value">{outVal}</span>
-            <span className="fx-note">
-              {writeTrap
-                ? 'need a non-const method'
-                : readOk
-                  ? 'const documents the contract'
-                  : mutFind
-                    ? 'two overloads, one object'
-                    : constFind
-                      ? 'const view'
-                      : moveBlocked
-                        ? 'return T, not const T'
-                        : returnT
-                          ? 'value, not borrow'
-                          : lieTrap
-                            ? 'const ≠ thread-safe'
-                            : 'result'}
-            </span>
+      )}
+      {id === 'byval' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${moveBlocked ? ' fx-pane--trap' : ''}${returnT ? ' fx-pane--gone' : ''}`}>
+            <span className="fx-kicker">{returnT ? 'T' : 'const T'}</span>
+            <div className="fx-buf-row">
+              {['A', 'd', 'a'].map((ch) => (
+                <span
+                  key={ch}
+                  className={`fx-letter${returnT ? ' fx-letter--empty' : stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}
+                >
+                  {returnT ? '·' : stepped ? ch : '·'}
+                </span>
+              ))}
+            </div>
+            <span className="fx-note">{returnT ? 'moved-from' : moveBlocked ? 'const temp' : 'temporary'}</span>
+          </div>
+          <div className={`fx-link${returnT ? ' fx-link--weld' : moveBlocked ? ' fx-link--dead' : stepped ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">s</span>
+            <div className="fx-buf-row">
+              {['A', 'd', 'a'].map((ch) => (
+                <span
+                  key={ch}
+                  className={`fx-letter${returnT ? ' fx-letter--move' : moveBlocked ? ' fx-letter--on' : ' fx-letter--empty'}`}
+                >
+                  {decided ? ch : '·'}
+                </span>
+              ))}
+            </div>
+            <span className="fx-note">{returnT ? 'stole' : moveBlocked ? 'copy · blocked move' : 'waiting'}</span>
           </div>
         </div>
-      </div>
-      {items ? (
-        <div className={`fx-pane${writeTrap ? ' fx-pane--trap' : ' fx-pane--focus'}`}>
-          <span className="fx-kicker">items_</span>
-          <div className="fx-buf-row" style={{ justifyContent: 'center' }}>
-            {['a', 'b', 'c'].map((ch) => (
-              <span
-                key={ch}
-                className={`fx-letter${writeTrap ? ' fx-letter--dead' : readOk ? ' fx-letter--read' : ' fx-letter--on'}`}
-              >
-                {ch}
+      )}
+      {id === 'lie' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">empty() const</span>
+            <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">this</span>
+              <span className="fx-value">{stepped ? 'Bag' : '—'}</span>
+              <span className="fx-note">members are const</span>
+            </div>
+          </div>
+          <div className={`fx-link${lieTrap ? ' fx-link--dead' : stepped ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${lieTrap ? ' fx-pane--focus' : ''}${lieTrap ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">g_hits</span>
+            <div className="fx-buf-row">
+              <span className={`fx-letter${lieTrap ? ' fx-letter--write' : stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>
+                {lieTrap ? '1' : stepped ? '0' : '·'}
               </span>
-            ))}
+            </div>
+            <span className="fx-note">{lieTrap ? 'not a mutex' : 'global, not a member'}</span>
           </div>
         </div>
-      ) : null}
-      {ada ? (
-        <div className={`fx-pane${moveBlocked ? ' fx-pane--trap' : ' fx-pane--focus'}`}>
-          <span className="fx-kicker">{recap ? 'T' : 'const std::string'}</span>
-          <div className="fx-buf-row" style={{ justifyContent: 'center' }}>
-            {['A', 'd', 'a'].map((ch) => (
-              <span
-                key={ch}
-                className={`fx-letter${moveBlocked ? ' fx-letter--dead' : recap ? ' fx-letter--move' : ' fx-letter--on'}`}
-              >
-                {ch}
-              </span>
-            ))}
-          </div>
-        </div>
-      ) : null}
-      {id === 'lie' && stepped ? (
-        <div className={`fx-pane${lieTrap ? ' fx-pane--trap' : ' fx-pane--focus'}`}>
-          <span className="fx-kicker">g_hits</span>
-          <div className="fx-buf-row" style={{ justifyContent: 'center' }}>
-            <span className={`fx-letter${lieTrap ? ' fx-letter--write' : ' fx-letter--on'}`}>{lieTrap ? '1' : '0'}</span>
-          </div>
-        </div>
-      ) : null}
+      )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
           lieTrap ? 'fx-verdict--trap' : trap ? 'fx-verdict--warn' : readOk || mutFind || returnT ? 'fx-verdict--ok' : ''
