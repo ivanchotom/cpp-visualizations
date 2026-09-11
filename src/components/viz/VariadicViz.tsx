@@ -125,25 +125,6 @@ print();                  // no matching function
           ? 'Play index_sequence'
           : 'Play print(rest...)'
 
-  const leftLink = packed ? (noStop || sizeofTrap ? 'fx-link--dead' : 'fx-link--on') : ''
-  const rightLink = sizeofTrap || noStop ? 'fx-link--dead' : won ? 'fx-link--weld' : expanded ? 'fx-link--on' : ''
-
-  const glyphs = id === 'sizeof' ? ['int', 'char'] : id === 'index' ? ['0', '1', '2'] : PACK
-  const packLabel = id === 'sizeof' ? 'Ts...' : id === 'index' ? 'I...' : id === 'nobase' ? 'rest...' : 'xs...'
-
-  const outVal =
-    id === 'sum' && expanded
-      ? '6'
-      : sizeofOk
-        ? '2'
-        : sizeofTrap
-          ? 'ill-formed'
-          : id === 'index' && expanded
-            ? 'get<0,1,2>'
-            : noStop
-              ? 'no stop'
-              : '—'
-
   return (
     <SceneShell
       modes={MODES}
@@ -163,67 +144,76 @@ print();                  // no matching function
       code={code}
       tone={tone}
     >
-      <div className="fx-own">
-        <div className={`fx-pane${packed ? ' fx-pane--focus' : ''}${noStop && recap ? ' fx-pane--gone' : ''}`}>
-          <span className="fx-kicker">pack</span>
-          <div className={`fx-slot${packed ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{packLabel}</span>
+      {id === 'sum' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${packed ? ' fx-rank--on' : ''}${expanded ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">pack</span>
+            <code>xs...</code>
+            <span className="fx-note">{packed ? '1 2 3' : '—'}</span>
+          </div>
+          <div className={`fx-rank${expanded ? ' fx-rank--on' : ''}`}>
+            <span className="fx-note">foreach</span>
+            <code>{'(t += xs, 0)...'}</code>
+            <span className="fx-note">{expanded ? '6' : '—'}</span>
+          </div>
+          <div className="fx-buf-row">
+            {PACK.map((g, n) => (
+              <span key={g} className={`fx-letter${n < peeled ? ' fx-letter--on' : ' fx-letter--empty'}`}>
+                {n < peeled ? g : '·'}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+      {id === 'sizeof' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${packed ? ' fx-rank--on' : ''}${sizeofTrap ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">pack</span>
+            <code>sizeof...(Ts)</code>
+            <span className="fx-note">{sizeofOk || sizeofTrap ? '2' : packed ? 'len' : '—'}</span>
+          </div>
+          <div className={`fx-rank${sizeofTrap ? ' fx-rank--on fx-rank--trap' : sizeofOk ? ' fx-rank--on' : ''}`}>
+            <span className="fx-note">object</span>
+            <code>sizeof(xs)</code>
+            <span className="fx-note">{sizeofTrap ? 'ill' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'index' && (
+        <div className="fx-ladder">
+          {(['0', '1', '2'] as const).map((n, k) => (
+            <div key={n} className={`fx-rank${expanded && k <= 2 ? ' fx-rank--on' : packed ? ' fx-rank--done' : ''}`}>
+              <span className="fx-note">{`I=${n}`}</span>
+              <code>{`get<${n}>`}</code>
+              <span className="fx-note">{expanded ? n : packed ? n : '—'}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {id === 'nobase' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${packed ? ' fx-pane--focus' : ''}${noStop && recap ? ' fx-pane--gone' : ''}`}>
+            <span className="fx-kicker">rest</span>
             <div className="fx-buf-row">
-              {glyphs.map((g, n) => (
-                <span
-                  key={g}
-                  className={`fx-letter${n < peeled ? (id === 'nobase' ? ' fx-letter--on' : ' fx-letter--on') : ' fx-letter--empty'}`}
-                >
-                  {n < peeled ? g : '∅'}
+              {PACK.map((g, n) => (
+                <span key={g} className={`fx-letter${n < peeled ? ' fx-letter--on' : ' fx-letter--empty'}`}>
+                  {n < peeled ? g : '·'}
                 </span>
               ))}
             </div>
-            <span className="fx-note">{id === 'nobase' ? `print remaining ${peeled}` : 'not an object'}</span>
+            <span className="fx-note">{noStop ? 'empty pack' : 'peel head, recurse'}</span>
+          </div>
+          <div className={`fx-link${noStop ? ' fx-link--dead' : packed ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${expanded ? ' fx-pane--focus' : ''}${noStop ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">print()</span>
+            <div className={`fx-slot${noStop ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">base</span>
+              <span className="fx-value">{noStop ? 'none' : '—'}</span>
+              <span className="fx-note">{noStop ? 'no matching function' : 'need void print() {}'}</span>
+            </div>
           </div>
         </div>
-        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
-        <div className={`fx-pane${packed ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">expand</span>
-          <div className={`fx-slot${packed ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">
-              {id === 'sum' ? '(t += xs, 0)...' : id === 'sizeof' ? 'sizeof...' : id === 'index' ? 'index_sequence' : 'print(rest...)'}
-            </span>
-            <span className="fx-value">
-              {id === 'sum' && packed ? '{ … }' : id === 'sizeof' && packed ? 'length' : id === 'index' && packed ? 'I...' : packed ? 'recurse' : '—'}
-            </span>
-            <span className="fx-note">
-              {id === 'sum' ? 'C++14 foreach' : id === 'sizeof' ? 'not sizeof(xs)' : id === 'index' ? 'C++14' : 'needs a base'}
-            </span>
-          </div>
-        </div>
-        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
-        <div className={`fx-pane${expanded ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">result</span>
-          <div
-            className={`fx-slot${
-              sizeofTrap || noStop ? ' fx-slot--trap' : won ? ' fx-slot--ok' : ' fx-slot--dim'
-            }`}
-          >
-            <span className="fx-kicker">
-              {id === 'sum' ? 't' : id === 'sizeof' ? 'count' : id === 'index' ? 'each' : 'instantiation'}
-            </span>
-            <span className="fx-value">{outVal}</span>
-            <span className="fx-note">
-              {id === 'sum' && won
-                ? 'comma in braces'
-                : sizeofTrap
-                  ? 'pack, not object'
-                  : sizeofOk
-                    ? 'compile-time'
-                    : id === 'index' && won
-                      ? '0 .. N-1'
-                      : noStop
-                        ? 'never terminates'
-                        : 'waiting'}
-            </span>
-          </div>
-        </div>
-      </div>
+      )}
       <div
         className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
           sizeofTrap || noStop ? 'fx-verdict--trap' : won ? 'fx-verdict--ok' : ''

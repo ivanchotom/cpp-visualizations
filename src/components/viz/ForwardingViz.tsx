@@ -30,14 +30,6 @@ export function ForwardingViz() {
 
   const t = id === 'lval' || id === 'move' ? 'int&' : 'int'
   const collapsedTy = id === 'lval' || id === 'move' ? 'int&' : 'int&&'
-  const fwdCast =
-    id === 'move'
-      ? 'static_cast<int&&>(t)'
-      : id === 'lval'
-        ? 'static_cast<int&>(t)'
-        : 'static_cast<int&&>(t)'
-  const callName = id === 'prvalue' ? '42' : id === 'xvalue' ? 'std::move(x)' : 'x'
-  const cat = id === 'prvalue' ? 'prvalue' : id === 'xvalue' ? 'xvalue' : 'lvalue'
 
   const code =
     i === 0
@@ -117,12 +109,6 @@ sink(std::move(t));`
           ? 'Play wrap(move(x))'
           : 'Play move(t)'
 
-  const leftLink = deduced ? (trap ? 'fx-link--dead' : 'fx-link--on') : ''
-  const rightLink = forwarded ? (trap ? 'fx-link--dead' : steal ? 'fx-link--on' : 'fx-link--weld') : collapsed ? 'fx-link--on' : ''
-
-  const xVal = trap ? 'stolen' : id === 'prvalue' ? '42' : 'x'
-  const sinkVal = forwarded ? (steal ? 'steal' : 'bind') : '—'
-
   const verdict =
     id === 'move' && forwarded
       ? 'move(t) stole the lvalue'
@@ -163,51 +149,68 @@ sink(std::move(t));`
       code={code}
       tone={tone}
     >
-      <div className="fx-own">
-        <div className={`fx-pane${deduced ? ' fx-pane--focus' : ''}${trap ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">call</span>
-          <div className={`fx-slot${trap ? ' fx-slot--trap' : deduced ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{callName}</span>
-            <span className="fx-value">{xVal}</span>
-            <span className="fx-note">{trap ? 'caller did not give it away' : cat}</span>
+      {(id === 'lval' || id === 'xvalue') && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${deduced ? ' fx-rank--on' : ''}${collapsed ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">T</span>
+            <code>wrap(T&&)</code>
+            <span className="fx-note">{deduced ? t : '—'}</span>
+          </div>
+          <div className={`fx-rank${collapsed ? ' fx-rank--on' : ''}${id === 'xvalue' && forwarded ? '' : ''}`}>
+            <span className="fx-note">collapse</span>
+            <code>{collapsed ? collapsedTy : 'T&&'}</code>
+            <span className="fx-note">{forwarded ? (id === 'lval' ? 'bind' : 'steal') : collapsed ? 'lval' : '—'}</span>
           </div>
         </div>
-        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
-        <div className={`fx-pane${deduced ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">T&& t</span>
-          <div
-            className={`fx-slot${
-              stealMove
-                ? ' fx-slot--trap'
-                : collapsed
-                  ? steal
-                    ? ' fx-slot--focus'
-                    : ' fx-slot--weld'
-                  : deduced
-                    ? ' fx-slot--focus'
-                    : ' fx-slot--dim'
-            }`}
-          >
-            <span className="fx-kicker">T = {deduced ? t : '?'}</span>
-            <span className="fx-value">{collapsed ? collapsedTy : 'T&&'}</span>
-            <span className="fx-note">
-              {id === 'move' && collapsed ? 'move ignores T' : collapsed ? 'named → still an lvalue' : 'collapses'}
-            </span>
-            {stealFwd && <span className="fx-badge fx-badge--owner">may steal</span>}
-            {id === 'lval' && collapsed && <span className="fx-badge">no steal</span>}
-            {stealMove && <span className="fx-badge fx-badge--owner">move always steals</span>}
+      )}
+      {id === 'prvalue' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${deduced ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">call</span>
+            <div className={`fx-slot${deduced ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">wrap</span>
+              <span className="fx-value">{deduced ? '42' : '—'}</span>
+              <span className="fx-note">prvalue · T = int</span>
+            </div>
+          </div>
+          <div className={`fx-link${forwarded ? ' fx-link--on' : collapsed ? ' fx-link--on' : deduced ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${collapsed ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">sink</span>
+            <div className={`fx-slot${forwarded ? ' fx-slot--ok' : collapsed ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">forward</span>
+              <span className="fx-value">{forwarded ? '&&' : collapsed ? 'int&&' : '—'}</span>
+              <span className="fx-note">{forwarded ? 'may steal' : 'named t is still an lvalue'}</span>
+            </div>
           </div>
         </div>
-        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
-        <div className={`fx-pane${forwarded ? ' fx-pane--focus' : ''}${trap ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">sink</span>
-          <div className={`fx-slot${trap ? ' fx-slot--trap' : forwarded ? (steal ? ' fx-slot--focus' : ' fx-slot--ok') : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{id === 'move' ? 'sink(move(t))' : 'sink(…)'}</span>
-            <span className="fx-value">{sinkVal}</span>
-            <span className="fx-note">{forwarded ? fwdCast : 'waiting'}</span>
+      )}
+      {id === 'move' && (
+        <div className="fx-sh">
+          <div className={`fx-pane${deduced ? ' fx-pane--focus' : ''}${trap ? ' fx-pane--gone' : ''}`}>
+            <span className="fx-kicker">caller x</span>
+            <div className="fx-buf-row">
+              <span className={`fx-letter${trap ? ' fx-letter--dead' : deduced ? ' fx-letter--on' : ' fx-letter--empty'}`}>
+                {trap ? '·' : deduced ? 'x' : '·'}
+              </span>
+            </div>
+            <span className="fx-note">{trap ? 'did not ask to give it away' : 'lvalue · T = int&'}</span>
+          </div>
+          <div className={`fx-link${trap ? ' fx-link--dead' : stealMove ? ' fx-link--on' : deduced ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${collapsed ? ' fx-pane--focus' : ''}${trap ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">sink</span>
+            <div className={`fx-slot${trap ? ' fx-slot--trap' : stealMove ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">move(t)</span>
+              <span className="fx-value">{trap ? 'stole' : collapsed ? '&&' : '—'}</span>
+              <span className="fx-note">{trap ? 'always an rvalue cast' : 'ignores T'}</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+      {id === 'lval' && (
+        <div className="fx-buf-row">
+          <span className={`fx-letter${deduced ? ' fx-letter--on' : ' fx-letter--empty'}`}>{deduced ? 'x' : '·'}</span>
+        </div>
+      )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
           trap ? 'fx-verdict--trap' : steal && forwarded ? 'fx-verdict--warn' : forwarded || collapsed ? 'fx-verdict--ok' : ''
