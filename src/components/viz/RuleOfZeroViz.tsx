@@ -67,6 +67,7 @@ export function RuleOfZeroViz() {
   const virtTrap = id === 'virt' && decided && !recap
   const virtOk = id === 'virt' && recap
   const trap = copied || leak || doubleFree || virtTrap
+  const nameChars = id === 'zero' ? ['I', 'v', 'a', 'n'] : ['A', 'd', 'a']
 
   const code =
     id === 'zero'
@@ -157,44 +158,6 @@ Bag a, b = a;
           ? 'Play raw ptr'
           : 'Play virtual dtor'
 
-  const inName = id === 'zero' ? 'members' : id === 'quiet' ? '~Person()' : id === 'raw' ? 'heap' : 'Base'
-  const inVal =
-    id === 'zero' ? (decided ? 'string + ptr' : stepped ? 'string' : '—') : id === 'quiet' ? '{}' : id === 'raw' ? (stepped ? 'new int{7}' : 'unset') : 'polymorphic'
-  const midName = id === 'zero' ? 'Person' : id === 'quiet' ? 'implicit moves' : id === 'raw' ? 'Bag' : '~Base()'
-  const midVal =
-    id === 'zero' && decided
-      ? 'copy deleted'
-      : id === 'zero' && stepped
-        ? 'no specials'
-        : id === 'quiet' && decided
-          ? 'suppressed'
-          : id === 'raw' && stepped
-            ? recap
-              ? 'user dtor'
-              : 'thinks Zero'
-            : id === 'virt' && recap
-              ? '=default rest'
-              : id === 'virt' && stepped
-                ? 'virtual'
-                : '—'
-  const outName = id === 'zero' ? 'b = move(a)' : id === 'quiet' ? 'b = move(a)' : id === 'raw' ? 'Bag b = a' : 'the five'
-  const outVal = stolen
-    ? 'b owns · a empty'
-    : copied
-      ? 'copy · a unchanged'
-      : leak
-        ? 'two ptrs, one new'
-        : doubleFree
-          ? 'double free'
-          : virtTrap
-            ? 'moves absent'
-            : virtOk
-              ? 'all five spelled'
-              : '—'
-
-  const leftLink = stepped ? (trap && decided ? 'fx-link--dead' : stolen || virtOk ? 'fx-link--weld' : 'fx-link--on') : ''
-  const rightLink = doubleFree ? 'fx-link--dead' : stolen || virtOk ? 'fx-link--weld' : copied || leak || virtTrap ? 'fx-link--dead' : ''
-
   const verdict =
     id === 'zero' && i === 1
       ? 'members manage · no specials'
@@ -222,7 +185,7 @@ Bag a, b = a;
                             ? '=default the rest'
                             : ''
 
-  const nameB = stolen ? 'Ivan' : copied ? 'Ada' : ''
+  const linkKind = stolen ? 'weld' : copied || leak ? 'on' : doubleFree || virtTrap ? 'dead' : virtOk ? 'weld' : stepped ? 'on' : ''
 
   return (
     <SceneShell
@@ -254,105 +217,65 @@ Bag a, b = a;
           )
         })}
       </div>
-      <div className="fx-own">
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-          <span className="fx-kicker">in</span>
-          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">{inName}</span>
-            <span className="fx-value">{inVal}</span>
-            <span className="fx-note">resource</span>
+      {id === 'virt' ? (
+        <div className="fx-sh">
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${virtTrap ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">Base</span>
+            <div className={`fx-slot${virtOk ? ' fx-slot--ok' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">virtual dtor</span>
+              <span className="fx-value">{stepped ? '~B' : '—'}</span>
+              <span className="fx-note">{virtOk ? 'and the other four' : virtTrap ? 'moves absent' : 'polymorphic'}</span>
+            </div>
+          </div>
+          <div className={`fx-link${linkKind ? ` fx-link--${linkKind}` : ''}`} />
+          <div className={`fx-pane${virtOk ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">Derived</span>
+            <div className={`fx-slot${virtOk ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">delete p</span>
+              <span className="fx-value">{virtOk ? 'ok' : '—'}</span>
+              <span className="fx-note">{virtOk ? 'right dtor runs' : 'needs virtual ~Base'}</span>
+            </div>
           </div>
         </div>
-        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${trap && decided ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">class</span>
-          <div
-            className={`fx-slot${
-              trap && decided ? ' fx-slot--trap' : stolen || virtOk ? ' fx-slot--weld' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'
-            }`}
-          >
-            <span className="fx-kicker">{midName}</span>
-            <span className="fx-value">{midVal}</span>
-            <span className="fx-note">
-              {id === 'zero'
-                ? 'compiler writes them'
-                : id === 'quiet'
-                  ? 'user dtor kills moves'
-                  : id === 'raw'
-                    ? 'raw is not a member manager'
-                    : 'deliberate Five'}
-            </span>
-          </div>
-        </div>
-        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
-        <div className={`fx-pane${recap || (id === 'zero' && decided) ? ' fx-pane--focus' : ''}${doubleFree ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">out</span>
-          <div
-            className={`fx-slot${
-              doubleFree
-                ? ' fx-slot--trap'
-                : stolen || virtOk
-                  ? ' fx-slot--weld'
-                  : copied || leak
-                    ? ' fx-slot--flash'
-                    : ' fx-slot--dim'
-            }`}
-          >
-            <span className="fx-kicker">{outName}</span>
-            <span className="fx-value">{outVal}</span>
-            <span className="fx-note">
-              {stolen
-                ? 'string moved, ptr stole'
-                : copied
-                  ? 'C++14 copies'
-                  : leak
-                    ? 'two owners'
-                    : doubleFree
-                      ? 'UB / crash'
-                      : virtOk
-                        ? 'moves restored'
-                        : 'specials'}
-            </span>
-            {stolen && <span className="fx-badge fx-badge--owner">owner</span>}
-            {copied && <span className="fx-badge fx-badge--open">copy</span>}
-          </div>
-        </div>
-      </div>
-      {id !== 'virt' && stepped ? (
+      ) : (
         <div className="fx-sh">
           <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${stolen ? ' fx-pane--gone' : ''}`}>
             <span className="fx-kicker">a</span>
             <div className="fx-buf-row">
               {id === 'raw' ? (
-                <span className={`fx-letter${doubleFree ? ' fx-letter--dead' : ' fx-letter--on'}`}>7</span>
+                <span className={`fx-letter${doubleFree ? ' fx-letter--dead' : stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>
+                  {stepped ? '7' : '·'}
+                </span>
               ) : (
-                (id === 'zero' ? ['I', 'v', 'a', 'n'] : ['A', 'd', 'a']).map((ch, n) => (
-                  <span key={n} className={`fx-letter${stolen ? ' fx-letter--empty' : ' fx-letter--on'}`}>
-                    {stolen ? '·' : ch}
+                nameChars.map((ch, n) => (
+                  <span key={n} className={`fx-letter${stolen ? ' fx-letter--empty' : stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>
+                    {stolen ? '·' : stepped ? ch : '·'}
                   </span>
                 ))
               )}
             </div>
             <span className="fx-note">{stolen ? 'moved-from' : leak || doubleFree ? 'owns p' : 'source'}</span>
           </div>
-          <div className={`fx-link${stolen ? ' fx-link--weld' : copied || leak ? ' fx-link--on' : doubleFree ? ' fx-link--dead' : ''}`} />
+          <div className={`fx-link${linkKind ? ` fx-link--${linkKind}` : ''}`} />
           <div className={`fx-pane${stolen || copied || leak || doubleFree ? ' fx-pane--focus' : ''}${doubleFree ? ' fx-pane--trap' : ''}`}>
             <span className="fx-kicker">b</span>
             <div className="fx-buf-row">
               {id === 'raw' ? (
-                leak || doubleFree ? (
-                  <span className={`fx-letter${doubleFree ? ' fx-letter--dead' : ' fx-letter--on'}`}>7</span>
-                ) : (
-                  <span className="fx-letter fx-letter--empty">·</span>
-                )
+                <span
+                  className={`fx-letter${
+                    doubleFree ? ' fx-letter--dead' : leak ? ' fx-letter--on' : ' fx-letter--empty'
+                  }`}
+                >
+                  {leak || doubleFree ? '7' : '·'}
+                </span>
               ) : stolen || copied ? (
-                (nameB || '').split('').map((ch, n) => (
+                nameChars.map((ch, n) => (
                   <span key={n} className={`fx-letter${stolen ? ' fx-letter--move' : ' fx-letter--on'}`}>
                     {ch}
                   </span>
                 ))
               ) : (
-                (id === 'zero' ? ['I', 'v', 'a', 'n'] : ['A', 'd', 'a']).map((_, n) => (
+                nameChars.map((_, n) => (
                   <span key={n} className="fx-letter fx-letter--empty">
                     ·
                   </span>
@@ -364,7 +287,7 @@ Bag a, b = a;
             </span>
           </div>
         </div>
-      ) : null}
+      )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
           doubleFree ? 'fx-verdict--trap' : trap ? 'fx-verdict--warn' : stolen || virtOk ? 'fx-verdict--ok' : ''
