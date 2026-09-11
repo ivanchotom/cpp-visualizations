@@ -1,106 +1,30 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { hop, waitNextBeat, type Point } from './motion.ts'
+import { useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'access' | 'inv' | 'thisc' | 'virtctor'
 
-const MODES: { id: Mode; title: string; sig: string }[] = [
-  { id: 'access', title: 'private', sig: 'r.den_' },
-  { id: 'inv', title: 'invariant', sig: 'Ratio(1, 0)' },
-  { id: 'thisc', title: 'this const', sig: 'num() const' },
-  { id: 'virtctor', title: 'virt in ctor', sig: 'Base() { speak(); }' },
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'access', title: 'private' },
+  { id: 'inv', title: 'invariant' },
+  { id: 'thisc', title: 'this const' },
+  { id: 'virtctor', title: 'virt in ctor' },
 ]
-
-const STEP_MS = 1300
-const HOP_MS = 700
 
 export function ClassesViz() {
   const [id, setId] = useState<Mode>('access')
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [from, setFrom] = useState<Point>({ x: 80, y: 90 })
-  const [to, setTo] = useState<Point>({ x: 360, y: 90 })
+  const { i, playing, play, reset } = useBeats(4)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const srcRef = useRef<HTMLDivElement>(null)
-  const dstRef = useRef<HTMLDivElement>(null)
+  function select(next: string) {
+    reset()
+    setId(next as Mode)
+  }
 
-  const stepCount = 4
-  const bounced = (id === 'access' && i >= 2) || (id === 'thisc' && i >= 2)
+  const bounced = id === 'access' && i >= 2
   const threw = id === 'inv' && i >= 2
+  const constThis = id === 'thisc' && i >= 1
+  const writeBlocked = id === 'thisc' && i >= 2
   const wrongSpeak = id === 'virtctor' && i >= 2
-
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    if (!stage || !srcRef.current || !dstRef.current) return
-    const origin = stage.getBoundingClientRect()
-    const a = srcRef.current.getBoundingClientRect()
-    const b = dstRef.current.getBoundingClientRect()
-    const src = { x: a.left - origin.left + a.width / 2, y: a.top - origin.top + a.height / 2 }
-    const dst = { x: b.left - origin.left + b.width / 2, y: b.top - origin.top + b.height / 2 }
-    if (bounced) {
-      setFrom(dst)
-      setTo(src)
-    } else {
-      setFrom(src)
-      setTo(dst)
-    }
-  }, [id, i, bounced])
-
-  useEffect(() => {
-    if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
-    }
-    raf = requestAnimationFrame(hopLoop)
-    const stopBeat = waitNextBeat(STEP_MS, () => {
-      if (i >= stepCount - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stopBeat()
-    }
-  }, [playing, i, stepCount])
-
-  function select(next: Mode) {
-    setPlaying(false)
-    setId(next)
-    setI(0)
-    setHopT(1)
-  }
-
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
-  }
-
-  const pos = hopT < 1 && i >= 1 ? hop(from, to, hopT) : null
-  const flyerText =
-    id === 'access'
-      ? bounced
-        ? 'private'
-        : 'den_'
-      : id === 'inv'
-        ? threw
-          ? 'throw'
-          : '0'
-        : id === 'thisc'
-          ? bounced
-            ? 'const'
-            : 'this'
-          : i === 1
-            ? 'speak()'
-            : 'Base::'
 
   const code =
     id === 'access'
@@ -142,15 +66,15 @@ struct D : Base { void speak(); };`
           ? 'Play Ratio(1, 0). If construction throws, there is no object. Callers never see a Ratio with den_ == 0.'
           : id === 'thisc'
             ? 'Play a const member. Inside num() const, this is const Ratio*. You may not assign num_. That is how const-correct APIs compose.'
-            : 'Play a virtual call in a constructor. The derived part is not there yet. The call binds as if the type were the class under construction.'
+            : 'Play a virtual call in a constructor. The derived part is not there yet. The call uses the class under construction.'
       : id === 'access' && i === 1
-        ? 'den_ is a data member. Outside the class, the name is not accessible. That bounce is the encapsulation, not a suggestion.'
+        ? 'den_ is a data member. The lock is the language, not a style guide. The cyan bar is a name lookup, not a hop.'
         : id === 'access' && i === 2
           ? 'Ill-formed. Friendship punches a hole — use sparingly. The public API is den().'
           : id === 'access'
             ? 'r.den() is the read. In-class initializers (int n = 0) fill members a constructor forgets to mention, still in declaration order.'
             : id === 'inv' && i === 1
-              ? '0 hops into den_. The mem-initializer already wrote it. The body is the last chance to reject the value.'
+              ? 'The mem-initializer wrote 0 into den_. The body is the last chance to reject the value. Nothing has escaped to the caller.'
               : id === 'inv' && i === 2
                 ? 'throw. Construction fails. Already-constructed members are destroyed in reverse. No Ratio exists for the caller.'
                 : id === 'inv'
@@ -162,97 +86,144 @@ struct D : Base { void speak(); };`
                       : id === 'thisc'
                         ? 'Callers with a const Ratio& may only call const members. That is the whole point of marking them.'
                         : i === 1
-                          ? 'Base() runs first. speak() is virtual. Lookup still finds the final overrider — but only among classes whose construction has started and not yet finished? No: during Base(), the type is Base.'
+                          ? 'Base() runs first. speak() is virtual, but during Base() the dynamic type is Base. Derived is not a slice that exists yet.'
                           : i === 2
                             ? 'Base::speak. D’s vtable slot is not active. Calling a pure virtual here is UB. Don’t virtual-dispatch in ctor/dtor.'
                             : 'D() body has not run. Members of D are not constructed. This is why factories after full construction exist.'
 
-  const m = MODES.find((x) => x.id === id) ?? MODES[0]
-  const stageKind = threw || bounced ? 'cl-stage--reject' : wrongSpeak ? 'cl-stage--virt' : ''
+  const tone = bounced || threw || writeBlocked ? 'trap' : wrongSpeak && i >= 3 ? 'warn' : i >= 3 ? 'ok' : 'idle'
+
+  const playLabel =
+    id === 'access' ? 'Play r.den_' : id === 'inv' ? 'Play Ratio(1, 0)' : id === 'thisc' ? 'Play num() const' : 'Play speak() in ctor'
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        {MODES.map((x) => (
-          <button
-            key={x.id}
-            className={`chip${id === x.id ? ' chip--active' : ''}`}
-            onClick={() => select(x.id)}
-            disabled={playing}
-          >
-            {x.title}
-          </button>
-        ))}
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play class
-        </button>
-        <button className="chip chip--ghost" onClick={() => select(id)}>
-          reset
-        </button>
-      </div>
-
-      <div ref={stageRef} className={`viz-stage cl-stage viz-stage--live ${stageKind}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{stepCount} · <code>{m.sig}</code>
-        </p>
-        <div className="cl-row">
-          <div ref={srcRef} className={`own-card${i >= 1 ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">
-              {id === 'access' ? 'caller' : id === 'inv' ? 'ctor args' : id === 'thisc' ? 'obj' : 'Base()'}
+    <SceneShell
+      modes={MODES}
+      mode={id}
+      onSelect={select}
+      playing={playing}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setId(id)
+      }}
+      playLabel={playLabel}
+      step={i}
+      stepCount={4}
+      sig={MODES.find((m) => m.id === id)?.title}
+      caption={caption}
+      code={code}
+      tone={tone}
+    >
+      {id === 'access' && (
+        <div className="fx-sh">
+          <div className={`fx-slot${i >= 1 ? ' fx-slot--focus' : ''}${bounced ? ' fx-slot--trap' : ''}`}>
+            <span className="fx-kicker">caller</span>
+            <span className="fx-value">
+              <code>r</code>
             </span>
-            <span className="own-name">
-              {id === 'access' ? 'r' : id === 'inv' ? 'Ratio(1, 0)' : id === 'thisc' ? 'const Ratio' : 'construct'}
-            </span>
-            <span className="mem-note">{id === 'virtctor' ? 'body runs last' : 'outside'}</span>
+            <span className="fx-note">{i >= 3 ? 'r.den()' : i >= 1 ? 'wants r.den_' : 'outside the class'}</span>
           </div>
-          <div
-            ref={dstRef}
-            className={`own-card${i >= 1 && !bounced && !threw ? ' own-card--unique' : ''}${bounced || threw ? ' nd-card--ub' : ''}${id === 'access' && bounced ? ' own-ctrl--ghost' : ''}`}
-          >
-            <span className="lf-tag">
-              {id === 'access' ? 'private' : id === 'inv' ? 'den_' : id === 'thisc' ? 'this' : 'speak()'}
-            </span>
-            <span className="own-name">
-              {id === 'access'
-                ? bounced
-                  ? 'inaccessible'
-                  : 'den_'
-                : id === 'inv'
-                  ? threw
-                    ? 'no object'
-                    : '0'
-                  : id === 'thisc'
-                    ? bounced
-                      ? 'const Ratio*'
-                      : 'this'
-                    : wrongSpeak
-                      ? 'Base::speak'
-                      : 'D::speak?'}
-            </span>
-            <span className="mem-note">
-              {id === 'access' && bounced
-                ? 'use den()'
-                : threw
-                  ? 'invariant held'
-                  : id === 'thisc' && bounced
-                    ? 'no write'
-                    : wrongSpeak
-                      ? 'D not constructed'
-                      : 'waiting'}
-            </span>
+          <div className={`fx-link${bounced ? ' fx-link--dead' : i >= 3 ? ' fx-link--weld' : i >= 1 ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${i >= 1 ? ' fx-pane--focus' : ''}${bounced ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">Ratio</span>
+            <div className={`fx-slot${bounced ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">private</span>
+              <span className="fx-value">
+                <code>den_</code>
+              </span>
+              <span className="fx-badge fx-badge--lock">private</span>
+            </div>
+            <div className={`fx-slot${i >= 3 ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">public</span>
+              <span className="fx-note">int den() const</span>
+              {i >= 3 && <span className="fx-badge fx-badge--open">API</span>}
+            </div>
           </div>
         </div>
-        {pos && (
-          <span className={`ptr-pulse cl-flyer${bounced || threw ? ' cl-flyer--trap' : ''}`} style={{ left: pos.x, top: pos.y }}>
-            {flyerText}
-          </span>
-        )}
+      )}
+      {id === 'inv' && (
+        <div className="fx-sh">
+          <div className={`fx-slot${i >= 1 ? ' fx-slot--focus' : ''}${threw ? ' fx-slot--trap' : ''}`}>
+            <span className="fx-kicker">ctor args</span>
+            <span className="fx-value">
+              <code>Ratio(1, 0)</code>
+            </span>
+            <span className="fx-note">{threw ? 'construction failed' : 'n = 1, d = 0'}</span>
+          </div>
+          <div className={`fx-link${threw ? ' fx-link--dead' : i >= 1 ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${i >= 1 && !threw ? ' fx-pane--focus' : ''}${threw ? ' fx-pane--gone' : ''}`}>
+            <span className="fx-kicker">{threw ? 'no object' : 'constructing'}</span>
+            <div className={`fx-slot${i >= 1 && !threw ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">den_</span>
+              <span className="fx-value">{i >= 1 && !threw ? '0' : '—'}</span>
+              <span className="fx-note">{threw ? 'destroyed on unwind' : 'must not be 0'}</span>
+            </div>
+          </div>
+        </div>
+      )}
+      {id === 'thisc' && (
+        <div className="fx-sh">
+          <div className={`fx-slot${constThis ? ' fx-slot--weld' : ''}`}>
+            <span className="fx-kicker">object</span>
+            <span className="fx-value">
+              <code>const Ratio</code>
+            </span>
+            <span className="fx-note">callers may only call const members</span>
+          </div>
+          <div className={`fx-link${constThis ? ' fx-link--weld' : ''}`} />
+          <div className={`fx-pane${constThis ? ' fx-pane--focus' : ''}${writeBlocked ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">this</span>
+            <span className="fx-value">
+              <code>{constThis ? 'const Ratio*' : '—'}</code>
+            </span>
+            <div className={`fx-slot${writeBlocked ? ' fx-slot--trap' : constThis ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">num_</span>
+              <span className="fx-note">{writeBlocked ? 'write is ill-formed' : constThis ? 'read is fine' : 'not in the member yet'}</span>
+            </div>
+          </div>
+        </div>
+      )}
+      {id === 'virtctor' && (
+        <div className="fx-sh">
+          <div className="fx-pane">
+            <span className="fx-kicker">under construction</span>
+            <div className={`fx-slot${i >= 1 ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">Base</span>
+              <span className="fx-note">{i >= 1 ? 'vptr → Base' : 'not started'}</span>
+            </div>
+            <div className="fx-slot fx-slot--dim">
+              <span className="fx-kicker">Derived</span>
+              <span className="fx-note">not constructed</span>
+            </div>
+          </div>
+          <div className={`fx-link${i >= 2 ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${wrongSpeak ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">virtual call</span>
+            <div className={`fx-vt-slot${wrongSpeak ? ' fx-vt-slot--hot' : ''}`}>
+              <code>speak</code>
+              <span className="fx-vt-fn">{wrongSpeak ? 'Base::speak' : 'D::speak?'}</span>
+            </div>
+          </div>
+        </div>
+      )}
+      <div
+        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
+          bounced || threw || writeBlocked ? 'fx-verdict--trap' : wrongSpeak ? 'fx-verdict--warn' : i >= 3 ? 'fx-verdict--ok' : ''
+        }`}
+      >
+        {id === 'access' && bounced && i < 3
+          ? 'r.den_ · private · ill-formed'
+          : id === 'access' && i >= 3
+            ? 'r.den() · the API'
+            : threw
+              ? 'throw · no Ratio exists'
+              : writeBlocked
+                ? 'const this · write ill-formed'
+                : wrongSpeak && i >= 2
+                  ? 'Base::speak · D not alive'
+                  : ''}
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{code}</code>
-      </pre>
-      <p className="layout-hint">{caption}</p>
-    </div>
+    </SceneShell>
   )
 }

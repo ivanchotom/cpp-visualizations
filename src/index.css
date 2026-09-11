@@ -5093,7 +5093,8 @@ pre {
   .fx-sh,
   .fx-cat-row,
   .fx-obj-row,
-  .fx-own {
+  .fx-own,
+  .fx-five {
     grid-template-columns: 1fr;
   }
   .fx-sh .fx-link,
@@ -5121,6 +5122,7 @@ pre {
   .fx-vt-slot,
   .fx-slice,
   .fx-count-pip,
+  .fx-sm,
   .fx-pipe-rail::after {
     transition: none !important;
     animation: none !important;
@@ -5405,5 +5407,51 @@ button.fx-slot {
 
 .fx-slice--derived.fx-slice--on {
   border-color: rgba(198, 120, 221, 0.35);
+}
+
+.fx-five {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.fx-sm {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 64px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #161b22;
+  opacity: 0.35;
+  transition: opacity 0.3s var(--ease-out), border-color 0.28s var(--ease-out), background 0.28s var(--ease-out);
+}
+
+.fx-sm--gen {
+  opacity: 1;
+  border-color: var(--copy);
+  background: rgba(62, 224, 255, 0.08);
+}
+
+.fx-sm--user {
+  opacity: 1;
+  border-color: #c678dd;
+  background: rgba(198, 120, 221, 0.1);
+}
+
+.fx-sm--absent {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+.fx-sm--deleted {
+  opacity: 1;
+  border-color: rgba(224, 108, 117, 0.5);
+  background: rgba(224, 108, 117, 0.1);
+}
+
+.fx-sm--idle {
+  opacity: 0.35;
 }
 
