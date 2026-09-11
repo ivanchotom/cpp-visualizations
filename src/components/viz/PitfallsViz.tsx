@@ -1,190 +1,69 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { hop, waitNextBeat, type Point } from './motion.ts'
+import { useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'parse' | 'slice' | 'ns' | 'div'
 
-const MODES: { id: Mode; title: string; sig: string }[] = [
-  { id: 'parse', title: 'parse', sig: 'Widget w()' },
-  { id: 'slice', title: 'slicing', sig: 'f(Base)' },
-  { id: 'ns', title: 'using ns', sig: 'using namespace' },
-  { id: 'div', title: '1/2', sig: '1 / 2' },
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'parse', title: 'parse' },
+  { id: 'slice', title: 'slicing' },
+  { id: 'ns', title: 'using ns' },
+  { id: 'div', title: '1/2' },
 ]
-
-const STEP_MS = 1300
-const HOP_MS = 700
 
 export function PitfallsViz() {
   const [id, setId] = useState<Mode>('parse')
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [from, setFrom] = useState<Point>({ x: 80, y: 90 })
-  const [to, setTo] = useState<Point>({ x: 360, y: 90 })
+  const { i, playing, play, reset } = useBeats(4)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const srcRef = useRef<HTMLDivElement>(null)
-  const midRef = useRef<HTMLDivElement>(null)
-  const rightRef = useRef<HTMLDivElement>(null)
-
-  const stepCount = 4
-  const bounce = (id === 'parse' && i >= 2) || (id === 'ns' && i >= 2)
-  const trapped = i >= 2
-  const won = false
-
-  const useRight = i >= 2
-
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    const srcEl = srcRef.current
-    const dstEl = useRight ? rightRef.current : midRef.current
-    if (!stage || !srcEl || !dstEl) return
-    const origin = stage.getBoundingClientRect()
-    const a = srcEl.getBoundingClientRect()
-    const b = dstEl.getBoundingClientRect()
-    const src = { x: a.left - origin.left + a.width / 2, y: a.top - origin.top + a.height / 2 }
-    const dst = { x: b.left - origin.left + b.width / 2, y: b.top - origin.top + b.height / 2 }
-    if (bounce) {
-      setFrom(dst)
-      setTo(src)
-    } else {
-      setFrom(src)
-      setTo(dst)
-    }
-  }, [id, i, bounce, useRight])
-
-  useEffect(() => {
-    if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
-    }
-    raf = requestAnimationFrame(hopLoop)
-    const stopBeat = waitNextBeat(STEP_MS, () => {
-      if (i >= stepCount - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stopBeat()
-    }
-  }, [playing, i, stepCount])
-
-  function select(next: Mode) {
-    setPlaying(false)
-    setId(next)
-    setI(0)
-    setHopT(1)
+  function select(next: string) {
+    reset()
+    setId(next as Mode)
   }
 
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
-  }
-
-  const pos = hopT < 1 && i >= 1 ? hop(from, to, hopT) : null
-  const flyerText =
-    id === 'parse'
-      ? i === 1
-        ? 'w()'
-        : 'object?'
-      : id === 'slice'
-        ? i === 1
-          ? 'Derived'
-          : 'by value'
-        : id === 'ns'
-          ? i === 1
-            ? 'using'
-            : 'header'
-          : i === 1
-            ? '1 / 2'
-            : '0'
-
-  const leftName =
-    id === 'parse' ? 'source' : id === 'slice' ? 'Derived d' : id === 'ns' ? 'header.h' : 'ints'
-  const leftVal =
-    id === 'parse' ? 'Widget w()' : id === 'slice' ? 'extra fields' : id === 'ns' ? '#include' : '1 and 2'
-  const midName =
-    id === 'parse' ? 'parser' : id === 'slice' ? 'f(Base b)' : id === 'ns' ? 'std::' : 'operator/'
-  const midVal =
-    id === 'parse' && i >= 1
-      ? 'function decl'
-      : id === 'slice' && i >= 1
-        ? i >= 2
-          ? 'Base only'
-          : 'copy'
-        : id === 'ns' && i >= 1
-          ? 'leaks names'
-          : id === 'div' && i >= 1
-            ? 'integer /'
-            : '—'
-  const midNote =
-    id === 'parse' ? 'most vexing' : id === 'slice' ? 'by value' : id === 'ns' ? 'never here' : 'truncates'
-  const rightName =
-    id === 'parse' ? 'object' : id === 'slice' ? 'derived part' : id === 'ns' ? 'collision' : 'ratio'
-  const rightVal =
-    id === 'parse' && i >= 2
-      ? 'none'
-      : id === 'slice' && i >= 2
-        ? 'dropped'
-        : id === 'ns' && i >= 2
-          ? 'ADL / macros'
-          : id === 'div' && i >= 2
-            ? '0'
-            : '—'
-  const rightNote =
-    id === 'parse' && bounce
-      ? 'use Widget w{}'
-      : id === 'parse'
-        ? 'looks like a ctor'
-        : id === 'slice' && trapped
-          ? 'pass Base&'
-          : id === 'slice'
-            ? 'virtuals gone'
-            : id === 'ns' && bounce
-              ? 'keep it local'
-              : id === 'ns'
-                ? 'in a .cpp maybe'
-                : trapped
-                  ? '1.0 / 2'
-                  : 'not 0.5'
+  const stepped = i >= 1
+  const decided = i >= 2
+  const recap = i >= 3
+  const parseTrap = id === 'parse' && decided && !recap
+  const parseFix = id === 'parse' && recap
+  const sliceTrap = id === 'slice' && decided && !recap
+  const sliceFix = id === 'slice' && recap
+  const nsTrap = id === 'ns' && decided && !recap
+  const nsFix = id === 'ns' && recap
+  const divTrap = id === 'div' && decided && !recap
+  const divFix = id === 'div' && recap
+  const trap = parseTrap || sliceTrap || nsTrap || divTrap
+  const ok = parseFix || sliceFix || nsFix || divFix
 
   const code =
     id === 'parse'
-      ? i < 2
-        ? `Widget w();     // function
-// not a default-constructed Widget`
-        : `Widget w();     // function declaration
+      ? recap
+        ? `Widget w();     // function declaration
 Widget w{};     // object — C++11 brace-init
 Widget w;       // also an object`
+        : `Widget w();     // function
+// not a default-constructed Widget`
       : id === 'slice'
-        ? i < 2
-          ? `struct Base { int a; };
-struct Derived : Base { int extra; };
-void f(Base b);`
-          : `void f(Base b);   // by value: slices
+        ? recap
+          ? `void f(Base b);   // by value: slices
 f(derived);        // extra is gone
 void g(Base& b);   // keep the dynamic type`
+          : `struct Base { int a; };
+struct Derived : Base { int extra; };
+void f(Base b);`
         : id === 'ns'
-          ? i < 2
-            ? `// header.h — don’t
-using namespace std;`
-            : `// header.h
+          ? recap
+            ? `// header.h
 // using namespace std;  // never
-// in .cpp, keep it local or don’t`
-          : i < 2
-            ? `int a = 1, b = 2;
-int r = a / b;     // 0`
-            : `int r = 1 / 2;           // 0
+// in .cpp, keep it local or don’t
+using std::string;        // narrower`
+            : `// header.h — don’t
+using namespace std;`
+          : recap
+            ? `int r = 1 / 2;           // 0
 double q = 1.0 / 2;      // 0.5
 double s = 1 / 2.0;      // 0.5`
+            : `int a = 1, b = 2;
+int r = a / b;     // 0`
 
   const caption =
     i === 0
@@ -196,94 +75,248 @@ double s = 1 / 2.0;      // 0.5`
             ? 'Play using ns. using namespace in a header dumps names into every translation unit that includes it. Never. In a .cpp, keep it local.'
             : 'Play 1/2. Integer division truncates toward zero. 1/2 is 0, not a ratio. Use a floating operand or a cast.'
       : id === 'parse' && i === 1
-        ? 'w() hops at the parser. C++’s most vexing parse: anything that can be a declaration is one.'
+        ? 'The parser sees Widget w();. Anything that can be a declaration is one. That is the most vexing parse. There is no object yet.'
         : id === 'parse' && i === 2
-          ? 'You wanted an object. There is none. The name w is a function. Bounce. Widget w{} constructs.'
+          ? 'You wanted an object. There is none. The name w is a function. Widget w{} constructs. Widget w; does too.'
           : id === 'parse'
-            ? 'Also: std::vector<int> v(std::istream_iterator<int>{in}, std::istream_iterator<int>{}); extra braces dodge the parse.'
+            ? 'Also: extra braces around iterator pairs dodge the parse. std::vector<int> v(std::istream_iterator<int>{in}, std::istream_iterator<int>{});'
             : id === 'slice' && i === 1
-              ? 'Derived hops toward f. The parameter type is Base, by value. The call will copy a Base.'
+              ? 'The parameter is Base by value. The call copies a Base. Derived’s extra members are not in that object.'
               : id === 'slice' && i === 2
                 ? 'extra is dropped. If speak() is virtual, b.speak() is Base::speak. Pass Base& or unique_ptr<Base>.'
                 : id === 'slice'
                   ? 'Slicing is silent. A deleted Base copy constructor makes it a compile error — often the right fix for a polymorphic base.'
                   : id === 'ns' && i === 1
-                    ? 'using namespace std hops into the header. Every include of this file now sees std names and any future ones.'
+                    ? 'using namespace std in a header. Every include of this file now sees std names and any future ones.'
                     : id === 'ns' && i === 2
-                      ? 'The leak bounces back as a collision: min/max macros, ADL surprises, another library’s size. Keep using-directives out of headers.'
+                      ? 'The leak shows up as a collision: min/max macros, ADL surprises, another library’s size. Keep using-directives out of headers.'
                       : id === 'ns'
                         ? 'using std::string; in a .cpp is a narrower habit. using namespace in a header is a defect.'
                         : i === 1
-                          ? '1 / 2 hops into integer division. Both operands are int. The result type is int.'
+                          ? '1 / 2 is integer division. Both operands are int. The result type is int.'
                           : i === 2
                             ? '0. Not 0.5. The compiler did exactly what the types asked. Cast one operand or write 1.0 / 2.'
                             : 'This is not UB. It is the wrong type. Same class of bug as mixing int milliseconds with a float dt.'
 
-  const m = MODES.find((x) => x.id === id) ?? MODES[0]
-  const stageKind = trapped ? 'pf-stage--reject' : won ? 'pf-stage--win' : ''
+  const tone = trap ? 'warn' : ok ? 'ok' : 'idle'
+  const playLabel =
+    id === 'parse' ? 'Play Widget w()' : id === 'slice' ? 'Play slicing' : id === 'ns' ? 'Play using ns' : 'Play 1/2'
+
+  const inName = id === 'parse' ? 'source' : id === 'slice' ? 'Derived d' : id === 'ns' ? 'header.h' : 'ints'
+  const inVal =
+    id === 'parse'
+      ? recap
+        ? 'Widget w{}'
+        : 'Widget w()'
+      : id === 'slice'
+        ? 'extra fields'
+        : id === 'ns'
+          ? '#include'
+          : '1 and 2'
+  const midName = id === 'parse' ? 'parser' : id === 'slice' ? 'f(Base b)' : id === 'ns' ? 'std::' : 'operator/'
+  const midVal =
+    id === 'parse' && recap
+      ? 'brace-init'
+      : id === 'parse' && stepped
+        ? 'function decl'
+        : id === 'slice' && recap
+          ? 'Base&'
+          : id === 'slice' && decided
+            ? 'Base only'
+            : id === 'slice' && stepped
+              ? 'copy'
+              : id === 'ns' && stepped
+                ? 'leaks names'
+                : id === 'div' && recap
+                  ? '1.0 / 2'
+                  : id === 'div' && stepped
+                    ? 'integer /'
+                    : '—'
+  const outName = id === 'parse' ? 'object' : id === 'slice' ? 'derived part' : id === 'ns' ? 'collision' : 'ratio'
+  const outVal = parseTrap
+    ? 'none'
+    : parseFix
+      ? 'Widget'
+      : sliceTrap
+        ? 'dropped'
+        : sliceFix
+          ? 'kept'
+          : nsTrap
+            ? 'min / size'
+            : nsFix
+              ? 'local using'
+              : divTrap
+                ? '0'
+                : divFix
+                  ? '0.5'
+                  : '—'
+
+  const leftLink = stepped ? (trap ? 'fx-link--dead' : ok ? 'fx-link--weld' : 'fx-link--on') : ''
+  const rightLink = trap ? 'fx-link--dead' : ok ? 'fx-link--weld' : ''
+
+  const verdict =
+    id === 'parse' && i === 1
+      ? 'w() · function declaration'
+      : parseTrap
+        ? 'no object · most vexing parse'
+        : parseFix
+          ? 'Widget w{} · object'
+          : id === 'slice' && i === 1
+            ? 'f(Base) · copy a Base'
+            : sliceTrap
+              ? 'extra dropped · virtuals gone'
+              : sliceFix
+                ? 'pass Base& · keep dynamic type'
+                : id === 'ns' && i === 1
+                  ? 'using namespace · every TU'
+                  : nsTrap
+                    ? 'min/max · ADL · collisions'
+                    : nsFix
+                      ? 'never in a header'
+                      : id === 'div' && i === 1
+                        ? 'int / int · int result'
+                        : divTrap
+                          ? '1/2 is 0 · not a ratio'
+                          : divFix
+                            ? '1.0 / 2 · 0.5'
+                            : ''
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        {MODES.map((x) => (
-          <button
-            key={x.id}
-            className={`chip${id === x.id ? ' chip--active' : ''}`}
-            onClick={() => select(x.id)}
-            disabled={playing}
-          >
-            {x.title}
-          </button>
-        ))}
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play trap
-        </button>
-        <button className="chip chip--ghost" onClick={() => select(id)}>
-          reset
-        </button>
-      </div>
-
-      <div ref={stageRef} className={`viz-stage pf-stage viz-stage--live ${stageKind}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{stepCount} · <code>{m.sig}</code>
-        </p>
-        <div className="pf-row">
-          <div ref={srcRef} className={`own-card${i >= 1 ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">in</span>
-            <span className="own-name">{leftName}</span>
-            <span className="mem-val">{leftVal}</span>
-            <span className="mem-note">written</span>
-          </div>
-          <div ref={midRef} className={`own-card${i >= 1 && !useRight ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">meaning</span>
-            <span className="own-name">{midName}</span>
-            <span className="mem-val">{midVal}</span>
-            <span className="mem-note">{midNote}</span>
-          </div>
-          <div
-            ref={rightRef}
-            className={`own-card${won ? ' own-card--unique' : ''}${trapped ? ' nd-card--ub' : ''}`}
-          >
-            <span className="lf-tag">out</span>
-            <span className="own-name">{rightName}</span>
-            <span className="mem-val">{rightVal}</span>
-            <span className="mem-note">{rightNote}</span>
+    <SceneShell
+      modes={MODES}
+      mode={id}
+      onSelect={select}
+      playing={playing}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setId(id)
+      }}
+      playLabel={playLabel}
+      step={i}
+      stepCount={4}
+      sig={MODES.find((m) => m.id === id)?.title}
+      caption={caption}
+      code={code}
+      tone={tone}
+    >
+      <div className="fx-own">
+        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+          <span className="fx-kicker">in</span>
+          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+            <span className="fx-kicker">{inName}</span>
+            <span className="fx-value">{inVal}</span>
+            <span className="fx-note">written</span>
           </div>
         </div>
-        {pos && (
-          <span
-            className={`ptr-pulse pf-flyer${trapped || bounce ? ' pf-flyer--trap' : ''}`}
-            style={{ left: pos.x, top: pos.y }}
+        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
+        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${trap ? ' fx-pane--trap' : ''}`}>
+          <span className="fx-kicker">meaning</span>
+          <div
+            className={`fx-slot${
+              trap ? ' fx-slot--trap' : ok ? ' fx-slot--weld' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'
+            }`}
           >
-            {flyerText}
-          </span>
-        )}
+            <span className="fx-kicker">{midName}</span>
+            <span className="fx-value">{midVal}</span>
+            <span className="fx-note">
+              {id === 'parse' ? 'most vexing' : id === 'slice' ? 'by value' : id === 'ns' ? 'never here' : 'truncates'}
+            </span>
+          </div>
+        </div>
+        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
+        <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}${trap ? ' fx-pane--trap' : ''}`}>
+          <span className="fx-kicker">out</span>
+          <div className={`fx-slot${trap ? ' fx-slot--trap' : ok ? ' fx-slot--weld' : ' fx-slot--dim'}`}>
+            <span className="fx-kicker">{outName}</span>
+            <span className="fx-value">{outVal}</span>
+            <span className="fx-note">
+              {parseTrap
+                ? 'use Widget w{}'
+                : parseFix
+                  ? 'brace-init'
+                  : sliceTrap
+                    ? 'pass Base&'
+                    : sliceFix
+                      ? 'dynamic type kept'
+                      : nsTrap
+                        ? 'keep it local'
+                        : nsFix
+                          ? 'in a .cpp maybe'
+                          : divTrap
+                            ? '1.0 / 2'
+                            : divFix
+                              ? 'not 0.5 until a float'
+                              : 'result'}
+            </span>
+          </div>
+        </div>
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{code}</code>
-      </pre>
-      <p className="layout-hint">{caption}</p>
-    </div>
+      {id === 'parse' && stepped ? (
+        <div className="fx-sh">
+          <div className={`fx-pane${parseTrap ? ' fx-pane--trap' : parseFix ? ' fx-pane--gone' : ' fx-pane--focus'}`}>
+            <span className="fx-kicker">Widget w()</span>
+            <div className="fx-buf-row">
+              <span className={`fx-letter${parseTrap || !recap ? ' fx-letter--dead' : ' fx-letter--empty'}`}>f</span>
+            </div>
+            <span className="fx-note">function</span>
+          </div>
+          <div className={`fx-link${parseFix ? ' fx-link--weld' : parseTrap ? ' fx-link--dead' : ''}`} />
+          <div className={`fx-pane${parseFix ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">Widget w{ '{}' }</span>
+            <div className="fx-buf-row">
+              {['W'].map((ch) => (
+                <span key={ch} className={`fx-letter${parseFix ? ' fx-letter--on' : ' fx-letter--empty'}`}>
+                  {parseFix ? ch : '·'}
+                </span>
+              ))}
+            </div>
+            <span className="fx-note">object</span>
+          </div>
+        </div>
+      ) : null}
+      {id === 'slice' && stepped ? (
+        <div className="fx-inh">
+          <div className={`fx-slice fx-slice--on${sliceFix ? ' fx-slice--hot' : ''}`}>
+            <span className="fx-kicker">Base</span>
+            <span className="fx-note">int a</span>
+          </div>
+          <div
+            className={`fx-slice fx-slice--derived${
+              sliceTrap ? ' fx-slice--off' : stepped ? ' fx-slice--on' : ' fx-slice--dim'
+            }`}
+          >
+            <span className="fx-kicker">Derived</span>
+            <span className="fx-note">{sliceTrap ? 'sliced away' : 'int extra'}</span>
+          </div>
+        </div>
+      ) : null}
+      {id === 'ns' && stepped ? (
+        <div className="fx-buf-row" style={{ justifyContent: 'center' }}>
+          {['min', 'max', 'size'].map((ch) => (
+            <span key={ch} className={`fx-letter${nsTrap ? ' fx-letter--dead' : nsFix ? ' fx-letter--empty' : ' fx-letter--on'}`}>
+              {ch === 'min' ? 'm' : ch === 'max' ? 'M' : 's'}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {id === 'div' && stepped ? (
+        <div className="fx-buf-row" style={{ justifyContent: 'center' }}>
+          <span className="fx-letter fx-letter--on">1</span>
+          <span className="fx-letter fx-letter--pad">/</span>
+          <span className="fx-letter fx-letter--on">2</span>
+          <span className={`fx-letter${divFix ? ' fx-letter--on' : divTrap ? ' fx-letter--dead' : ' fx-letter--empty'}`}>
+            {divFix ? '.5' : divTrap ? '0' : '·'}
+          </span>
+        </div>
+      ) : null}
+      <div
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          trap ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''
+        }`}
+      >
+        {verdict}
+      </div>
+    </SceneShell>
   )
 }
