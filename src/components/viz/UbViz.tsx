@@ -11,8 +11,6 @@ const MODES: { id: Mode; title: string }[] = [
   { id: 'alias', title: 'aliasing' },
 ]
 
-const CELLS = ['1', '2', '3', '4'] as const
-
 export function UbViz() {
   const [id, setId] = useState<Mode>('oob')
   const { i, playing, play, reset } = useBeats(4)
@@ -34,6 +32,7 @@ export function UbViz() {
   const aliasTrap = id === 'alias' && decided && !recap
   const memcpyOk = id === 'alias' && recap
   const trap = oobTrap || signedTrap || uninitTrap || aliasTrap
+  const ok = okRead || unsignedOk || uninitFix || memcpyOk
 
   const code =
     id === 'oob'
@@ -85,7 +84,7 @@ int n = *reinterpret_cast<int*>(&f);  // UB`
             ? 'Play uninit. An automatic int with no initializer is not 0. Reading it is UB — sanitizers catch this; -O2 may invent nonsense.'
             : 'Play aliasing. The object is a float. Reading it through int* is a strict-aliasing violation. C++14 copies the bits with memcpy, not a union pun.'
       : id === 'oob' && i === 1
-        ? 'i = 0. The read is in range. The program has a defined value. Cells light in place — no flyer.'
+        ? 'i = 0. The read is in range. The program has a defined value. Stations light in place — no flyer.'
         : id === 'oob' && i === 2
           ? 'i = 4. There is no element there. UB, not a crash you can catch, not “whatever is on the stack.”'
           : id === 'oob'
@@ -108,9 +107,9 @@ int n = *reinterpret_cast<int*>(&f);  // UB`
                             ? 'reinterpret_cast<int*>(&f) then load. Strict aliasing: the compiler may assume a store to f never aliases this int.'
                             : 'std::memcpy(&bits, &f, sizeof bits) is the C++14-blessed type pun. C++20 adds bit_cast. Union punning is a C habit, not portable C++.'
 
-  const tone = trap ? 'trap' : okRead || unsignedOk || uninitFix || memcpyOk ? 'ok' : 'idle'
+  const tone = trap ? 'trap' : ok ? 'ok' : 'idle'
   const playLabel =
-    id === 'oob' ? 'Play bounds' : id === 'overflow' ? 'Play overflow' : id === 'uninit' ? 'Play uninit' : 'Play aliasing'
+    id === 'oob' ? 'Play a[i]' : id === 'overflow' ? 'Play INT_MAX+1' : id === 'uninit' ? 'Play int x' : 'Play aliasing'
 
   const verdict =
     id === 'oob' && i === 1
@@ -159,111 +158,66 @@ int n = *reinterpret_cast<int*>(&f);  // UB`
       tone={tone}
     >
       {id === 'oob' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">int a[4]</span>
-            <div className="fx-buf-row">
-              {CELLS.map((ch, n) => (
-                <span
-                  key={n}
-                  className={`fx-letter${okRead && n === 0 ? ' fx-letter--read' : stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}
-                >
-                  {stepped ? ch : '·'}
-                </span>
-              ))}
-              <span className={`fx-letter${oobTrap ? ' fx-letter--dead' : ' fx-letter--pad'}`}>
-                {oobTrap ? '*' : '·'}
-              </span>
-            </div>
-            <span className="fx-note">{oobTrap ? '*(a+4) is not an element' : 'a+4 is a pointer only'}</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${oobTrap ? ' fx-rank--done' : ''}`}>
+            <code>a</code>
+            <span className="fx-note">
+              <code>{'int[4]'}</code>
+            </span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-link${oobTrap ? ' fx-link--dead' : okRead ? ' fx-link--weld' : ''}`} />
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${oobTrap ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">a[i]</span>
-            <div className={`fx-slot${oobTrap ? ' fx-slot--trap' : okRead ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">index</span>
-              <span className="fx-value">{oobTrap ? '4' : okRead ? '0' : '—'}</span>
-              <span className="fx-note">{oobTrap ? 'UB' : okRead ? 'value 1' : 'valid 0..3'}</span>
-            </div>
+          <div className={`fx-rank${oobTrap ? ' fx-rank--trap' : okRead ? ' fx-rank--on' : ''}`}>
+            <code>{'a[i]'}</code>
+            <span className="fx-note">index</span>
+            <span className="fx-note">{oobTrap ? 'ub' : okRead ? '1' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'overflow' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped && !unsignedOk ? ' fx-pane--focus' : ''}${signedTrap ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">signed int</span>
-            <div className={`fx-slot${signedTrap ? ' fx-slot--trap' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">n</span>
-              <span className="fx-value">{signedTrap ? 'UB' : stepped ? 'max' : '—'}</span>
-              <span className="fx-note">{signedTrap ? 'INT_MAX + 1' : 'INT_MAX'}</span>
-            </div>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${signedTrap ? ' fx-rank--trap' : ''}${unsignedOk ? ' fx-rank--done' : ''}`}>
+            <code>n</code>
+            <span className="fx-note">signed int</span>
+            <span className="fx-note">{signedTrap ? 'ub' : stepped ? 'max' : '—'}</span>
           </div>
-          <div className={`fx-link${unsignedOk ? ' fx-link--weld' : signedTrap ? ' fx-link--dead' : stepped ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${unsignedOk ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">unsigned</span>
-            <div className={`fx-slot${unsignedOk ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">u</span>
-              <span className="fx-value">{unsignedOk ? '0' : '—'}</span>
-              <span className="fx-note">{unsignedOk ? 'UINT_MAX + 1 wraps' : 'modulo 2^N'}</span>
-            </div>
+          <div className={`fx-rank${unsignedOk ? ' fx-rank--on' : ''}`}>
+            <code>u</code>
+            <span className="fx-note">unsigned wrap</span>
+            <span className="fx-note">{unsignedOk ? '0' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'uninit' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${uninitTrap ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">int x</span>
-            <div className="fx-buf-row">
-              <span
-                className={`fx-letter${
-                  uninitFix ? ' fx-letter--on' : uninitTrap || stepped ? ' fx-letter--junk' : ' fx-letter--empty'
-                }`}
-              >
-                {uninitFix ? '0' : stepped ? '?' : '·'}
-              </span>
-            </div>
-            <span className="fx-note">{uninitFix ? 'initialized' : 'indeterminate'}</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${uninitTrap ? ' fx-rank--trap' : ''}${uninitFix ? ' fx-rank--done' : ''}`}>
+            <code>x</code>
+            <span className="fx-note">automatic</span>
+            <span className="fx-note">{uninitFix ? '0' : stepped ? 'no' : '—'}</span>
           </div>
-          <div className={`fx-link${uninitFix ? ' fx-link--weld' : uninitTrap ? ' fx-link--dead' : stepped ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}${uninitTrap ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">int y</span>
-            <div className="fx-buf-row">
-              <span
-                className={`fx-letter${
-                  uninitFix ? ' fx-letter--on' : uninitTrap ? ' fx-letter--junk' : ' fx-letter--empty'
-                }`}
-              >
-                {uninitFix ? '0' : uninitTrap ? '?' : '·'}
-              </span>
-            </div>
-            <span className="fx-note">{uninitFix ? 'defined' : uninitTrap ? 'read is UB' : 'waiting'}</span>
+          <div className={`fx-rank${uninitTrap ? ' fx-rank--trap' : uninitFix ? ' fx-rank--on' : ''}`}>
+            <code>y</code>
+            <span className="fx-note">copy of x</span>
+            <span className="fx-note">{uninitFix ? '0' : uninitTrap ? 'ub' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'alias' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">float f</span>
-            <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">object</span>
-              <span className="fx-value">{stepped ? '1.0' : '—'}</span>
-              <span className="fx-note">type is float</span>
-            </div>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${memcpyOk ? ' fx-rank--done' : ''}`}>
+            <code>f</code>
+            <span className="fx-note">float object</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-link${memcpyOk ? ' fx-link--weld' : aliasTrap ? ' fx-link--dead' : stepped ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}${aliasTrap ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">{memcpyOk ? 'memcpy' : 'int*'}</span>
-            <div className={`fx-slot${memcpyOk ? ' fx-slot--ok' : aliasTrap ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">bits</span>
-              <span className="fx-value">{memcpyOk ? 'ok' : aliasTrap ? 'UB' : '—'}</span>
-              <span className="fx-note">{memcpyOk ? 'C++14 type pun' : aliasTrap ? 'strict aliasing' : 'not an int'}</span>
-            </div>
+          <div className={`fx-rank${aliasTrap ? ' fx-rank--trap' : memcpyOk ? ' fx-rank--on' : ''}`}>
+            <code>{memcpyOk ? 'cpy' : 'p'}</code>
+            <span className="fx-note">{memcpyOk ? 'memcpy bits' : 'int* load'}</span>
+            <span className="fx-note">{memcpyOk ? 'ok' : aliasTrap ? 'ub' : '—'}</span>
           </div>
         </div>
       )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
-          trap ? 'fx-verdict--trap' : okRead || unsignedOk || uninitFix || memcpyOk ? 'fx-verdict--ok' : ''
+          trap ? 'fx-verdict--trap' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
         {verdict}

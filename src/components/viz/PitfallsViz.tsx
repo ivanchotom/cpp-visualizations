@@ -68,14 +68,14 @@ int r = a / b;     // 0`
   const caption =
     i === 0
       ? id === 'parse'
-        ? 'Play parse. Widget w(); looks like a construction. It is a function declaration. Brace-init Widget w{} is an object.'
+        ? 'Play Widget w(). Widget w(); looks like a construction. It is a function declaration. Brace-init Widget w{} is an object.'
         : id === 'slice'
           ? 'Play slicing. f(Base) by value copies only the Base subobject. Virtuals and extra members vanish. Pass Base& or a pointer.'
           : id === 'ns'
             ? 'Play using ns. using namespace in a header dumps names into every translation unit that includes it. Never. In a .cpp, keep it local.'
             : 'Play 1/2. Integer division truncates toward zero. 1/2 is 0, not a ratio. Use a floating operand or a cast.'
       : id === 'parse' && i === 1
-        ? 'The parser sees Widget w();. Anything that can be a declaration is one. That is the most vexing parse. There is no object yet.'
+        ? 'The parser sees Widget w();. Anything that can be a declaration is one. That is the most vexing parse. There is no object yet. Stations light in place.'
         : id === 'parse' && i === 2
           ? 'You wanted an object. There is none. The name w is a function. Widget w{} constructs. Widget w; does too.'
           : id === 'parse'
@@ -149,88 +149,60 @@ int r = a / b;     // 0`
       tone={tone}
     >
       {id === 'parse' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped && !parseFix ? ' fx-pane--focus' : ''}${parseTrap ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">function</span>
-            <div className="fx-buf-row">
-              <span className={`fx-letter${parseTrap || (stepped && !parseFix) ? ' fx-letter--dead' : ' fx-letter--empty'}`}>
-                f
-              </span>
-            </div>
-            <span className="fx-note">
-              <code>w();</code>
-            </span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped && !parseFix ? ' fx-rank--on' : ''}${parseTrap ? ' fx-rank--trap' : ''}${parseFix ? ' fx-rank--done' : ''}`}>
+            <code>{'w()'}</code>
+            <span className="fx-note">function decl</span>
+            <span className="fx-note">{parseFix ? 'no' : stepped ? 'fn' : '—'}</span>
           </div>
-          <div className={`fx-link${parseFix ? ' fx-link--weld' : parseTrap ? ' fx-link--dead' : ''}`} />
-          <div className={`fx-pane${parseFix ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">object</span>
-            <div className="fx-buf-row">
-              <span className={`fx-letter${parseFix ? ' fx-letter--on' : ' fx-letter--empty'}`}>{parseFix ? 'W' : '·'}</span>
-            </div>
-            <span className="fx-note">
-              <code>w{'{}'}</code>
-            </span>
+          <div className={`fx-rank${parseFix ? ' fx-rank--on' : ''}`}>
+            <code>{'w{}'}</code>
+            <span className="fx-note">brace-init</span>
+            <span className="fx-note">{parseFix ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'slice' && (
-        <div className="fx-inh">
-          <div className={`fx-slice fx-slice--on${sliceFix ? ' fx-slice--hot' : ''}`}>
-            <span className="fx-kicker">Base</span>
-            <span className="fx-note">int a</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${sliceFix ? ' fx-rank--done' : ''}`}>
+            <code>Base</code>
+            <span className="fx-note">by value</span>
+            <span className="fx-note">{sliceFix ? 'ref' : stepped ? 'ok' : '—'}</span>
           </div>
-          <div
-            className={`fx-slice fx-slice--derived${
-              sliceTrap ? ' fx-slice--off' : stepped ? ' fx-slice--on' : ' fx-slice--dim'
-            }`}
-          >
-            <span className="fx-kicker">Derived</span>
-            <span className="fx-note">{sliceTrap ? 'sliced away' : 'int extra'}</span>
+          <div className={`fx-rank${sliceTrap ? ' fx-rank--trap' : sliceFix ? ' fx-rank--on' : ''}`}>
+            <code>extra</code>
+            <span className="fx-note">Derived</span>
+            <span className="fx-note">{sliceFix ? 'ok' : sliceTrap ? 'gone' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'ns' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped && !nsFix ? ' fx-pane--focus' : ''}${nsTrap ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">header</span>
-            <div className="fx-buf-row">
-              {['m', 'M', 's'].map((ch) => (
-                <span key={ch} className={`fx-letter${nsTrap ? ' fx-letter--dead' : stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>
-                  {stepped ? ch : '·'}
-                </span>
-              ))}
-            </div>
-            <span className="fx-note">using namespace std</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped && !nsFix ? ' fx-rank--on' : ''}${nsTrap ? ' fx-rank--trap' : ''}${nsFix ? ' fx-rank--done' : ''}`}>
+            <code>hpp</code>
+            <span className="fx-note">using namespace</span>
+            <span className="fx-note">{nsFix ? 'no' : nsTrap ? 'leak' : stepped ? 'all' : '—'}</span>
           </div>
-          <div className={`fx-link${nsFix ? ' fx-link--weld' : nsTrap ? ' fx-link--dead' : stepped ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${nsFix ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">.cpp</span>
-            <div className={`fx-slot${nsFix ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">using</span>
-              <span className="fx-value">{nsFix ? 'str' : '—'}</span>
-              <span className="fx-note">{nsFix ? 'using std::string' : 'keep it local'}</span>
-            </div>
+          <div className={`fx-rank${nsFix ? ' fx-rank--on' : ''}`}>
+            <code>cpp</code>
+            <span className="fx-note">
+              <code>std::string</code>
+            </span>
+            <span className="fx-note">{nsFix ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'div' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped && !divFix ? ' fx-pane--focus' : ''}${divTrap ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">int / int</span>
-            <div className={`fx-slot${divTrap ? ' fx-slot--trap' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">1 / 2</span>
-              <span className="fx-value">{divTrap || stepped ? '0' : '—'}</span>
-              <span className="fx-note">truncates toward 0</span>
-            </div>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped && !divFix ? ' fx-rank--on' : ''}${divTrap ? ' fx-rank--trap' : ''}${divFix ? ' fx-rank--done' : ''}`}>
+            <code>1/2</code>
+            <span className="fx-note">int / int</span>
+            <span className="fx-note">{divTrap || (stepped && !divFix) ? '0' : '—'}</span>
           </div>
-          <div className={`fx-link${divFix ? ' fx-link--weld' : divTrap ? ' fx-link--dead' : stepped ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${divFix ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">float</span>
-            <div className={`fx-slot${divFix ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">1.0 / 2</span>
-              <span className="fx-value">{divFix ? '0.5' : '—'}</span>
-              <span className="fx-note">{divFix ? 'a ratio' : 'need a floating operand'}</span>
-            </div>
+          <div className={`fx-rank${divFix ? ' fx-rank--on' : ''}`}>
+            <code>1.0</code>
+            <span className="fx-note">float operand</span>
+            <span className="fx-note">{divFix ? '0.5' : '—'}</span>
           </div>
         </div>
       )}
