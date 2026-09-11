@@ -322,7 +322,7 @@ Bag a, b = a;
         <div className="fx-sh">
           <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${stolen ? ' fx-pane--gone' : ''}`}>
             <span className="fx-kicker">a</span>
-            <div className="fx-obj-row" style={{ flexWrap: 'nowrap' }}>
+            <div className="fx-buf-row">
               {id === 'raw' ? (
                 <span className={`fx-letter${doubleFree ? ' fx-letter--dead' : ' fx-letter--on'}`}>7</span>
               ) : (
@@ -338,7 +338,7 @@ Bag a, b = a;
           <div className={`fx-link${stolen ? ' fx-link--weld' : copied || leak ? ' fx-link--on' : doubleFree ? ' fx-link--dead' : ''}`} />
           <div className={`fx-pane${stolen || copied || leak || doubleFree ? ' fx-pane--focus' : ''}${doubleFree ? ' fx-pane--trap' : ''}`}>
             <span className="fx-kicker">b</span>
-            <div className="fx-obj-row" style={{ flexWrap: 'nowrap' }}>
+            <div className="fx-buf-row">
               {id === 'raw' ? (
                 leak || doubleFree ? (
                   <span className={`fx-letter${doubleFree ? ' fx-letter--dead' : ' fx-letter--on'}`}>7</span>

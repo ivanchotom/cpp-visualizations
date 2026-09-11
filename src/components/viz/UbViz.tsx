@@ -279,7 +279,7 @@ int n = *reinterpret_cast<int*>(&f);  // UB`
       {id === 'oob' || id === 'uninit' ? (
         <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${trap ? ' fx-pane--trap' : ''}`}>
           <span className="fx-kicker">{id === 'oob' ? 'int a[4]' : 'int x'}</span>
-          <div className="fx-obj-row" style={{ flexWrap: 'nowrap', justifyContent: 'center' }}>
+          <div className="fx-buf-row" style={{ justifyContent: 'center' }}>
             {id === 'oob' ? (
               <>
                 {CELLS.map((ch, n) => (
