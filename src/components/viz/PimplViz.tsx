@@ -1,214 +1,98 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { hop, waitNextBeat, type Point } from './motion.ts'
+import { useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'firewall' | 'dtor' | 'moves' | 'abi'
+type SlotKind = 'gen' | 'user' | 'absent' | 'deleted' | 'idle'
 
-const MODES: { id: Mode; title: string; sig: string }[] = [
-  { id: 'firewall', title: 'firewall', sig: 'unique_ptr<Impl>' },
-  { id: 'dtor', title: 'dtor', sig: '~Widget() = default' },
-  { id: 'moves', title: 'moves', sig: 'Widget(Widget&&)' },
-  { id: 'abi', title: 'ABI', sig: 'sizeof(Widget)' },
+const SLOTS = [
+  { key: 'dtor', label: '~T()' },
+  { key: 'copy', label: 'T(const T&)' },
+  { key: 'cassign', label: 'T& operator=' },
+  { key: 'move', label: 'T(T&&)' },
+  { key: 'massign', label: 'T& operator= &&' },
+] as const
+
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'firewall', title: 'firewall' },
+  { id: 'dtor', title: 'dtor' },
+  { id: 'moves', title: 'moves' },
+  { id: 'abi', title: 'ABI' },
 ]
 
-const STEP_MS = 1300
-const HOP_MS = 700
+function slotState(mode: Mode, i: number, key: (typeof SLOTS)[number]['key']): SlotKind {
+  if (mode === 'firewall' || mode === 'abi') return 'idle'
+  if (i === 0) return 'idle'
+  if (mode === 'dtor') {
+    if (key === 'dtor') return i >= 1 ? 'user' : 'idle'
+    return 'idle'
+  }
+  if (key === 'dtor') return 'user'
+  if (key === 'copy' || key === 'cassign') return i >= 3 ? 'deleted' : 'idle'
+  if (key === 'move' || key === 'massign') return i >= 3 ? 'user' : i >= 2 ? 'absent' : 'idle'
+  return 'idle'
+}
+
+function slotLabel(st: SlotKind): string {
+  if (st === 'idle') return '—'
+  if (st === 'gen') return 'generated'
+  if (st === 'user') return 'user'
+  if (st === 'deleted') return '= delete'
+  return 'absent'
+}
 
 export function PimplViz() {
   const [id, setId] = useState<Mode>('firewall')
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [from, setFrom] = useState<Point>({ x: 80, y: 90 })
-  const [to, setTo] = useState<Point>({ x: 360, y: 90 })
+  const { i, playing, play, reset } = useBeats(4)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const srcRef = useRef<HTMLDivElement>(null)
-  const midRef = useRef<HTMLDivElement>(null)
-  const rightRef = useRef<HTMLDivElement>(null)
-
-  const stepCount = 4
-  const bounce = (id === 'dtor' && i >= 2) || (id === 'moves' && i === 2)
-  const trapped = (id === 'dtor' && i >= 2) || (id === 'moves' && i === 2)
-  const won =
-    (id === 'firewall' && i >= 2) || (id === 'abi' && i >= 2) || (id === 'moves' && i >= 3)
-
-  const useRight = i >= 2
-
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    const srcEl = srcRef.current
-    const dstEl = useRight ? rightRef.current : midRef.current
-    if (!stage || !srcEl || !dstEl) return
-    const origin = stage.getBoundingClientRect()
-    const a = srcEl.getBoundingClientRect()
-    const b = dstEl.getBoundingClientRect()
-    const src = { x: a.left - origin.left + a.width / 2, y: a.top - origin.top + a.height / 2 }
-    const dst = { x: b.left - origin.left + b.width / 2, y: b.top - origin.top + b.height / 2 }
-    if (bounce) {
-      setFrom(dst)
-      setTo(src)
-    } else {
-      setFrom(src)
-      setTo(dst)
-    }
-  }, [id, i, bounce, useRight])
-
-  useEffect(() => {
-    if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
-    }
-    raf = requestAnimationFrame(hopLoop)
-    const stopBeat = waitNextBeat(STEP_MS, () => {
-      if (i >= stepCount - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stopBeat()
-    }
-  }, [playing, i, stepCount])
-
-  function select(next: Mode) {
-    setPlaying(false)
-    setId(next)
-    setI(0)
-    setHopT(1)
+  function select(next: string) {
+    reset()
+    setId(next as Mode)
   }
 
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
-  }
-
-  const pos = hopT < 1 && i >= 1 ? hop(from, to, hopT) : null
-  const flyerText =
-    id === 'firewall'
-      ? i === 1
-        ? 'Impl'
-        : '.cpp'
-      : id === 'dtor'
-        ? i === 1
-          ? '~unique_ptr'
-          : 'sizeof(Impl)'
-        : id === 'moves'
-          ? i === 1
-            ? '~Widget'
-            : i === 2
-              ? 'move?'
-              : 'default in .cpp'
-          : i === 1
-            ? 'int extra'
-            : 'same sizeof'
-
-  const leftName =
-    id === 'firewall' ? 'widget.hpp' : id === 'dtor' ? 'header' : id === 'moves' ? 'header' : 'Widget'
-  const leftVal =
-    id === 'firewall'
-      ? 'struct Impl; ptr'
-      : id === 'dtor'
-        ? '~Widget() = default'
-        : id === 'moves'
-          ? '~Widget();'
-          : 'unique_ptr<Impl>'
-  const midName =
-    id === 'firewall' ? 'widget.cpp' : id === 'dtor' ? 'unique_ptr' : id === 'moves' ? 'C++14' : 'Impl'
-  const midVal =
-    id === 'firewall' && i >= 1
-      ? 'Impl complete'
-      : id === 'dtor' && i >= 1
-        ? 'needs complete T'
-        : id === 'moves' && i >= 1
-          ? i >= 3
-            ? 'moves declared'
-            : 'dtor declared'
-          : id === 'abi' && i >= 1
-            ? '+ extra field'
-            : '—'
-  const midNote =
-    id === 'firewall'
-      ? 'clients never see n'
-      : id === 'dtor'
-        ? 'dtor runs delete'
-        : id === 'moves'
-          ? 'user dtor kills moves'
-          : 'private layout'
-  const rightName =
-    id === 'firewall' ? 'client TU' : id === 'dtor' ? 'compile' : id === 'moves' ? 'Widget(Widget&&)' : 'sizeof'
-  const rightVal =
-    id === 'firewall' && i >= 2
-      ? 'no rebuild'
-      : id === 'dtor' && i >= 2
-        ? 'ill-formed'
-        : id === 'moves' && i >= 3
-          ? 'defined'
-          : id === 'moves' && i >= 2
-            ? 'suppressed'
-            : id === 'abi' && i >= 2
-              ? 'one pointer'
-              : '—'
-  const rightNote =
-    id === 'firewall' && won
-      ? 'compilation firewall'
-      : id === 'firewall'
-        ? 'stable header'
-        : bounce && id === 'dtor'
-          ? 'Impl incomplete'
-          : id === 'dtor'
-            ? 'define in .cpp'
-            : id === 'moves' && won
-              ? 'declare, define later'
-              : bounce
-                ? 'implicit move gone'
-                : id === 'moves'
-                  ? 'C++14 rule'
-                  : won
-                    ? 'add fields freely'
-                    : 'plus padding'
+  const stepped = i >= 1
+  const decided = i >= 2
+  const recap = i >= 3
+  const fireOk = id === 'firewall' && decided
+  const dtorTrap = id === 'dtor' && decided && !recap
+  const dtorFix = id === 'dtor' && recap
+  const movesGone = id === 'moves' && decided && !recap
+  const movesOk = id === 'moves' && recap
+  const abiOk = id === 'abi' && decided
+  const trap = dtorTrap || movesGone
+  const showSlots = id === 'dtor' || id === 'moves'
 
   const code =
     id === 'firewall'
-      ? i < 2
-        ? `// widget.hpp
-class Widget {
-  struct Impl;
-  std::unique_ptr<Impl> impl_;
-};`
-        : `// widget.cpp
+      ? decided
+        ? `// widget.cpp
 struct Widget::Impl { int n = 0; };
 Widget::Widget() : impl_(std::make_unique<Impl>()) {}
 void Widget::draw() const { /* impl_->n */ }
 // client TUs do not recompile when n changes`
+        : `// widget.hpp
+class Widget {
+  struct Impl;
+  std::unique_ptr<Impl> impl_;
+};`
       : id === 'dtor'
-        ? i < 2
-          ? `// widget.hpp  — Impl is incomplete here
+        ? recap
+          ? `// widget.hpp:  ~Widget();
+// widget.cpp:  Widget::~Widget() = default;
+// after struct Widget::Impl { … };`
+          : decided
+            ? `// unique_ptr::~unique_ptr calls delete
+// delete needs sizeof(Impl)
+// ~Widget() = default; in the header
+// instantiates that while Impl is incomplete`
+            : `// widget.hpp  — Impl is incomplete here
 class Widget {
   ~Widget() = default;     // ill-formed
   std::unique_ptr<Impl> impl_;
 };`
-          : `// unique_ptr::~unique_ptr calls delete
-// delete needs sizeof(Impl)
-// ~Widget() = default; in the header
-// instantiates that while Impl is incomplete
-
-// widget.hpp:  ~Widget();
-// widget.cpp:  Widget::~Widget() = default;`
         : id === 'moves'
-          ? i < 3
+          ? recap
             ? `class Widget {
-  ~Widget();               // user-declared
-  // C++14: implicit moves are suppressed
-};`
-            : `class Widget {
 public:
   Widget();
   ~Widget();
@@ -218,12 +102,16 @@ public:
   Widget& operator=(const Widget&) = delete;
 };
 // define the defaults in the .cpp`
-          : i < 2
-            ? `struct Widget::Impl { int n = 0; };
-// sizeof(Widget) is one pointer`
-            : `struct Widget::Impl { int n = 0; std::string s; };
+            : `class Widget {
+  ~Widget();               // user-declared
+  // C++14: implicit moves are suppressed
+};`
+          : recap
+            ? `struct Widget::Impl { int n = 0; std::string s; };
 // sizeof(Widget) still one pointer
 // clients do not recompile`
+            : `struct Widget::Impl { int n = 0; };
+// sizeof(Widget) is one pointer`
 
   const caption =
     i === 0
@@ -235,94 +123,235 @@ public:
             ? 'Play moves. A user-declared destructor suppresses implicit moves in C++14. Declare the destructor and the moves in the header; default them in the .cpp.'
             : 'Play ABI. The public object’s size stays one pointer. You can add Impl fields without changing sizeof(Widget). That is the stable ABI.'
       : id === 'firewall' && i === 1
-        ? 'Impl hops into the .cpp. The header only forward-declares it. make_unique is C++14 — that is the allocation you pay, plus a pointer hop on every call.'
+        ? 'Impl lives in the .cpp. The header only forward-declares it. make_unique is C++14 — that is the allocation you pay, plus a pointer hop on every call.'
         : id === 'firewall' && i === 2
           ? 'The client TU does not see n. Change Impl and only widget.cpp rebuilds. That is the compilation firewall. Hot small value types should stay in the header instead.'
           : id === 'firewall'
             ? 'PIMPL is for big, stable façades (a Widget, a Client, a Parser). Passing one by value in a tight loop will show up in profiles.'
             : id === 'dtor' && i === 1
-              ? '~unique_ptr hops. It will delete the Impl. That requires a complete type so the compiler knows how many bytes to destroy.'
+              ? 'unique_ptr’s destructor will delete the Impl. That requires a complete type so the compiler knows how many bytes to destroy.'
               : id === 'dtor' && i === 2
-                ? 'sizeof(Impl) bounces — Impl is still incomplete in the header. ~Widget() = default; here instantiates unique_ptr’s destructor too soon.'
+                ? 'Impl is still incomplete in the header. ~Widget() = default; here instantiates unique_ptr’s destructor too soon. Ill-formed.'
                 : id === 'dtor'
                   ? 'Declare ~Widget(); in the header. Define Widget::~Widget() = default; in the .cpp after struct Widget::Impl { … };'
                   : id === 'moves' && i === 1
-                    ? '~Widget hops in as a user-declared destructor. In C++14 that suppresses the implicit move constructor and move assign.'
+                    ? '~Widget is user-declared. In C++14 that suppresses the implicit move constructor and move assign.'
                     : id === 'moves' && i === 2
-                      ? 'The implicit move bounces. Widget becomes copy-only (or ill-formed if copies are deleted). You meant to steal the unique_ptr.'
+                      ? 'The implicit move is gone. Widget becomes copy-only (or ill-formed if copies are deleted). You meant to steal the unique_ptr.'
                       : id === 'moves'
                         ? 'Declare the moves in the header, default them in the .cpp next to the destructor. Copies are either deleted or written by hand.'
                         : i === 1
-                          ? 'int extra hops into Impl. The public class still holds one unique_ptr. Padding may sit next to that pointer; the size does not grow with Impl.'
+                          ? 'Impl has n. The public class still holds one unique_ptr. Padding may sit next to that pointer; the size does not grow with Impl.'
                           : i === 2
                             ? 'sizeof(Widget) stays one pointer. Add strings, containers, more fields — the client’s layout is unchanged. That is why PIMPL is an ABI firewall too.'
                             : 'You still pay an allocation and a hop. Do not PIMPL a type you pass by value in a hot loop.'
 
-  const m = MODES.find((x) => x.id === id) ?? MODES[0]
-  const stageKind = trapped ? 'pi-stage--reject' : won ? 'pi-stage--win' : ''
+  const tone = trap ? 'warn' : fireOk || dtorFix || movesOk || abiOk ? 'ok' : 'idle'
+  const playLabel =
+    id === 'firewall' ? 'Play firewall' : id === 'dtor' ? 'Play dtor' : id === 'moves' ? 'Play moves' : 'Play ABI'
+
+  const inName = id === 'firewall' ? 'widget.hpp' : id === 'dtor' ? 'header' : id === 'moves' ? 'header' : 'Widget'
+  const inVal =
+    id === 'firewall'
+      ? 'struct Impl; ptr'
+      : id === 'dtor'
+        ? recap
+          ? '~Widget();'
+          : '~Widget() = default'
+        : id === 'moves'
+          ? recap
+            ? 'moves declared'
+            : '~Widget();'
+          : 'unique_ptr<Impl>'
+  const midName = id === 'firewall' ? 'widget.cpp' : id === 'dtor' ? 'unique_ptr' : id === 'moves' ? 'C++14' : 'Impl'
+  const midVal =
+    id === 'firewall' && stepped
+      ? 'Impl complete'
+      : id === 'dtor' && recap
+        ? 'complete in .cpp'
+        : id === 'dtor' && stepped
+          ? 'needs complete T'
+          : id === 'moves' && recap
+            ? 'moves declared'
+            : id === 'moves' && decided
+              ? 'moves suppressed'
+              : id === 'moves' && stepped
+                ? 'dtor declared'
+                : id === 'abi' && recap
+                  ? 'n + string'
+                  : id === 'abi' && stepped
+                    ? '+ extra field'
+                    : '—'
+  const outName = id === 'firewall' ? 'client TU' : id === 'dtor' ? 'compile' : id === 'moves' ? 'Widget(Widget&&)' : 'sizeof'
+  const outVal = fireOk
+    ? 'no rebuild'
+    : dtorTrap
+      ? 'ill-formed'
+      : dtorFix
+        ? 'ok in .cpp'
+        : movesOk
+          ? 'defined'
+          : movesGone
+            ? 'suppressed'
+            : abiOk
+              ? 'one pointer'
+              : '—'
+
+  const leftLink = stepped ? (trap ? 'fx-link--dead' : fireOk || dtorFix || movesOk || abiOk ? 'fx-link--weld' : 'fx-link--on') : ''
+  const rightLink = trap ? 'fx-link--dead' : fireOk || dtorFix || movesOk || abiOk ? 'fx-link--weld' : ''
+
+  const verdict =
+    id === 'firewall' && i === 1
+      ? 'Impl in .cpp · header opaque'
+      : fireOk
+        ? 'compilation firewall'
+        : id === 'dtor' && i === 1
+          ? 'unique_ptr dtor needs complete T'
+          : dtorTrap
+            ? 'default in header · ill-formed'
+            : dtorFix
+              ? 'declare in hpp · default in cpp'
+              : id === 'moves' && i === 1
+                ? 'user dtor · C++14'
+                : movesGone
+                  ? 'implicit moves gone'
+                  : movesOk
+                    ? 'declare, default in .cpp'
+                    : id === 'abi' && i === 1
+                      ? 'Impl grows · Widget does not'
+                      : abiOk && !recap
+                        ? 'sizeof stays one pointer'
+                        : abiOk
+                          ? 'stable ABI · pay an allocation'
+                          : ''
+
+  const implLetters =
+    id === 'abi' && recap ? ['n', 's'] : id === 'abi' && stepped ? ['n'] : id === 'firewall' && stepped ? ['n'] : []
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        {MODES.map((x) => (
-          <button
-            key={x.id}
-            className={`chip${id === x.id ? ' chip--active' : ''}`}
-            onClick={() => select(x.id)}
-            disabled={playing}
-          >
-            {x.title}
-          </button>
-        ))}
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play pimpl
-        </button>
-        <button className="chip chip--ghost" onClick={() => select(id)}>
-          reset
-        </button>
-      </div>
-
-      <div ref={stageRef} className={`viz-stage pi-stage viz-stage--live ${stageKind}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{stepCount} · <code>{m.sig}</code>
-        </p>
-        <div className="pi-row">
-          <div ref={srcRef} className={`own-card${i >= 1 ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">in</span>
-            <span className="own-name">{leftName}</span>
-            <span className="mem-val">{leftVal}</span>
-            <span className="mem-note">public</span>
-          </div>
-          <div ref={midRef} className={`own-card${i >= 1 && !useRight ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">impl</span>
-            <span className="own-name">{midName}</span>
-            <span className="mem-val">{midVal}</span>
-            <span className="mem-note">{midNote}</span>
-          </div>
-          <div
-            ref={rightRef}
-            className={`own-card${won ? ' own-card--unique' : ''}${trapped ? ' nd-card--ub' : ''}`}
-          >
-            <span className="lf-tag">out</span>
-            <span className="own-name">{rightName}</span>
-            <span className="mem-val">{rightVal}</span>
-            <span className="mem-note">{rightNote}</span>
+    <SceneShell
+      modes={MODES}
+      mode={id}
+      onSelect={select}
+      playing={playing}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setId(id)
+      }}
+      playLabel={playLabel}
+      step={i}
+      stepCount={4}
+      sig={MODES.find((m) => m.id === id)?.title}
+      caption={caption}
+      code={code}
+      tone={tone}
+    >
+      {showSlots ? (
+        <div className="fx-five">
+          {SLOTS.map((s) => {
+            const st = slotState(id, i, s.key)
+            return (
+              <div key={s.key} className={`fx-sm fx-sm--${st}`}>
+                <span className="fx-kicker">{s.label}</span>
+                <span className="fx-note">{slotLabel(st)}</span>
+              </div>
+            )
+          })}
+        </div>
+      ) : null}
+      <div className="fx-own">
+        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+          <span className="fx-kicker">in</span>
+          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+            <span className="fx-kicker">{inName}</span>
+            <span className="fx-value">{inVal}</span>
+            <span className="fx-note">public</span>
           </div>
         </div>
-        {pos && (
-          <span
-            className={`ptr-pulse pi-flyer${trapped || bounce ? ' pi-flyer--trap' : ''}`}
-            style={{ left: pos.x, top: pos.y }}
+        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
+        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${trap ? ' fx-pane--trap' : ''}`}>
+          <span className="fx-kicker">impl</span>
+          <div
+            className={`fx-slot${
+              trap ? ' fx-slot--trap' : fireOk || dtorFix || abiOk ? ' fx-slot--weld' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'
+            }`}
           >
-            {flyerText}
-          </span>
-        )}
+            <span className="fx-kicker">{midName}</span>
+            <span className="fx-value">{midVal}</span>
+            <span className="fx-note">
+              {id === 'firewall'
+                ? 'clients never see n'
+                : id === 'dtor'
+                  ? 'dtor runs delete'
+                  : id === 'moves'
+                    ? 'user dtor kills moves'
+                    : 'private layout'}
+            </span>
+          </div>
+        </div>
+        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
+        <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}${trap ? ' fx-pane--trap' : ''}`}>
+          <span className="fx-kicker">out</span>
+          <div
+            className={`fx-slot${
+              trap ? ' fx-slot--trap' : fireOk || dtorFix || movesOk || abiOk ? ' fx-slot--weld' : ' fx-slot--dim'
+            }`}
+          >
+            <span className="fx-kicker">{outName}</span>
+            <span className="fx-value">{outVal}</span>
+            <span className="fx-note">
+              {fireOk
+                ? 'stable header'
+                : dtorTrap
+                  ? 'Impl incomplete'
+                  : dtorFix
+                    ? 'define after Impl'
+                    : movesOk
+                      ? 'declare, define later'
+                      : movesGone
+                        ? 'implicit move gone'
+                        : abiOk
+                          ? 'add fields freely'
+                          : 'client'}
+            </span>
+          </div>
+        </div>
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{code}</code>
-      </pre>
-      <p className="layout-hint">{caption}</p>
-    </div>
+      {id === 'firewall' || id === 'abi' ? (
+        <div className="fx-sh">
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">Widget</span>
+            <div className="fx-buf-row">
+              <span className={`fx-letter${stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>p</span>
+            </div>
+            <span className="fx-note">{abiOk ? 'sizeof unchanged' : 'one unique_ptr'}</span>
+          </div>
+          <div className={`fx-link${fireOk || abiOk ? ' fx-link--weld' : stepped ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">Impl</span>
+            <div className="fx-buf-row">
+              {implLetters.length ? (
+                implLetters.map((ch) => (
+                  <span key={ch} className="fx-letter fx-letter--on">
+                    {ch}
+                  </span>
+                ))
+              ) : (
+                <span className="fx-letter fx-letter--empty">·</span>
+              )}
+            </div>
+            <span className="fx-note">{id === 'abi' && recap ? 'n + string' : 'private'}</span>
+          </div>
+        </div>
+      ) : null}
+      <div
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          trap ? 'fx-verdict--warn' : fireOk || dtorFix || movesOk || abiOk ? 'fx-verdict--ok' : ''
+        }`}
+      >
+        {verdict}
+      </div>
+    </SceneShell>
   )
 }
