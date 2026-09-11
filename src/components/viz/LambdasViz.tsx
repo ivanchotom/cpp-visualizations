@@ -1,40 +1,46 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { curve, edge, hop, waitNextBeat, type Point } from './motion.ts'
+import { useEffect, useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'copy' | 'ref' | 'dangle' | 'init'
 
-const MODES: { id: Mode; title: string; sig: string }[] = [
-  { id: 'copy', title: '[=] copy', sig: '[=]() mutable' },
-  { id: 'ref', title: '[&] weld', sig: '[&]()' },
-  { id: 'dangle', title: 'dangling [&]', sig: 'return [&]' },
-  { id: 'init', title: 'init-capture', sig: '[p = std::move(p)]' },
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'copy', title: '[=] copy' },
+  { id: 'ref', title: '[&] weld' },
+  { id: 'dangle', title: 'dangling [&]' },
+  { id: 'init', title: 'init-capture' },
 ]
-
-const STEP_MS = 1300
-const HOP_MS = 700
 
 export function LambdasViz() {
   const [id, setId] = useState<Mode>('copy')
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [arrow, setArrow] = useState('')
-  const [from, setFrom] = useState<Point>({ x: 80, y: 90 })
-  const [to, setTo] = useState<Point>({ x: 320, y: 90 })
+  const { i, playing, play, reset } = useBeats(4)
+  const [flash, setFlash] = useState<'local' | 'closure' | 'both' | null>(null)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const srcRef = useRef<HTMLDivElement>(null)
-  const dstRef = useRef<HTMLDivElement>(null)
+  function select(next: string) {
+    reset()
+    setFlash(null)
+    setId(next as Mode)
+  }
 
-  const stepCount = id === 'dangle' ? 4 : 3
   const captured = i >= 1
   const ran = i >= 2
   const frameGone = id === 'dangle' && i >= 2
   const dangled = id === 'dangle' && i >= 3
-  const stole = id === 'init' && i >= 1
-  const welded = (id === 'ref' || id === 'dangle') && captured && !dangled
+  const stole = id === 'init' && captured
+  const welded = (id === 'ref' || id === 'dangle') && captured && !dangled && !frameGone
   const copied = id === 'copy' && captured
-  const outerVal = id === 'ref' && ran ? 8 : id === 'init' ? (stole ? 'empty' : '7') : frameGone ? '☠' : 7
+
+  const outerVal =
+    id === 'ref' && ran
+      ? 8
+      : id === 'init'
+        ? stole
+          ? 'empty'
+          : '7'
+        : frameGone
+          ? 'gone'
+          : 7
+
   const closureVal =
     id === 'init'
       ? stole
@@ -58,69 +64,21 @@ export function LambdasViz() {
               : 7
             : '—'
 
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    if (!stage || !srcRef.current || !dstRef.current) {
-      setArrow('')
-      return
-    }
-    const origin = stage.getBoundingClientRect()
-    const a = edge(srcRef.current, origin, 'right')
-    const b = edge(dstRef.current, origin, 'left')
-    setFrom(a)
-    setTo(b)
-    if (welded || (id === 'init' && stole) || copied) setArrow(curve(a, b, 22))
-    else setArrow('')
-  }, [id, i, welded, stole, copied])
-
   useEffect(() => {
     if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
-    }
-    raf = requestAnimationFrame(hopLoop)
-    const stopBeat = waitNextBeat(STEP_MS, () => {
-      if (i >= stepCount - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stopBeat()
-    }
-  }, [playing, i, stepCount])
-
-  function select(next: Mode) {
-    setPlaying(false)
-    setId(next)
-    setI(0)
-    setHopT(1)
-  }
-
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
-  }
-
-  const pos = hopT < 1 && i >= 1 ? hop(from, to, hopT) : null
-  const pulseKind = id === 'copy' || id === 'init' ? 'p' : id === 'dangle' && dangled ? 'throw' : 'r'
-  const flyerGlyph = id === 'init' ? '7' : id === 'copy' ? '7' : 'n'
+    if (i === 2 && id === 'copy') setFlash('closure')
+    else if (i === 2 && id === 'ref') setFlash('both')
+    else if (i === 3 && id === 'dangle') setFlash('closure')
+    else setFlash(null)
+    const t = window.setTimeout(() => setFlash(null), 520)
+    return () => window.clearTimeout(t)
+  }, [i, playing, id])
 
   const code =
     id === 'copy'
-      ? i === 0
+      ? i < 2
         ? `int n = 7;\nauto f = [=]() mutable { ++n; };`
-        : i === 1
-          ? `auto f = [=]() mutable { ++n; };\n// f holds its own int n = 7`
-          : `f();  // closure n is 8, outer n is still 7`
+        : `f();  // closure n is 8, outer n is still 7`
       : id === 'ref'
         ? i < 2
           ? `int n = 7;\nauto f = [&] { ++n; };`
@@ -133,137 +91,161 @@ export function LambdasViz() {
               : i === 2
                 ? `}  // n is destroyed. The alias is leftover.`
                 : `auto f = make();\nf();  // dangling reference — UB`
-          : i === 0
+          : i < 2
             ? `auto p = std::make_unique<int>(7);\nauto f = [p = std::move(p)] {\n  return *p;\n};`
-            : i === 1
-              ? `auto f = [p = std::move(p)] { return *p; };\n// init-capture steals (C++14)`
-              : `f();  // *p is 7. Original p is empty.`
+            : `f();  // *p is 7. Original p is empty.`
 
   const caption =
     i === 0
       ? id === 'copy'
-        ? 'Play the lambda. [=] copies what it names. Generic [](auto x) is a template operator() — also C++14.'
+        ? 'Play [=]. The closure copies what it names. mutable lets operator() change that copy. Generic [](auto x) is a template operator() — also C++14.'
         : id === 'ref'
           ? 'Play [&]. The closure welds to the local. Same object, two names — until the local dies.'
           : id === 'dangle'
             ? 'Play make(). Returning [&] from a function is the classic dangling-capture trap.'
             : 'Play init-capture. [p = std::move(p)] is C++14: the member is initialized, not copy-captured.'
       : id === 'copy' && i === 1
-        ? 'Cyan clone: the closure has its own n. Outer 7 stays put. Huge [=] copies whole containers — name what you need.'
-        : id === 'copy'
+        ? 'The closure has its own n. Outer 7 stays put. Huge [=] copies whole containers — name what you need.'
+        : id === 'copy' && i === 2
           ? 'mutable lets operator() mutate the copy. Outer n is still 7. [](auto x) would stamp a new operator() per argument type.'
-          : id === 'ref' && i === 1
-            ? 'Green weld: no copy. The lambda is an alias for n. Cheap, and dangerous if you outlive n.'
-            : id === 'ref'
-              ? 'Write-through: ++n updates the local. Same object, two names — just like T&.'
-              : id === 'dangle' && i === 1
-                ? 'Green weld to stack n. Returning the lambda takes that alias out of the function.'
-                : id === 'dangle' && i === 2
-                  ? 'make() returned. The frame is gone. n is destroyed. The capture still points at that slot.'
-                  : id === 'dangle'
-                    ? 'f() reads a dead local. That is UB — not a stale copy, a hole in the stack. Capture by value, or a named [&n] you can audit.'
-                    : i === 1
-                      ? 'Magenta steal into the closure member. Original unique_ptr is empty. You cannot copy unique_ptr; you move it in.'
-                      : 'f() reads *p. The unique_ptr lives as long as the closure. That is how you ship ownership into a callback in C++14.'
+          : id === 'copy'
+            ? '[=] is a copy. A captureless lambda converts to a function pointer. Capturing this by [=] copies the pointer, not the object.'
+            : id === 'ref' && i === 1
+              ? 'Green weld: no copy. The lambda is an alias for n. Cheap, and dangerous if you outlive n.'
+              : id === 'ref' && i === 2
+                ? 'Write-through: ++n updates the local. Same object, two names — just like T&.'
+                : id === 'ref'
+                  ? 'Keep [&] lambdas inside the scope of what they name. Return them and you dangle.'
+                  : id === 'dangle' && i === 1
+                    ? 'Green weld to stack n. Returning the lambda takes that alias out of the function.'
+                    : id === 'dangle' && i === 2
+                      ? 'make() returned. The frame is gone. n is destroyed. The capture still names that slot.'
+                      : id === 'dangle'
+                        ? 'f() reads a dead local. That is UB — not a stale copy, a hole in the stack. Capture by value, or a named [&n] you can audit.'
+                        : i === 1
+                          ? 'The unique_ptr member is initialized from std::move(p). Original p is empty. You cannot copy unique_ptr; you move it in.'
+                          : i === 2
+                            ? 'f() reads *p. The unique_ptr lives as long as the closure. That is how you ship ownership into a callback in C++14.'
+                            : 'Init-capture is C++14. Use it when the member is not a copy of an existing name — move, or a computed value.'
 
-  const m = MODES.find((x) => x.id === id) ?? MODES[0]
-  const stageKind =
+  const tone = dangled ? 'trap' : frameGone ? 'warn' : stole && ran ? 'ok' : ran ? 'ok' : 'idle'
+
+  const linkCls = dangled || frameGone ? 'fx-link--dead' : copied || stole ? 'fx-link--on' : welded ? 'fx-link--weld' : ''
+  const playLabel =
     id === 'copy'
-      ? 'viz-stage--copy'
-      : id === 'init'
-        ? 'viz-stage--move'
-        : dangled
-          ? 'lm-stage--dead'
-          : ''
+      ? 'Play [=] mutable'
+      : id === 'ref'
+        ? 'Play [&] write'
+        : id === 'dangle'
+          ? 'Play make() then f()'
+          : 'Play init-capture'
+
+  const localFlash = flash === 'local' || flash === 'both'
+  const closureFlash = flash === 'closure' || flash === 'both'
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        {MODES.map((x) => (
-          <button
-            key={x.id}
-            className={`chip${id === x.id ? ' chip--active' : ''}`}
-            onClick={() => select(x.id)}
-            disabled={playing}
-          >
-            {x.title}
-          </button>
-        ))}
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play capture
-        </button>
-        <button className="chip chip--ghost" onClick={() => select(id)}>
-          reset
-        </button>
-      </div>
-
-      <div ref={stageRef} className={`viz-stage lm-stage viz-stage--live ${stageKind}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{stepCount} · <code>{m.sig}</code>
-        </p>
-        <div className="lm-row">
+    <SceneShell
+      modes={MODES}
+      mode={id}
+      onSelect={select}
+      playing={playing}
+      onPlay={() => {
+        setFlash(null)
+        play()
+      }}
+      onReset={() => {
+        reset()
+        setFlash(null)
+        setId(id)
+      }}
+      playLabel={playLabel}
+      step={i}
+      stepCount={4}
+      sig={MODES.find((m) => m.id === id)?.title}
+      caption={caption}
+      code={code}
+      tone={tone}
+    >
+      <div className="fx-sh">
+        <div
+          className={`fx-pane${captured && !frameGone ? ' fx-pane--focus' : ''}${
+            frameGone ? ' fx-pane--gone' : ''
+          }`}
+        >
+          <span className="fx-kicker">{id === 'dangle' ? 'make() frame' : id === 'init' ? 'unique_ptr' : 'local'}</span>
           <div
-            ref={srcRef}
-            className={`own-card${id === 'init' ? (stole ? ' own-ctrl--ghost' : ' own-card--unique') : welded ? ' pb-hot' : ''}${frameGone ? ' lm-frame--gone' : ''}`}
+            className={`fx-slot${
+              stole
+                ? ' fx-slot--dim'
+                : welded
+                  ? ' fx-slot--weld'
+                  : captured
+                    ? ' fx-slot--focus'
+                    : ' fx-slot--dim'
+            }${localFlash ? ' fx-slot--flash-ref' : ''}${frameGone ? ' fx-pane--gone' : ''}`}
           >
-            <span className="lf-tag">{id === 'dangle' ? 'make() frame' : id === 'init' ? 'unique_ptr' : 'local'}</span>
-            <span className="own-name">{id === 'init' ? 'p' : 'n'}</span>
-            <span className="mem-val">{outerVal}</span>
-            {frameGone && <span className="mem-note">destroyed</span>}
-            {id === 'init' && stole && <span className="mem-note">moved-from</span>}
-          </div>
-          <div
-            ref={dstRef}
-            className={`own-card lm-closure${copied ? ' own-card--unique' : welded ? ' own-card--weak' : stole ? ' own-card--unique' : ''}${dangled ? ' lm-closure--ub' : ''}${ran && id === 'copy' ? ' pb-hot' : ''}`}
-          >
-            <span className="lf-tag">closure f</span>
-            <span className="own-name">{id === 'init' ? 'p' : id === 'copy' ? 'n' : '&n'}</span>
-            <span className="mem-val">{closureVal}</span>
-            {copied && <span className="mem-note">copied member</span>}
-            {welded && <span className="mem-note">alias</span>}
-            {stole && <span className="mem-note">init-capture</span>}
-            {dangled && <span className="mem-note">dangling</span>}
+            <span className="fx-kicker">{id === 'init' ? 'p' : 'n'}</span>
+            <span className="fx-value">{outerVal}</span>
+            <span className="fx-note">
+              {frameGone ? 'destroyed' : stole ? 'moved-from' : id === 'ref' && ran ? 'written through' : 'outer'}
+            </span>
           </div>
         </div>
-        <svg className="ptr-svg" aria-hidden>
-          <defs>
-            <linearGradient id="lm-grad" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor={id === 'copy' || id === 'init' ? '#3ee0ff' : dangled ? '#f0883e' : '#7dce82'} />
-              <stop offset="100%" stopColor={id === 'init' ? '#ff7ab6' : dangled ? '#e06c75' : '#7dce82'} />
-            </linearGradient>
-            <marker id="lm-head" markerWidth="10" markerHeight="10" refX="7" refY="5" orient="auto">
-              <path
-                d="M0,0 L10,5 L0,10 z"
-                fill={id === 'copy' ? '#3ee0ff' : id === 'init' ? '#ff7ab6' : dangled ? '#e06c75' : '#7dce82'}
-              />
-            </marker>
-          </defs>
-          {arrow && (
-            <path
-              d={arrow}
-              className={`own-arc${copied || id === 'init' ? '' : dangled ? ' lm-arc--dead' : ' own-arc--weak'}`}
-              fill="none"
-              markerEnd="url(#lm-head)"
-            />
-          )}
-        </svg>
-        {pos && i === 1 && (
-          <span
-            className={`ptr-pulse ptr-pulse--${pulseKind} lm-flyer${id === 'init' ? ' lm-flyer--steal' : ''}`}
-            style={{ left: pos.x, top: pos.y }}
+        <div className={`fx-link${linkCls ? ` ${linkCls}` : ''}`} />
+        <div className={`fx-pane${captured ? ' fx-pane--focus' : ''}${dangled ? ' fx-pane--gone' : ''}`}>
+          <span className="fx-kicker">closure f</span>
+          <div
+            className={`fx-slot${
+              dangled
+                ? ' fx-slot--trap'
+                : copied || stole
+                  ? ' fx-slot--focus'
+                  : welded
+                    ? ' fx-slot--weld'
+                    : ' fx-slot--dim'
+            }${closureFlash ? (id === 'copy' ? ' fx-slot--flash' : id === 'dangle' ? '' : ' fx-slot--flash-ref') : ''}`}
           >
-            {flyerGlyph}
-          </span>
-        )}
-        {pos && ((id === 'ref' && i === 2) || (id === 'copy' && i === 2) || dangled) && (
-          <span className={`ptr-pulse ptr-pulse--${pulseKind}`} style={{ left: pos.x, top: pos.y }} />
-        )}
+            <span className="fx-kicker">{id === 'init' ? 'p' : id === 'copy' ? 'n' : '&n'}</span>
+            <span className="fx-value">{closureVal}</span>
+            <span className="fx-note">
+              {copied
+                ? ran
+                  ? 'mutated copy'
+                  : 'copied member'
+                : welded
+                  ? 'alias'
+                  : stole
+                    ? ran
+                      ? '*p is 7'
+                      : 'init-capture'
+                    : dangled
+                      ? 'dangling'
+                      : 'no capture yet'}
+            </span>
+            {copied && <span className="fx-badge">[=] mutable</span>}
+            {stole && <span className="fx-badge fx-badge--owner">moved in</span>}
+          </div>
+        </div>
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{code}</code>
-      </pre>
-      <p className="layout-hint">{caption}</p>
-    </div>
+      <div
+        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
+          dangled ? 'fx-verdict--trap' : ran && id !== 'dangle' ? 'fx-verdict--ok' : ''
+        }`}
+      >
+        {id === 'copy' && ran
+          ? '[=] copy · outer still 7'
+          : id === 'ref' && ran
+            ? '[&] weld · write-through'
+            : dangled
+              ? 'dangling [&] · UB'
+              : id === 'dangle' && frameGone
+                ? 'frame gone · alias leftover'
+                : stole && ran
+                  ? 'init-capture · C++14 steal'
+                  : stole
+                    ? 'unique_ptr moved into f'
+                    : ''}
+      </div>
+    </SceneShell>
   )
 }
