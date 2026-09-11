@@ -71,7 +71,13 @@ export function InvalidationViz() {
 
   const vOld = i === 0 ? ['a', 'b', 'c', '·'] : i === 1 ? ['a', 'b', 'c', 'd'] : ['a', 'b', 'c', 'd']
   const vNew = vectorDangle ? ['a', 'b', 'c', 'd', 'e', '·', '·', '·'] : ['·', '·', '·', '·', '·', '·', '·', '·']
-  const listNodes = listErase ? ['a', '·', 'c'] : i === 0 ? ['a', 'b', 'c'] : i === 1 ? ['a', 'b', 'c', 'd'] : ['a', 'b', 'c', 'd', 'e']
+  const listNodes = listErase
+    ? ['a', '·', 'c', 'd', 'e']
+    : i === 0
+      ? ['a', 'b', 'c']
+      : i === 1
+        ? ['a', 'b', 'c', 'd']
+        : ['a', 'b', 'c', 'd', 'e']
   const endCells = ['a', 'b', 'c', '·']
 
   const code =
