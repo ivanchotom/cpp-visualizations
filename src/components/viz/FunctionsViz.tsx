@@ -110,10 +110,17 @@ int add(int a, int b) { return a + b; }`
       tone={tone}
     >
       {id === 'def' && (
-        <div className="fx-expr">
-          <span className="fx-tok fx-tok--hot">scale</span>
-          <span className={`fx-tok${i >= 1 ? ' fx-tok--hot' : ''}`}>(5</span>
-          <span className={`fx-tok${filled ? ' fx-tok--hot' : ' fx-tok--warn'}`}>{filled ? ', 2)' : ', ?)'}</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${i >= 1 ? ' fx-rank--on' : ''}${filled ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">caller</span>
+            <code>scale(5)</code>
+            <span className="fx-note">{i >= 1 ? '1' : '—'}</span>
+          </div>
+          <div className={`fx-rank${filled ? ' fx-rank--on' : ''}`}>
+            <span className="fx-note">filled</span>
+            <code>scale(5, 2)</code>
+            <span className="fx-note">{filled ? '2' : '—'}</span>
+          </div>
         </div>
       )}
       {id === 'virt' && (
@@ -136,15 +143,16 @@ int add(int a, int b) { return a + b; }`
         </div>
       )}
       {(id === 'inline' || id === 'hdr') && (
-        <div className="fx-compare" style={{ gridTemplateColumns: '1fr auto 1fr' }}>
-          <div className={`fx-slot${tuA ? (odr ? ' fx-slot--trap' : ' fx-slot--ok') : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">TU a</span>
-            <span className="fx-note">{tuA ? 'add() defined' : 'not yet included'}</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${tuA ? ' fx-rank--on' : ''}${odr ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">TU a</span>
+            <code>add()</code>
+            <span className="fx-note">{tuA ? 'ok' : '—'}</span>
           </div>
-          <span className={`fx-op${tuB ? ' fx-op--on' : ''}`}>{id === 'inline' ? 'inline' : 'ODR'}</span>
-          <div className={`fx-slot${tuB ? (odr ? ' fx-slot--trap' : ' fx-slot--ok') : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">TU b</span>
-            <span className="fx-note">{tuB ? (odr ? 'second definition' : 'same add()') : 'not yet included'}</span>
+          <div className={`fx-rank${tuB ? ' fx-rank--on' : ''}${odr ? ' fx-rank--trap' : ''}`}>
+            <span className="fx-note">TU b</span>
+            <code>{id === 'inline' ? 'inline' : 'add()'}</code>
+            <span className="fx-note">{odr ? 'ill' : tuB ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
