@@ -1,298 +1,195 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { clamp01, curve, easeInOutCubic, edge, hop, lerp, usePrefersReducedMotion } from './motion.ts'
+import { useEffect, useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 type Target = 'a' | 'b'
 
-interface Packet {
-  id: number
-  t: number
-  born: number
-  kind: 'p' | 'r'
-  from: { x: number; y: number }
-  to: { x: number; y: number }
-}
+const MODES: { id: Target; title: string }[] = [
+  { id: 'a', title: 'p = &a' },
+  { id: 'b', title: 'p = &b' },
+]
 
 export function PointersViz() {
-  const reduced = usePrefersReducedMotion()
+  const [pointAt, setPointAt] = useState<Target>('a')
   const [a, setA] = useState(10)
   const [b, setB] = useState(20)
-  const [pointAt, setPointAt] = useState<Target>('a')
   const [flash, setFlash] = useState<Target | 'r' | null>(null)
-  const [packets, setPackets] = useState<Packet[]>([])
-  const [tick, setTick] = useState(0)
+  const { i, playing, play, reset } = useBeats(5)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const aRef = useRef<HTMLButtonElement>(null)
-  const bRef = useRef<HTMLButtonElement>(null)
-  const pRef = useRef<HTMLDivElement>(null)
-  const rRef = useRef<HTMLDivElement>(null)
-  const packetsRef = useRef<Packet[]>([])
-  const rafRef = useRef(0)
-  const packetId = useRef(0)
-
-  const pVal = pointAt === 'a' ? a : b
-
-  function layout() {
-    const stage = stageRef.current
-    if (!stage || !aRef.current || !bRef.current || !pRef.current || !rRef.current) {
-      return null
-    }
-    const origin = stage.getBoundingClientRect()
-    const target = pointAt === 'a' ? aRef.current : bRef.current
-    return {
-      p: edge(pRef.current, origin, 'top'),
-      target: edge(target, origin, 'bottom'),
-      r: edge(rRef.current, origin, 'top'),
-      a: edge(aRef.current, origin, 'bottom'),
-    }
-  }
-
-  useLayoutEffect(() => {
-    setTick((n) => n + 1)
-  }, [pointAt, a, b])
+  const scripted = playing || i > 0
+  const liveTarget: Target = scripted ? (i >= 1 ? 'b' : 'a') : pointAt
+  const aVal = scripted ? (i >= 3 ? 11 : 10) : a
+  const bVal = scripted ? (i >= 2 ? 21 : 20) : b
+  const pVal = liveTarget === 'a' ? aVal : bVal
 
   useEffect(() => {
-    const onResize = () => setTick((n) => n + 1)
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
+    if (!playing) return
+    if (i === 2) setFlash('b')
+    else if (i === 3) setFlash('r')
+    else setFlash(null)
+    const t = window.setTimeout(() => setFlash(null), 520)
+    return () => window.clearTimeout(t)
+  }, [i, playing])
 
-  const pts = layout()
-  const pPath = pts ? curve(pts.p, pts.target, 40) : ''
-  const rPath = pts ? curve(pts.r, pts.a, 28) : ''
-
-  const [drawP, setDrawP] = useState(pPath)
-  const fromPath = useRef(pPath)
-
-  useEffect(() => {
-    if (!pPath) return
-    if (reduced) {
-      setDrawP(pPath)
-      fromPath.current = pPath
-      return
-    }
-    const start = fromPath.current || pPath
-    const startPts = parseEnds(start)
-    const endPts = parseEnds(pPath)
-    if (!startPts || !endPts) {
-      setDrawP(pPath)
-      fromPath.current = pPath
-      return
-    }
-    const t0 = performance.now()
-    let raf = 0
-    const dur = 520
-    const step = (now: number) => {
-      const t = easeInOutCubic(clamp01((now - t0) / dur))
-      const from = {
-        x: lerp(startPts.from.x, endPts.from.x, t),
-        y: lerp(startPts.from.y, endPts.from.y, t),
-      }
-      const to = {
-        x: lerp(startPts.to.x, endPts.to.x, t),
-        y: lerp(startPts.to.y, endPts.to.y, t),
-      }
-      setDrawP(curve(from, to, 40))
-      if (t < 1) raf = requestAnimationFrame(step)
-      else fromPath.current = pPath
-    }
-    raf = requestAnimationFrame(step)
-    return () => cancelAnimationFrame(raf)
-  }, [pPath, reduced, tick])
-
-  function spawnPacket(kind: 'p' | 'r') {
-    const stage = stageRef.current
-    const fromEl = kind === 'r' ? rRef.current : pRef.current
-    const toEl = kind === 'r' ? aRef.current : pointAt === 'a' ? aRef.current : bRef.current
-    if (!stage || !fromEl || !toEl) return
-    const origin = stage.getBoundingClientRect()
-    const pkt: Packet = {
-      id: ++packetId.current,
-      t: 0,
-      born: performance.now(),
-      kind,
-      from: edge(fromEl, origin, 'top'),
-      to: edge(toEl, origin, 'bottom'),
-    }
-    packetsRef.current = [...packetsRef.current, pkt]
-    setPackets(packetsRef.current)
-    if (rafRef.current) return
-    const loop = (now: number) => {
-      const next = packetsRef.current
-        .map((p) => ({ ...p, t: clamp01((now - p.born) / 720) }))
-        .filter((p) => p.t < 1)
-      packetsRef.current = next
-      setPackets(next)
-      if (next.length) rafRef.current = requestAnimationFrame(loop)
-      else rafRef.current = 0
-    }
-    rafRef.current = requestAnimationFrame(loop)
+  function select(next: string) {
+    reset()
+    setA(10)
+    setB(20)
+    setFlash(null)
+    setPointAt(next as Target)
   }
 
-  useEffect(() => () => cancelAnimationFrame(rafRef.current), [])
-
-  function reseat(t: Target) {
-    setPointAt(t)
+  function hardReset() {
+    reset()
+    setA(10)
+    setB(20)
+    setFlash(null)
+    setPointAt('a')
   }
 
-  function writeThroughP() {
-    const next = pVal + 1
-    if (pointAt === 'a') setA(next)
-    else setB(next)
-    setFlash(pointAt)
-    spawnPacket('p')
+  function incP() {
+    if (playing) return
+    if (liveTarget === 'a') setA((n) => n + 1)
+    else setB((n) => n + 1)
+    setFlash(liveTarget)
     window.setTimeout(() => setFlash(null), 520)
   }
 
-  function incRef() {
-    setA(a + 1)
+  function incR() {
+    if (playing) return
+    setA((n) => n + 1)
     setFlash('r')
-    spawnPacket('r')
     window.setTimeout(() => setFlash(null), 520)
   }
+
+  const code =
+    i === 0 && !playing
+      ? `int a = ${aVal};\nint b = ${bVal};\nint* p = &${liveTarget};\nint& r = a;`
+      : i <= 1
+        ? `int* p = &a;\nint& r = a;\np = &b;            // reseat`
+        : i === 2
+          ? `++*p;              // writes b\n// b is ${bVal}`
+          : i === 3
+            ? `++r;               // writes a\n// r cannot reseat`
+            : `p points at b (${bVal})\nr is still a (${aVal})`
+
+  const caption =
+    i === 0 && !playing
+      ? 'p stores an address — chip p = &b to reseat. r is another name for a and cannot move. Play walks reseat then write-through.'
+      : i === 0
+        ? 'p starts at a. The cyan bar is an address. The green bar is a weld — r is a, for life.'
+        : i === 1
+          ? 'p = &b. The cyan bar now names b. r did not move. There is no r = b that rebinds a reference.'
+          : i === 2
+            ? '++*p writes through the address. b flashes in place. a is untouched.'
+            : i === 3
+              ? '++r writes a. The weld never left a. Same object, two names.'
+              : 'p can be null or reseated. r cannot. Prefer r in APIs; p when absence or reseating is the design.'
+
+  const tone = i >= 4 ? 'ok' : flash ? 'ok' : 'idle'
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        <button className={`chip${pointAt === 'a' ? ' chip--active' : ''}`} onClick={() => reseat('a')}>
-          p = &a
-        </button>
-        <button className={`chip${pointAt === 'b' ? ' chip--active' : ''}`} onClick={() => reseat('b')}>
-          p = &b
-        </button>
-        <button className="chip chip--play" onClick={writeThroughP}>
-          ++*p
-        </button>
-        <button className="chip chip--ref" onClick={incRef}>
-          ++r
-        </button>
-        <button
-          className="chip chip--ghost"
-          onClick={() => {
-            setA(10)
-            setB(20)
-            setPointAt('a')
-            setPackets([])
-            packetsRef.current = []
-          }}
+    <SceneShell
+      modes={MODES}
+      mode={scripted ? liveTarget : pointAt}
+      onSelect={select}
+      playing={playing}
+      onPlay={() => {
+        setA(10)
+        setB(20)
+        setPointAt('a')
+        play()
+      }}
+      onReset={hardReset}
+      playLabel="Play p = &b then ++"
+      step={i}
+      stepCount={5}
+      sig={liveTarget === 'a' ? 'p → a' : 'p → b'}
+      caption={caption}
+      code={code}
+      tone={tone}
+      footer={
+        <div className="stepper">
+          <button className="chip chip--play" onClick={incP} disabled={playing}>
+            ++*p
+          </button>
+          <button className="chip chip--ref" onClick={incR} disabled={playing}>
+            ++r
+          </button>
+        </div>
+      }
+    >
+      <div className="fx-obj-row">
+        <div
+          className={`fx-slot${liveTarget === 'a' ? ' fx-slot--focus' : ''}${
+            flash === 'a' || flash === 'r' ? ' fx-slot--flash-ref' : ''
+          }`}
         >
-          reset
-        </button>
-      </div>
-
-      <div ref={stageRef} className="viz-stage ptr-stage viz-stage--live">
-        <p className="ptr-hint-top">
-          Click <strong>a</strong> or <strong>b</strong> to reseat the pointer. The green weld is a
-          reference — it cannot move.
-        </p>
-        <div className="ptr-objects">
-          <button
-            ref={aRef}
-            className={`ptr-obj${pointAt === 'a' ? ' ptr-obj--pointed' : ''}${flash === 'a' || flash === 'r' ? ' ptr-obj--flash' : ''}`}
-            onClick={() => reseat('a')}
-          >
-            <span className="ptr-kind">object</span>
-            <span className="ptr-name">
-              <code>int a</code>
-            </span>
-            <span className="ptr-addr">0xA0</span>
-            <span className="ptr-big">{a}</span>
-          </button>
-          <button
-            ref={bRef}
-            className={`ptr-obj${pointAt === 'b' ? ' ptr-obj--pointed' : ''}${flash === 'b' ? ' ptr-obj--flash' : ''}`}
-            onClick={() => reseat('b')}
-          >
-            <span className="ptr-kind">object</span>
-            <span className="ptr-name">
-              <code>int b</code>
-            </span>
-            <span className="ptr-addr">0xB0</span>
-            <span className="ptr-big">{b}</span>
-          </button>
+          <span className="fx-kicker">object · 0xA0</span>
+          <span className="fx-value">{aVal}</span>
+          <span className="fx-note">
+            <code>int a</code>
+          </span>
         </div>
-
-        <div className="ptr-handles">
-          <div ref={pRef} className="ptr-obj ptr-obj--pointer ptr-obj--handle">
-            <span className="ptr-kind">pointer</span>
-            <span className="ptr-name">
-              <code>int* p</code>
-            </span>
-            <span className="ptr-addr">{pointAt === 'a' ? '0xA0' : '0xB0'}</span>
-            <span className="ptr-extra">*p = {pVal}</span>
-          </div>
-          <div
-            ref={rRef}
-            className={`ptr-obj ptr-obj--ref ptr-obj--handle${flash === 'r' ? ' ptr-obj--flash' : ''}`}
-          >
-            <span className="ptr-kind">reference</span>
-            <span className="ptr-name">
-              <code>int& r</code>
-            </span>
-            <span className="ptr-addr">welded to a</span>
-            <span className="ptr-extra">r = {a}</span>
-          </div>
+        <div
+          className={`fx-slot${liveTarget === 'b' ? ' fx-slot--focus' : ' fx-slot--dim'}${
+            flash === 'b' ? ' fx-slot--flash' : ''
+          }`}
+        >
+          <span className="fx-kicker">object · 0xB0</span>
+          <span className="fx-value">{bVal}</span>
+          <span className="fx-note">
+            <code>int b</code>
+          </span>
         </div>
-
-        <svg className="ptr-svg" aria-hidden>
-          <defs>
-            <linearGradient id="ptr-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#3ee0ff" />
-              <stop offset="100%" stopColor="#00a3ff" />
-            </linearGradient>
-            <linearGradient id="ref-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#b8f29b" />
-              <stop offset="100%" stopColor="#3d9a4a" />
-            </linearGradient>
-            <filter id="ptr-glow" x="-40%" y="-40%" width="180%" height="180%">
-              <feGaussianBlur stdDeviation="3.5" result="b" />
-              <feMerge>
-                <feMergeNode in="b" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-            <marker id="ptr-head" markerWidth="10" markerHeight="10" refX="7" refY="5" orient="auto">
-              <path d="M0,0 L10,5 L0,10 z" fill="#3ee0ff" />
-            </marker>
-            <marker id="ref-head" markerWidth="10" markerHeight="10" refX="7" refY="5" orient="auto">
-              <path d="M0,0 L10,5 L0,10 z" fill="#7dce82" />
-            </marker>
-          </defs>
-          <path d={rPath} className="ptr-arc ptr-arc--ref" fill="none" markerEnd="url(#ref-head)" />
-          <path
-            d={drawP}
-            className="ptr-arc ptr-arc--ptr"
-            fill="none"
-            filter="url(#ptr-glow)"
-            markerEnd="url(#ptr-head)"
-          />
-        </svg>
-        {packets.map((pkt) => {
-          const pos = hop(pkt.from, pkt.to, pkt.t)
-          return (
-            <span
-              key={pkt.id}
-              className={`ptr-pulse ptr-pulse--${pkt.kind}`}
-              style={{ left: pos.x, top: pos.y }}
-            />
-          )
-        })}
       </div>
-
-      <p className="layout-hint">
-        <strong>p</strong> stores an address, so you can reseat it from a to b — watch the cyan
-        arrow morph. <strong>r</strong> is another name for a for life; <code>++r</code> pulses
-        into a and there is no <code>r = b</code> that rebinds it.
-      </p>
-    </div>
+      <div className="fx-lockrow">
+        <div className={`fx-slot${flash === 'b' || (flash === 'a' && liveTarget === 'a') ? ' fx-slot--flash' : ''}`}>
+          <span className="fx-kicker">pointer</span>
+          <span className="fx-value">
+            <code>int* p</code>
+          </span>
+          <span className="fx-note">{liveTarget === 'a' ? '0xA0' : '0xB0'} · *p = {pVal}</span>
+          <span className="fx-badge fx-badge--open">may reseat</span>
+        </div>
+        <div className="fx-link fx-link--on" />
+        <div className={`fx-slot${liveTarget === 'a' ? ' fx-slot--focus' : ''}${flash === 'a' || flash === 'r' ? ' fx-slot--flash-ref' : ''}`}>
+          <span className="fx-kicker">{liveTarget === 'a' ? 'pointee a' : 'pointee b'}</span>
+          <span className="fx-value">{pVal}</span>
+          <span className="fx-note">{liveTarget === 'a' ? 'same object as r' : 'b, not r'}</span>
+        </div>
+      </div>
+      <div className="fx-lockrow">
+        <div className={`fx-slot fx-slot--weld${flash === 'r' ? ' fx-slot--flash-ref' : ''}`}>
+          <span className="fx-kicker">reference</span>
+          <span className="fx-value">
+            <code>int& r</code>
+          </span>
+          <span className="fx-note">r = {aVal}</span>
+          <span className="fx-badge fx-badge--lock">welded to a</span>
+        </div>
+        <div className="fx-link fx-link--weld" />
+        <div className={`fx-slot fx-slot--weld${flash === 'r' || flash === 'a' ? ' fx-slot--flash-ref' : ''}`}>
+          <span className="fx-kicker">alias of a</span>
+          <span className="fx-value">{aVal}</span>
+          <span className="fx-note">cannot reseat</span>
+        </div>
+      </div>
+      <div
+        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
+          i >= 4 ? 'fx-verdict--ok' : i >= 1 ? 'fx-verdict--ok' : ''
+        }`}
+      >
+        {i >= 4
+          ? 'p → b · r still a · two different bindings'
+          : i === 3
+            ? '++r · a is 11 · weld never moved'
+            : i === 2
+              ? '++*p · b is 21 · a unchanged'
+              : i === 1
+                ? 'cyan reseated · green weld stayed'
+                : ''}
+      </div>
+    </SceneShell>
   )
-}
-
-function parseEnds(d: string): { from: { x: number; y: number }; to: { x: number; y: number } } | null {
-  const m = d.match(/M ([-.\d]+) ([-.\d]+).*?([-.\d]+) ([-.\d]+)$/)
-  if (!m) return null
-  return {
-    from: { x: Number(m[1]), y: Number(m[2]) },
-    to: { x: Number(m[3]), y: Number(m[4]) },
-  }
 }

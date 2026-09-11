@@ -5085,7 +5085,8 @@ pre {
   .fx-obj-row {
     grid-template-columns: 1fr;
   }
-  .fx-sh .fx-link {
+  .fx-sh .fx-link,
+  .fx-lockrow .fx-link {
     height: 10px;
     width: 36%;
     justify-self: center;
@@ -5104,6 +5105,7 @@ pre {
   .fx-node,
   .fx-letter,
   .fx-pane,
+  .fx-size-unit,
   .fx-pipe-rail::after {
     transition: none !important;
     animation: none !important;
@@ -5179,5 +5181,56 @@ pre {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+
+.fx-slot--flash {
+  animation: fx-flash 0.55s var(--ease-out);
+}
+
+.fx-slot--flash-ref {
+  animation: fx-flash-ref 0.55s var(--ease-out);
+}
+
+@keyframes fx-flash {
+  0% {
+    background: rgba(62, 224, 255, 0.28);
+  }
+  100% {
+    background: #161b22;
+  }
+}
+
+@keyframes fx-flash-ref {
+  0% {
+    background: rgba(125, 206, 130, 0.28);
+  }
+  100% {
+    background: #161b22;
+  }
+}
+
+.fx-size {
+  display: flex;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.fx-size-unit {
+  height: 10px;
+  flex: 1;
+  max-width: 16px;
+  border-radius: 2px;
+  background: #2a3240;
+  opacity: 0.28;
+  transition: opacity 0.35s var(--ease-out), background 0.35s var(--ease-out);
+}
+
+.fx-size-unit--on {
+  opacity: 1;
+  background: var(--copy);
+}
+
+.fx-size-unit--trap {
+  background: #e06c75;
 }
 
