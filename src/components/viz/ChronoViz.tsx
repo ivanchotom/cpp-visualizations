@@ -11,19 +11,6 @@ const MODES: { id: Mode; title: string }[] = [
   { id: 'mix', title: 'clocks' },
 ]
 
-function Pips({ n, of, trap }: { n: number; of: number; trap?: boolean }) {
-  return (
-    <div className="fx-size" aria-hidden>
-      {Array.from({ length: of }, (_, k) => (
-        <span
-          key={k}
-          className={`fx-size-unit${k < n ? ' fx-size-unit--on' : ''}${trap && k < n ? ' fx-size-unit--trap' : ''}`}
-        />
-      ))}
-    </div>
-  )
-}
-
 export function ChronoViz() {
   const [id, setId] = useState<Mode>('steady')
   const { i, playing, play, reset } = useBeats(4)
@@ -40,6 +27,8 @@ export function ChronoViz() {
   const mixTrap = id === 'mix' && decided
   const steadyOk = id === 'steady' && recap
   const castOk = id === 'cast' && decided
+  const trap = jumped || mixTrap
+  const ok = steadyOk || (castOk && !trap)
 
   const code =
     id === 'steady'
@@ -68,14 +57,14 @@ auto b = std::chrono::system_clock::now();
   const caption =
     i === 0
       ? id === 'steady'
-        ? 'Play steady. duration is how long, time_point is when, clock is which epoch. Measure intervals with steady_clock — it does not jump.'
+        ? 'Play steady_clock. duration is how long, time_point is when, clock is which epoch. Measure intervals with steady_clock — it does not jump.'
         : id === 'jump'
-          ? 'Play jump. system_clock is the wall. NTP and the user can step it backwards. That is a terrible stopwatch.'
+          ? 'Play system_clock. system_clock is the wall. NTP and the user can step it backwards. That is a terrible stopwatch.'
           : id === 'cast'
             ? 'Play duration_cast. You pick the unit. The conversion truncates toward zero — 1500 ms becomes 1 second, not 2.'
-            : 'Play clocks. time_points from different clocks do not convert. You cannot subtract them. That is a type error, not a runtime surprise.'
+            : 'Play a - b. time_points from different clocks do not convert. You cannot subtract them. That is a type error, not a runtime surprise.'
       : id === 'steady' && i === 1
-        ? 't0 = now(). A time_point on this clock’s epoch. Not a wall-clock date. The bar is empty until work finishes.'
+        ? 't0 = now(). A time_point on this clock’s epoch. Not a wall-clock date. Stations light in place until work finishes.'
         : id === 'steady' && i === 2
           ? 'work() runs. now() is later on the same clock. The difference is a duration — milliseconds via duration_cast.'
           : id === 'steady'
@@ -87,7 +76,7 @@ auto b = std::chrono::system_clock::now();
                 : id === 'jump'
                   ? 'now - t0 can be negative. Use steady_clock for elapsed time. system_clock::to_time_t for C APIs.'
                   : id === 'cast' && i === 1
-                    ? '1500 milliseconds. duration<Rep, Period>. The Period is a std::ratio. The pips are the count, in place.'
+                    ? '1500 milliseconds. duration<Rep, Period>. The Period is a std::ratio. The count lives in the status column, not a size bar.'
                     : id === 'cast' && i === 2
                       ? 'duration_cast<seconds> truncates toward zero → 1. There is no rounding helper in C++14.'
                       : id === 'cast'
@@ -98,7 +87,7 @@ auto b = std::chrono::system_clock::now();
                             ? 'Minus is not defined across clocks. The types do not match. That is the feature.'
                             : 'Need a wall time? system_clock. Need a duration? subtract two points from the same clock, then duration_cast.'
 
-  const tone = jumped || mixTrap ? 'trap' : steadyOk || castOk ? 'ok' : 'idle'
+  const tone = trap ? 'trap' : ok ? 'ok' : 'idle'
   const playLabel =
     id === 'steady'
       ? 'Play steady_clock'
@@ -147,89 +136,68 @@ auto b = std::chrono::system_clock::now();
       tone={tone}
     >
       {id === 'steady' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">t0</span>
-            <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">now</span>
-              <span className="fx-value">{stepped ? 'tp' : '—'}</span>
-              <span className="fx-note">steady_clock · epoch</span>
-            </div>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${steadyOk ? ' fx-rank--done' : ''}`}>
+            <code>t0</code>
+            <span className="fx-note">steady now</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-link${steadyOk ? ' fx-link--weld' : stepped ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">duration</span>
-            <div className={`fx-slot${steadyOk ? ' fx-slot--ok' : decided ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">count</span>
-              <span className="fx-value">{steadyOk ? '42' : decided ? 'ms' : '—'}</span>
-              <Pips n={recap ? 8 : decided ? 5 : 0} of={8} />
-              <span className="fx-note">{steadyOk ? 'print .count() and the unit' : 'work() then now - t0'}</span>
-            </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+            <code>dt</code>
+            <span className="fx-note">
+              <code>.count()</code>
+            </span>
+            <span className="fx-note">{steadyOk ? '42' : decided ? 'ms' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'jump' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${jumped ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">t0</span>
-            <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">wall</span>
-              <span className="fx-value">{stepped ? 'sys' : '—'}</span>
-              <span className="fx-note">system_clock</span>
-            </div>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${jumped ? ' fx-rank--done' : ''}`}>
+            <code>t0</code>
+            <span className="fx-note">wall clock</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-link${jumped ? ' fx-link--dead' : stepped ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}${jumped ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">now − t0</span>
-            <div className={`fx-slot${jumped ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">elapsed</span>
-              <span className="fx-value">{recap ? '-2s' : jumped ? '??' : '—'}</span>
-              {jumped && recap && <Pips n={3} of={8} trap />}
-              <span className="fx-note">{jumped ? 'NTP can step backward' : 'not a stopwatch'}</span>
-            </div>
+          <div className={`fx-rank${jumped ? ' fx-rank--trap' : ''}`}>
+            <code>dt</code>
+            <span className="fx-note">now − t0</span>
+            <span className="fx-note">{recap ? '-2' : jumped ? '??' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'cast' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">ms</span>
-            <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">count</span>
-              <span className="fx-value">{stepped ? '1500' : '—'}</span>
-              <Pips n={stepped ? 15 : 0} of={15} />
-              <span className="fx-note">milliseconds</span>
-            </div>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${castOk ? ' fx-rank--done' : ''}`}>
+            <code>ms</code>
+            <span className="fx-note">milliseconds</span>
+            <span className="fx-note">{stepped ? '1500' : '—'}</span>
           </div>
-          <div className={`fx-link${castOk ? ' fx-link--weld' : stepped ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${castOk ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">seconds</span>
-            <div className={`fx-slot${castOk ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">count</span>
-              <span className="fx-value">{castOk ? '1' : '—'}</span>
-              <Pips n={castOk ? 1 : 0} of={2} />
-              <span className="fx-note">{castOk ? 'toward zero, not 2' : 'duration_cast'}</span>
-            </div>
+          <div className={`fx-rank${castOk ? ' fx-rank--on' : ''}`}>
+            <code>s</code>
+            <span className="fx-note">toward zero</span>
+            <span className="fx-note">{castOk ? '1' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'mix' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${mixTrap ? ' fx-rank--done' : ''}`}>
-            <span className="fx-note">steady</span>
-            <code>now()</code>
-            <span className="fx-note">{stepped ? 'tp A' : '—'}</span>
+            <code>A</code>
+            <span className="fx-note">steady now</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${mixTrap ? ' fx-rank--on fx-rank--trap' : ''}`}>
-            <span className="fx-note">system</span>
-            <code>a - b</code>
+          <div className={`fx-rank${mixTrap ? ' fx-rank--trap' : ''}`}>
+            <code>B</code>
+            <span className="fx-note">
+              <code>a - b</code>
+            </span>
             <span className="fx-note">{mixTrap ? 'err' : '—'}</span>
           </div>
         </div>
       )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
-          jumped || mixTrap ? 'fx-verdict--trap' : verdict ? 'fx-verdict--ok' : ''
+          trap ? 'fx-verdict--trap' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
         {verdict}
