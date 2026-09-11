@@ -2,148 +2,87 @@ import { useState } from 'react'
 import { SceneShell } from './scene/SceneShell.tsx'
 import { useBeats } from './scene/useBeats.ts'
 
-type Kind = 'vector' | 'list' | 'map' | 'end'
+type Mode = 'vector' | 'list' | 'map' | 'end'
 
-const MODES: { id: Kind; title: string }[] = [
+const MODES: { id: Mode; title: string }[] = [
   { id: 'vector', title: 'vector' },
   { id: 'list', title: 'list' },
   { id: 'map', title: 'map erase' },
   { id: 'end', title: 'end()' },
 ]
 
-function Letters({
-  chars,
-  itAt,
-  dangling,
-  goneAt,
-}: {
-  chars: readonly string[]
-  itAt?: number
-  dangling?: boolean
-  goneAt?: number
-}) {
-  return (
-    <div className="fx-buf-row">
-      {chars.map((ch, n) => {
-        const gone = n === goneAt
-        const isIt = itAt === n && !dangling && !gone
-        const empty = gone || !ch || ch === '·'
-        return (
-          <span
-            key={n}
-            className={`fx-letter${
-              dangling && n === itAt
-                ? ' fx-letter--dead'
-                : isIt
-                  ? ' fx-letter--it'
-                  : empty
-                    ? ' fx-letter--empty'
-                    : ' fx-letter--on'
-            }`}
-          >
-            {gone ? '·' : ch || '·'}
-          </span>
-        )
-      })}
-    </div>
-  )
-}
-
 export function InvalidationViz() {
-  const [kind, setKind] = useState<Kind>('vector')
+  const [id, setId] = useState<Mode>('vector')
   const { i, playing, play, reset } = useBeats(4)
 
   function select(next: string) {
     reset()
-    setKind(next as Kind)
+    setId(next as Mode)
   }
 
   const stepped = i >= 1
-  const grew = i >= 2
+  const decided = i >= 2
   const recap = i >= 3
-  const vectorFit = kind === 'vector' && i === 1
-  const vectorDangle = kind === 'vector' && grew
-  const listLive = kind === 'list' && i >= 1 && i < 3
-  const listErase = kind === 'list' && recap
-  const mapLive = kind === 'map' && i === 1
-  const mapDangle = kind === 'map' && i === 2
-  const mapFix = kind === 'map' && recap
-  const atEnd = kind === 'end' && i === 2
-  const derefEnd = kind === 'end' && recap
-  const itValid =
-    (kind === 'vector' && i < 2) || (kind === 'list' && i < 3) || (kind === 'end' && i === 1) || mapLive || mapFix
-  const dangling = vectorDangle || listErase || derefEnd || mapDangle
-
-  const vOld = i === 0 ? ['a', 'b', 'c', '·'] : i === 1 ? ['a', 'b', 'c', 'd'] : ['a', 'b', 'c', 'd']
-  const vNew = vectorDangle ? ['a', 'b', 'c', 'd', 'e', '·', '·', '·'] : ['·', '·', '·', '·', '·', '·', '·', '·']
-  const listNodes = listErase
-    ? ['a', '·', 'c', 'd', 'e']
-    : i === 0
-      ? ['a', 'b', 'c']
-      : i === 1
-        ? ['a', 'b', 'c', 'd']
-        : ['a', 'b', 'c', 'd', 'e']
-  const mapNodes = mapDangle || mapFix ? ['a', '·', 'c'] : ['a', 'b', 'c']
-  const endCells = ['a', 'b', 'c', '·']
+  const vectorDangle = id === 'vector' && decided
+  const listErase = id === 'list' && recap
+  const mapDangle = id === 'map' && decided && !recap
+  const mapFix = id === 'map' && recap
+  const derefEnd = id === 'end' && recap
+  const trap = vectorDangle || listErase || mapDangle || derefEnd
+  const ok = (id === 'list' && decided && !recap) || (id === 'map' && recap) || (id === 'vector' && stepped && !decided)
 
   const code =
-    kind === 'vector'
-      ? i < 2
-        ? `auto it = v.begin() + 1;  // → b
-v.push_back('d');  // fits, it still → b`
-        : `v.push_back('e');  // realloc
+    id === 'vector'
+      ? recap
+        ? `v.push_back('e');  // realloc
 // it is dangling`
-      : kind === 'list'
+        : `auto it = v.begin() + 1;  // → b
+v.push_back('d');  // fits, it still → b`
+      : id === 'list'
         ? recap
           ? `L.erase(it);  // only that iterator dies
 // iterators to a and c stay`
           : `auto it = std::next(L.begin());  // → b
 L.push_back('d');  // it still → b`
-        : kind === 'map'
+        : id === 'map'
           ? recap
             ? `it = m.erase(it);  // C++11: next
 // a and c stay`
-            : mapDangle
-              ? `m.erase(it);
+            : `m.erase(it);
 ++it;  // UB — it is dangling`
-              : `auto it = m.find('b');
-// insert would not invalidate it`
-          : i < 2
-            ? `auto first = v.begin();
+          : recap
+            ? `*v.end();  // UB
+// end() is not the last element`
+            : `auto first = v.begin();
 auto last = v.end();  // one-past-last
 // [first, last)  never *last`
-            : recap
-              ? `*v.end();  // UB
-// end() is not the last element`
-              : `auto it = v.end();
-// it == last, not dereferenceable`
 
   const caption =
     i === 0
-      ? kind === 'vector'
+      ? id === 'vector'
         ? 'Play push_back. it names b in a contiguous buffer. Growth that reallocates kills every iterator into that storage.'
-        : kind === 'list'
+        : id === 'list'
           ? 'Play list then erase. Node-based containers: insert does not move b. Only erase of that node kills it.'
-          : kind === 'map'
-            ? 'Play m.erase. map/set: insert does not invalidate. erase invalidates only erased iterators. C++11 erase returns the next iterator — use it.'
+          : id === 'map'
+            ? 'Play m.erase(it). map/set: insert does not invalidate. erase invalidates only erased iterators. C++11 erase returns the next iterator — use it.'
             : 'Play *end(). A range is half-open [begin, end). end() is one-past-last. Never dereference it.'
-      : kind === 'vector' && i === 1
-        ? 'push_back used spare capacity. No realloc. it, pointers, and references to b stay valid. The green ring is the weld.'
-        : kind === 'vector' && i === 2
-          ? 'Growth allocated a new buffer and released the old one. The weld dies. Every iterator into the old storage is dangling.'
-          : kind === 'vector'
+      : id === 'vector' && i === 1
+        ? 'push_back used spare capacity. No realloc. it still names b. Stations light in place.'
+        : id === 'vector' && i === 2
+          ? 'Growth allocated a new buffer and released the old one. Every iterator into the old storage is dangling.'
+          : id === 'vector'
             ? 'Old storage is gone. Every iterator into it is dangling. erase is a different rule — list and map show that.'
-            : kind === 'list' && i === 1
+            : id === 'list' && i === 1
               ? 'push_back allocates a new node. it still names b. Only an erased element’s iterators die.'
-              : kind === 'list' && i === 2
+              : id === 'list' && i === 2
                 ? 'Another insert at the end. Still no invalidation of it. There is no realloc of a contiguous buffer.'
-                : kind === 'list'
+                : id === 'list'
                   ? 'erase(it) destroys node b. That one iterator is invalid. Iterators to a and c remain valid. C++11 erase returns the next iterator — use it.'
-                  : kind === 'map' && i === 1
+                  : id === 'map' && i === 1
                     ? 'it names node b. Insert elsewhere would not touch it. Node containers do not realloc a buffer.'
-                    : kind === 'map' && i === 2
-                      ? 'erase(it) destroys b. ++it after that is undefined. The weld is dead. a and c are still live nodes.'
-                      : kind === 'map'
+                    : id === 'map' && i === 2
+                      ? 'erase(it) destroys b. ++it after that is undefined. a and c are still live nodes.'
+                      : id === 'map'
                         ? 'it = m.erase(it). it now names c. That is the erase-while-iterating loop. Do not ++ the old iterator.'
                         : i === 1
                           ? 'it = begin(). *it is a. The last live element is the one before end(), not end() itself.'
@@ -151,167 +90,121 @@ auto last = v.end();  // one-past-last
                             ? 'it = end(). It names one-past-last. Comparing it to end() is the loop test. Dereferencing it is not.'
                             : '*end() is undefined behavior. reverse_iterator’s base() is also one off from *rit — same class of off-by-one.'
 
-  const tone = dangling ? 'trap' : vectorFit || listLive || mapLive || mapFix || itValid ? 'ok' : 'idle'
+  const tone = trap ? 'trap' : ok ? 'ok' : 'idle'
   const playLabel =
-    kind === 'vector'
+    id === 'vector'
       ? 'Play push_back'
-      : kind === 'list'
+      : id === 'list'
         ? 'Play list then erase'
-        : kind === 'map'
+        : id === 'map'
           ? 'Play m.erase(it)'
           : 'Play *end()'
 
-  const itVal = mapFix
-    ? '→ c'
-    : dangling
-      ? 'dangling'
-      : kind === 'end' && atEnd
-        ? 'end()'
-        : kind === 'end' && i === 1
-          ? '→ a'
-          : itValid || i === 0
-            ? '→ b'
-            : '→ b'
-  const itNote = mapFix
-    ? 'returned next'
-    : dangling
-      ? kind === 'end'
-        ? 'never dereference'
-        : 'do not use'
-      : kind === 'end' && i === 0
-        ? 'half-open range'
-        : kind === 'end' && atEnd
-          ? 'one-past-last'
-          : 'names b'
-
-  const linkKind = dangling ? 'dead' : itValid ? 'weld' : kind === 'end' && atEnd ? 'on' : mapFix ? 'weld' : ''
-  const itAtOld = kind === 'vector' ? 1 : undefined
-  const itAtList = kind === 'list' ? 1 : undefined
-  const itAtMap = kind === 'map' ? (mapFix ? 2 : 1) : undefined
-  const itAtEnd = kind === 'end' ? (i === 1 ? 0 : i >= 2 ? 3 : undefined) : undefined
-
   const verdict =
-    vectorFit
-      ? 'fits · it still → b'
+    id === 'vector' && recap
+      ? 'realloc · it dangling'
       : vectorDangle
-        ? 'realloc · it dangling'
-        : listLive && i === 1
-          ? 'insert · it still → b'
+        ? 'new buffer · it ub'
+        : id === 'vector' && stepped
+          ? 'fits · it still → b'
           : listErase
             ? 'erase(it) · only b dies'
-            : mapLive
-              ? 'it → b · insert would keep it'
-              : mapDangle
-                ? 'erase(it) · ++it is UB'
+            : id === 'list' && decided
+              ? 'insert · it still → b'
+              : id === 'list' && stepped
+                ? 'it → b'
                 : mapFix
-                  ? 'it = erase(it) · now → c'
-                  : kind === 'end' && i === 1
-                    ? '*begin() · first element'
-                    : atEnd
-                      ? 'end() · one-past-last'
+                  ? 'it = erase(it) · → c'
+                  : mapDangle
+                    ? '++it · UB'
+                    : id === 'map' && stepped
+                      ? 'it → b'
                       : derefEnd
                         ? '*end() · UB'
-                        : ''
-
-  const showVerdict = Boolean(verdict)
+                        : id === 'end' && decided
+                          ? 'end() · one-past-last'
+                          : id === 'end' && stepped
+                            ? '*begin() · first'
+                            : ''
 
   return (
     <SceneShell
       modes={MODES}
-      mode={kind}
+      mode={id}
       onSelect={select}
       playing={playing}
       onPlay={play}
       onReset={() => {
         reset()
-        setKind(kind)
+        setId(id)
       }}
       playLabel={playLabel}
       step={i}
       stepCount={4}
-      sig={
-        kind === 'vector'
-          ? vectorDangle
-            ? 'it dangling'
-            : 'it → b'
-          : kind === 'list'
-            ? listErase
-              ? 'it dangling'
-              : 'it → b'
-            : kind === 'map'
-              ? mapFix
-                ? 'it → c'
-                : mapDangle
-                  ? 'it dangling'
-                  : 'it → b'
-              : ' [begin, end)'
-      }
+      sig={MODES.find((m) => m.id === id)?.title}
       caption={caption}
       code={code}
       tone={tone}
     >
-      {kind === 'vector' ? (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped && !vectorDangle ? ' fx-pane--focus' : ''}${vectorDangle ? ' fx-pane--gone' : ''}`}>
-            <span className="fx-kicker">buffer · cap 4</span>
-            <Letters chars={vOld} itAt={itAtOld} dangling={vectorDangle} />
-            <span className="fx-note">{vectorDangle ? 'freed · it not here' : 'contiguous'}</span>
+      {id === 'vector' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${vectorDangle ? ' fx-rank--trap' : recap ? ' fx-rank--done' : ''}`}>
+            <code>it</code>
+            <span className="fx-note">→ b</span>
+            <span className="fx-note">{vectorDangle ? 'ub' : stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-link${vectorDangle ? ' fx-link--dead' : itValid ? ' fx-link--weld' : ''}`} />
-          <div className={`fx-pane${vectorDangle ? ' fx-pane--focus' : ''}${vectorDangle ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">buffer · cap 8</span>
-            <Letters chars={vNew} />
-            <span className="fx-note">{vectorDangle ? 'new storage · it dangling' : 'not yet'}</span>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${vectorDangle ? ' fx-rank--trap' : ''}`}>
+            <code>v</code>
+            <span className="fx-note">realloc</span>
+            <span className="fx-note">{vectorDangle ? 'new' : '—'}</span>
           </div>
         </div>
-      ) : (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">{kind === 'list' ? 'heap nodes' : kind === 'map' ? 'map nodes' : '[begin, end)'}</span>
-            <Letters
-              chars={kind === 'list' ? listNodes : kind === 'map' ? mapNodes : endCells}
-              itAt={kind === 'list' ? itAtList : kind === 'map' ? itAtMap : itAtEnd}
-              dangling={dangling}
-              goneAt={listErase || mapDangle || mapFix ? 1 : undefined}
-            />
-            <span className="fx-note">
-              {kind === 'list'
-                ? listErase
-                  ? 'b destroyed · a,c stay'
-                  : 'insert does not move b'
-                : kind === 'map'
-                  ? mapFix
-                    ? 'b gone · a,c stay'
-                    : mapDangle
-                      ? 'b destroyed · a,c stay'
-                      : 'node map · no realloc'
-                  : derefEnd
-                    ? 'end is not the last element'
-                    : 'last live is c, then end'}
-            </span>
+      )}
+      {id === 'list' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${listErase ? ' fx-rank--trap' : recap ? ' fx-rank--done' : ''}`}>
+            <code>it</code>
+            <span className="fx-note">→ b</span>
+            <span className="fx-note">{listErase ? 'ub' : stepped ? 'ok' : '—'}</span>
           </div>
-          <div
-            className={`fx-link${linkKind === 'weld' ? ' fx-link--weld' : ''}${linkKind === 'dead' ? ' fx-link--dead' : ''}${
-              linkKind === 'on' ? ' fx-link--on' : ''
-            }`}
-          />
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${dangling ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">iterator</span>
-            <div
-              className={`fx-slot${
-                dangling ? ' fx-slot--trap' : itValid ? ' fx-slot--weld' : atEnd ? ' fx-slot--focus' : ' fx-slot--dim'
-              }`}
-            >
-              <span className="fx-kicker">it</span>
-              <span className="fx-value">{kind === 'end' ? (i === 1 ? '→ a' : atEnd || derefEnd ? 'end()' : '—') : itVal}</span>
-              <span className="fx-note">{itNote}</span>
-            </div>
+          <div className={`fx-rank${listErase ? ' fx-rank--trap' : decided ? ' fx-rank--on' : ''}`}>
+            <code>b</code>
+            <span className="fx-note">erase</span>
+            <span className="fx-note">{listErase ? 'gone' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'map' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${mapDangle ? ' fx-rank--trap' : mapFix ? ' fx-rank--done' : ''}`}>
+            <code>it</code>
+            <span className="fx-note">node</span>
+            <span className="fx-note">{mapFix ? 'c' : mapDangle ? 'ub' : stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${mapDangle ? ' fx-rank--trap' : mapFix ? ' fx-rank--done' : ''}`}>
+            <code>er</code>
+            <span className="fx-note">erase</span>
+            <span className="fx-note">{mapFix ? 'ok' : mapDangle ? 'ub' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'end' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>beg</code>
+            <span className="fx-note">*begin</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${derefEnd ? ' fx-rank--trap' : ''}`}>
+            <code>end</code>
+            <span className="fx-note">*end</span>
+            <span className="fx-note">{derefEnd ? 'ub' : decided ? 'past' : '—'}</span>
           </div>
         </div>
       )}
       <div
-        className={`fx-verdict${showVerdict ? ' fx-verdict--show' : ''} ${
-          dangling ? 'fx-verdict--trap' : atEnd ? 'fx-verdict--warn' : showVerdict ? 'fx-verdict--ok' : ''
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          trap ? 'fx-verdict--trap' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
         {verdict}
