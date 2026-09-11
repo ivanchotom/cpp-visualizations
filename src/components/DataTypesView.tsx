@@ -272,23 +272,21 @@ std::int64_t k = 0;  // when width is the contract`
         </div>
       )}
       {id === 'mix' && (
-        <div className="fx-compare">
-          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">signed int</span>
-            <span className="fx-value">-1</span>
-            <span className="fx-note">what you wrote</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${mixTrap ? ' fx-rank--done' : ''}`}>
+            <span className="fx-note">lhs</span>
+            <code>-1</code>
+            <span className="fx-note">{decided ? 'max' : stepped ? '-1' : '—'}</span>
           </div>
-          <span className="fx-op">&lt;</span>
-          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">unsigned int</span>
-            <span className="fx-value">1u</span>
-            <span className="fx-note">usual conversions</span>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+            <span className="fx-note">rhs</span>
+            <code>1u</code>
+            <span className="fx-note">{stepped ? '1' : '—'}</span>
           </div>
-          <span className="fx-op">→</span>
-          <div className={`fx-slot${mixTrap ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">after conversion</span>
-            <span className="fx-value">{mixTrap ? 'max' : '—'}</span>
-            <span className="fx-note">{mixTrap ? 'UINT_MAX' : 'waiting'}</span>
+          <div className={`fx-rank${mixTrap ? ' fx-rank--trap' : ''}`}>
+            <span className="fx-note">cmp</span>
+            <code>unsigned</code>
+            <span className="fx-note">{mixTrap ? 'no' : '—'}</span>
           </div>
         </div>
       )}

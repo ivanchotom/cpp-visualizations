@@ -11,7 +11,7 @@ const MODES: { id: Mode; title: string }[] = [
   { id: 'skip', title: 'continue' },
 ]
 
-const VEC = ['10', '20', '30']
+const VEC = ['1', '2', '3']
 const ITEMS = [
   { label: 'a', skip: true },
   { label: 'b', skip: false },
@@ -29,50 +29,52 @@ export function ControlFlowViz() {
 
   const idx = Math.max(0, i - 1)
   const wrote = id === 'ref' && i >= 3
-  const vec0 = wrote ? '11' : '10'
-  const xVal =
-    id === 'copy'
-      ? i >= 1
-        ? VEC[idx]
-        : '—'
-      : id === 'ref'
-        ? i >= 3
-          ? '11'
-          : i >= 1
-            ? '10'
-            : '—'
-        : '—'
+  const letters = wrote ? ['2', '2', '3'] : VEC
+  const xVal = id === 'copy' ? (i >= 1 ? VEC[idx] : '—') : id === 'ref' ? (i >= 1 ? letters[0] : '—') : '—'
+  const copyOn = id === 'copy' && i >= 1
+  const weldOn = id === 'ref' && i >= 1
 
   const code =
     id === 'copy'
-      ? `std::vector<int> v{10, 20, 30};\nfor (auto x : v) { use(x); }`
+      ? `std::vector<int> v{1, 2, 3};
+for (auto x : v) { use(x); }`
       : id === 'ref'
-        ? `for (auto& x : v) {\n  ++x;\n}`
+        ? `for (auto& x : v) {
+  ++x;
+}`
         : id === 'fall'
-          ? `switch (kind) {\n  case Kind::A:\n  case Kind::B:\n    handleAB();\n    break;\n}`
-          : `for (const auto& item : items) {\n  if (item.skip) continue;\n  use(item);\n}`
+          ? `switch (kind) {
+  case Kind::A:
+  case Kind::B:
+    handleAB();
+    break;
+}`
+          : `for (const auto& item : items) {
+  if (item.skip) continue;
+  use(item);
+}`
 
   const caption =
     i === 0
       ? id === 'copy'
-        ? 'Play range-for with auto x. Each element is copied into the loop variable. The vector cells stay put.'
+        ? 'Play auto x. Range-for with auto x copies each element. The vector cells stay put. C++14: no if-init, no [[fallthrough]].'
         : id === 'ref'
           ? 'Play auto&. x is a name welded to the element. ++x writes through. const auto& if you only read.'
           : id === 'fall'
             ? 'Play fallthrough. The program counter walks down the cases. A missing break is a defect unless you mark it.'
             : 'Play continue. The counter skips the rest of this iteration. The container is not modified.'
       : id === 'copy' && i === 1
-        ? 'x holds a copy of 10. Mutating x would not change v[0]. The original cell is dim, not emptied.'
+        ? 'x holds a copy of 1. Mutating x would not change v[0]. The original cell stays lit, not emptied.'
         : id === 'copy' && i === 2
-          ? 'A fresh x holds 20. Range-for is sugar over begin/end. Three copies for three elements.'
+          ? 'A fresh x holds 2. Range-for is sugar over begin/end. Three copies for three elements.'
           : id === 'copy'
-            ? 'v is still {10,20,30}. auto x is cheap for int; a tax for string.'
+            ? 'v is still {1, 2, 3}. auto x is cheap for int; a tax for string.'
             : id === 'ref' && i === 1
               ? 'x is welded to v[0]. Same bytes, two names. No copy.'
               : id === 'ref' && i === 2
-                ? 'Still welded. The next steps write through that name.'
+                ? 'Still welded. The next beat writes through that name.'
                 : id === 'ref'
-                  ? '++x stored 11 in the cell. v is {11, 20, 30}.'
+                  ? '++x stored 2 in the cell. v is {2, 2, 3}.'
                   : id === 'fall' && i === 1
                     ? 'kind is A. The PC is on case A. There is no break here.'
                     : id === 'fall' && i === 2
@@ -86,7 +88,20 @@ export function ControlFlowViz() {
                             : 'item c is used. continue did not erase a — it only skipped the body.'
 
   const pcTop = id === 'fall' || id === 'skip' ? 12 + Math.min(i, 3) * 48 : 12
-  const tone = id === 'ref' && wrote ? 'ok' : id === 'copy' && i >= 3 ? 'ok' : 'idle'
+  const tone = wrote || (id === 'copy' && i >= 3) ? 'ok' : 'idle'
+  const playLabel =
+    id === 'copy' ? 'Play auto x' : id === 'ref' ? 'Play auto& x' : id === 'fall' ? 'Play fallthrough' : 'Play continue'
+
+  const verdict =
+    id === 'copy' && i >= 3
+      ? 'three copies · v unchanged'
+      : id === 'ref' && wrote
+        ? 'v[0] is 2 · write-through'
+        : id === 'fall' && i >= 3
+          ? 'A fell into B · then break'
+          : id === 'skip' && i >= 3
+            ? 'a skipped · b and c used'
+            : ''
 
   return (
     <SceneShell
@@ -99,7 +114,7 @@ export function ControlFlowViz() {
         reset()
         setId(id)
       }}
-      playLabel="Play flow"
+      playLabel={playLabel}
       step={i}
       stepCount={4}
       sig={MODES.find((m) => m.id === id)?.title}
@@ -108,27 +123,43 @@ export function ControlFlowViz() {
       tone={tone}
     >
       {(id === 'copy' || id === 'ref') && (
-        <div className="fx-compare" style={{ gridTemplateColumns: '1fr auto 1fr' }}>
-          <div className="fx-slot">
+        <div className="fx-sh">
+          <div className={`fx-pane${i >= 1 ? ' fx-pane--focus' : ''}`}>
             <span className="fx-kicker">v</span>
-            <span className="fx-cells">
-              {[vec0, '20', '30'].map((v, n) => (
-                <span
-                  key={n}
-                  className={`fx-tok${id === 'ref' && i >= 1 && n === 0 ? ' fx-tok--hot' : ''}${id === 'copy' && i >= 1 && n === idx ? ' fx-slot--dim' : ''}`}
-                  style={{ fontSize: 16 }}
-                >
-                  {v}
-                </span>
-              ))}
-            </span>
-            <span className="fx-note">elements stay here</span>
+            <div className="fx-buf-row">
+              {letters.map((ch, n) => {
+                const isCopy = id === 'copy' && i >= 1 && n === idx
+                const isWeld = id === 'ref' && i >= 1 && n === 0
+                return (
+                  <span
+                    key={n}
+                    className={`fx-letter${
+                      isWeld && wrote
+                        ? ' fx-letter--write'
+                        : isWeld
+                          ? ' fx-letter--it'
+                          : isCopy
+                            ? ' fx-letter--read'
+                            : i >= 1
+                              ? ' fx-letter--on'
+                              : ' fx-letter--empty'
+                    }`}
+                  >
+                    {ch}
+                  </span>
+                )
+              })}
+            </div>
+            <span className="fx-note">{wrote ? 'v[0] written' : 'elements stay'}</span>
           </div>
-          <span className={`fx-op${id === 'ref' && i >= 1 ? ' fx-op--on' : ''}`}>{id === 'ref' && i >= 1 ? '≡' : '→'}</span>
-          <div className={`fx-slot${id === 'ref' && i >= 1 ? ' fx-slot--weld' : i >= 1 ? ' fx-slot--focus' : ''}`}>
+          <div className={`fx-link${weldOn ? ' fx-link--weld' : copyOn ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${i >= 1 ? ' fx-pane--focus' : ''}`}>
             <span className="fx-kicker">{id === 'ref' ? 'auto& x' : 'auto x'}</span>
-            <span className="fx-value">{xVal}</span>
-            <span className="fx-note">{id === 'ref' ? 'welded name' : 'copy'}</span>
+            <div className={`fx-slot${weldOn ? ' fx-slot--weld' : copyOn ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">{id === 'ref' ? 'alias' : 'copy'}</span>
+              <span className="fx-value">{xVal}</span>
+              <span className="fx-note">{id === 'ref' ? (wrote ? 'same object' : 'welded name') : 'distinct object'}</span>
+            </div>
           </div>
         </div>
       )}
@@ -148,7 +179,9 @@ export function ControlFlowViz() {
           {ITEMS.map((it, n) => (
             <div
               key={it.label}
-              className={`fx-node${i === n + 1 ? ' fx-node--on' : ''}${it.skip && i >= 1 && n === 0 ? ' fx-node--skip' : ''}${!it.skip && i > n + 1 ? ' fx-node--done' : ''}`}
+              className={`fx-node${i === n + 1 ? ' fx-node--on' : ''}${it.skip && i >= 1 && n === 0 ? ' fx-node--skip' : ''}${
+                !it.skip && i > n + 1 ? ' fx-node--done' : ''
+              }`}
             >
               {it.label}
               {it.skip ? ' · continue' : ' · use()'}
@@ -156,17 +189,7 @@ export function ControlFlowViz() {
           ))}
         </div>
       )}
-      <div className={`fx-verdict${i >= 3 ? ' fx-verdict--show fx-verdict--ok' : ''}`}>
-        {id === 'copy' && i >= 3
-          ? 'three copies · v unchanged'
-          : id === 'ref' && i >= 3
-            ? 'v[0] is 11 · write-through'
-            : id === 'fall' && i >= 3
-              ? 'A fell into B · then break'
-              : id === 'skip' && i >= 3
-                ? 'a skipped · b and c used'
-                : ''}
-      </div>
+      <div className={`fx-verdict${verdict ? ' fx-verdict--show fx-verdict--ok' : ''}`}>{verdict}</div>
     </SceneShell>
   )
 }
