@@ -27,6 +27,8 @@ export function PairViz() {
   const pairOk = id === 'pair' && decided
   const getOk = id === 'get' && decided
   const tieOk = id === 'tie' && decided
+  const trap = dangled
+  const ok = pairOk || getOk || tieOk
 
   const code =
     id === 'pair'
@@ -64,14 +66,14 @@ std::tie(std::ignore, name) = p;`
   const caption =
     i === 0
       ? id === 'pair'
-        ? 'Play pair. make_pair / make_tuple deduce with decay. make_pair(1, "n") is pair<int, const char*>, not a pair that owns a string.'
+        ? 'Play make_pair. make_pair / make_tuple deduce with decay. make_pair(1, "n") is pair<int, const char*>, not a pair that owns a string.'
         : id === 'get'
-          ? 'Play get. std::get<1>(t) is a compile-time index. Out of range is a compile error. get<T> works only if T is unique in the tuple.'
+          ? 'Play get<1>. std::get<1>(t) is a compile-time index. Out of range is a compile error. get<T> works only if T is unique in the tuple.'
           : id === 'tie'
             ? 'Play tie. C++14 has no structured bindings. std::tie(a, b) = p unpacks into existing lvalues. std::ignore skips a slot.'
-            : 'Play dangle. forward_as_tuple is a tuple of references to the arguments. Store it past the full-expression and the refs dangle.'
+            : 'Play forward_as_tuple. forward_as_tuple is a tuple of references to the arguments. Store it past the full-expression and the refs dangle.'
       : id === 'pair' && i === 1
-        ? 'Deduction decays: the string literal is const char*, not an array type inside the pair. Slots light in place.'
+        ? 'Deduction decays: the string literal is const char*, not an array type inside the pair. Stations light in place.'
         : id === 'pair' && i === 2
           ? 'The pair is first/second. Vocabulary type for “return two things.” Prefer a named struct when the fields have meaning.'
           : id === 'pair'
@@ -89,12 +91,12 @@ std::tie(std::ignore, name) = p;`
                       : id === 'tie'
                         ? 'tie(a.x, a.y) < tie(b.x, b.y) is lexicographic. It is not a hash, and it copies nothing — it compares through the references.'
                         : i === 1
-                          ? 'forward_as_tuple(42) is tuple<int&&>. The weld is a reference bound to a temporary that dies at the semicolon.'
+                          ? 'forward_as_tuple(42) is tuple<int&&>. The stored tuple holds a reference bound to a temporary that dies at the semicolon.'
                           : i === 2
-                            ? 'The stored tuple still exists. The temporary is gone. The weld dies. tuple<int&> bound to a temporary is the same trap.'
+                            ? 'The stored tuple still exists. The temporary is gone. The reference is dead. tuple<int&> bound to a temporary is the same trap.'
                             : 'Returning a local pair/tuple by value is fine — NRVO or a move. Returning a tuple of references to locals is not.'
 
-  const tone = dangled ? 'trap' : pairOk || getOk || tieOk ? 'ok' : 'idle'
+  const tone = trap ? 'trap' : ok ? 'ok' : 'idle'
   const playLabel =
     id === 'pair' ? 'Play make_pair' : id === 'get' ? 'Play get<1>' : id === 'tie' ? 'Play tie' : 'Play forward_as_tuple'
 
@@ -117,12 +119,6 @@ std::tie(std::ignore, name) = p;`
                     ? 'full-expression ended · dangle'
                     : ''
 
-  const tuple = [
-    { i: 0, ch: '1', ty: 'int' },
-    { i: 1, ch: '2', ty: 'dbl' },
-    { i: 2, ch: 'x', ty: 'chr' },
-  ]
-
   return (
     <SceneShell
       modes={MODES}
@@ -143,80 +139,70 @@ std::tie(std::ignore, name) = p;`
       tone={tone}
     >
       {id === 'pair' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">first</span>
-            <div className="fx-buf-row">
-              <span className={`fx-letter${stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>
-                {stepped ? '1' : '·'}
-              </span>
-            </div>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${pairOk ? ' fx-rank--done' : ''}`}>
+            <code>fst</code>
             <span className="fx-note">int</span>
+            <span className="fx-note">{stepped ? '1' : '—'}</span>
           </div>
-          <div className={`fx-link${pairOk ? ' fx-link--weld' : stepped ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">second</span>
-            <div className="fx-buf-row">
-              <span className={`fx-letter${decided ? ' fx-letter--on' : ' fx-letter--empty'}`}>
-                {stepped ? 'n' : '·'}
-              </span>
-            </div>
-            <span className="fx-note">{decided ? 'const char* · decayed' : 'not char[2]'}</span>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+            <code>snd</code>
+            <span className="fx-note">decayed ptr</span>
+            <span className="fx-note">{decided ? 'n' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'get' && (
         <div className="fx-ladder">
-          {tuple.map((slot) => {
-            const hot = getOk && slot.i === 1
-            return (
-              <div key={slot.i} className={`fx-rank${hot ? ' fx-rank--on' : stepped ? ' fx-rank--done' : ''}`}>
-                <span className="fx-note">{`I=${slot.i}`}</span>
-                <code>{`get<${slot.i}>`}</code>
-                <span className="fx-note">{hot ? slot.ty : stepped ? slot.ch : '—'}</span>
-              </div>
-            )
-          })}
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${getOk ? ' fx-rank--done' : ''}`}>
+            <code>t</code>
+            <span className="fx-note">tuple size 3</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${getOk ? ' fx-rank--on' : ''}`}>
+            <code>{'I=1'}</code>
+            <span className="fx-note">
+              <code>{'get<1>'}</code>
+            </span>
+            <span className="fx-note">{getOk ? '2.0' : '—'}</span>
+          </div>
         </div>
       )}
       {id === 'tie' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${tieOk ? ' fx-rank--done' : ''}`}>
-            <span className="fx-note">ignore</span>
-            <code>first</code>
+            <code>id</code>
+            <span className="fx-note">
+              <code>ignore</code>
+            </span>
             <span className="fx-note">{stepped ? 'skip' : '—'}</span>
           </div>
           <div className={`fx-rank${tieOk ? ' fx-rank--on' : ''}`}>
-            <span className="fx-note">name</span>
-            <code>second</code>
+            <code>nm</code>
+            <span className="fx-note">second</span>
             <span className="fx-note">{tieOk ? 'n' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'dangle' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${dangled ? ' fx-pane--gone' : ''}`}>
-            <span className="fx-kicker">arg</span>
-            <div className={`fx-slot${stepped && !dangled ? ' fx-slot--weld' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">tmp</span>
-              <span className="fx-value">{dangled ? '—' : stepped ? '42' : '—'}</span>
-              <span className="fx-note">dies at the semicolon</span>
-            </div>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${dangled ? ' fx-rank--done' : ''}`}>
+            <code>tmp</code>
+            <span className="fx-note">temporary</span>
+            <span className="fx-note">{dangled ? 'gone' : stepped ? '42' : '—'}</span>
           </div>
-          <div className={`fx-link${dangled ? ' fx-link--dead' : stepped ? ' fx-link--weld' : ''}`} />
-          <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}${dangled ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">stored t</span>
-            <div className={`fx-slot${dangled ? ' fx-slot--trap' : stepped ? ' fx-slot--weld' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">tuple</span>
-              <span className="fx-value">{dangled ? '&&' : stepped ? '&&' : '—'}</span>
-              <span className="fx-note">{dangled ? 'ref to a dead temporary' : 'tuple<int&&>'}</span>
-            </div>
+          <div className={`fx-rank${dangled ? ' fx-rank--trap' : stepped ? ' fx-rank--on' : ''}`}>
+            <code>t</code>
+            <span className="fx-note">
+              <code>tuple&&</code>
+            </span>
+            <span className="fx-note">{dangled ? 'ub' : stepped ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
-          dangled ? 'fx-verdict--trap' : verdict ? 'fx-verdict--ok' : ''
+          trap ? 'fx-verdict--trap' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
         {verdict}
