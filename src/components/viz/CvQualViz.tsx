@@ -20,15 +20,20 @@ export function CvQualViz() {
     setId(next as Mode)
   }
 
-  const lockPointee = (id === 'pointee' || id === 'cast') && i >= 1
-  const lockPtr = id === 'ptr' && i >= 1
-  const writeTry = i >= 2
-  const done = i >= 3
-  const writeOk = id === 'ptr' && done
-  const hits = id === 'mutable' && i >= 2 ? 1 : 0
-  const xVal = id === 'ptr' && writeOk ? 2 : id === 'cast' && done ? 'UB' : 1
-  const rejected = (id === 'pointee' && writeTry) || (id === 'ptr' && writeTry && !done) || (id === 'cast' && writeTry && !done)
-  const ub = id === 'cast' && done
+  const stepped = i >= 1
+  const decided = i >= 2
+  const recap = i >= 3
+
+  const pcIll = id === 'pointee' && decided
+  const reseatOk = id === 'pointee' && recap
+  const cpIll = id === 'ptr' && decided
+  const writeOk = id === 'ptr' && recap
+  const getOn = id === 'mutable' && stepped
+  const hitsOn = id === 'mutable' && decided
+  const castOk = id === 'cast' && stepped
+  const ub = id === 'cast' && recap
+  const trap = pcIll || (cpIll && !writeOk) || ub
+  const ok = writeOk || (hitsOn && recap) || reseatOk
 
   const code =
     id === 'pointee'
@@ -42,16 +47,16 @@ export function CvQualViz() {
   const caption =
     i === 0
       ? id === 'pointee'
-        ? 'Play const T*. Two independent knobs: can you change the int, and can you reseat the pointer?'
+        ? 'Play *pc = 2. Two independent knobs: can you change the int, and can you reseat the pointer? Stations light in place.'
         : id === 'ptr'
-          ? 'Play T* const. The pointer is glued. The int it names is still mutable.'
+          ? 'Play *cp = 2. The pointer is glued. The int it names is still mutable.'
           : id === 'mutable'
-            ? 'Play mutable. A const member function can still write that one field. Logical const, not bitwise.'
+            ? 'Play ++hits. A const member function can still write that one field. Logical const, not bitwise.'
             : 'Play const_cast. It compiles. Writing through it is UB if the object was defined const.'
       : id === 'pointee' && i === 1
-        ? 'pc points at x. A lock sits on the pointee. *pc is a const int.'
+        ? 'pc points at x. *pc is a const int. The handle may still reseat.'
         : id === 'pointee' && i === 2
-          ? '*pc = 2 is rejected. You may reseat pc (not shown as a lock on the handle).'
+          ? '*pc = 2 is rejected. You may reseat pc. The lock is on the T, not the pointer.'
           : id === 'pointee'
             ? 'Read as “pointer to const T”. The * is to the right of const: the T is const.'
             : id === 'ptr' && i === 1
@@ -72,9 +77,28 @@ export function CvQualViz() {
                             ? 'The write is attempted. If x was defined const, this is undefined behavior — not a warning, UB.'
                             : 'The cell is poisoned. const_cast is for interfacing with const-incorrect APIs, not for mutation.'
 
-  const tone = ub ? 'trap' : rejected && done ? 'warn' : writeOk || (id === 'mutable' && done) ? 'ok' : 'idle'
-  const linkOn = i >= 1
-  const linkKind = ub ? 'dead' : id === 'ptr' && writeOk ? 'weld' : linkOn ? 'on' : ''
+  const tone = ub ? 'trap' : trap ? 'warn' : ok ? 'ok' : 'idle'
+  const playLabel =
+    id === 'pointee' ? 'Play *pc = 2' : id === 'ptr' ? 'Play *cp = 2' : id === 'mutable' ? 'Play ++hits' : 'Play const_cast'
+
+  const verdict =
+    pcIll && recap
+      ? 'pointer to const T · may reseat'
+      : pcIll
+        ? '*pc = 2  ·  does not compile'
+        : writeOk
+          ? '*cp = 2  ·  x is 2'
+          : cpIll
+            ? 'cp = &y  ·  does not compile'
+            : hitsOn && recap
+              ? '++hits inside const get() · allowed'
+              : hitsOn
+                ? 'mutable field · const method writes'
+                : ub
+                  ? '*p = 2  ·  UB — object was born const'
+                  : castOk
+                    ? 'const_cast compiles · write is the crime'
+                    : ''
 
   return (
     <SceneShell
@@ -87,7 +111,7 @@ export function CvQualViz() {
         reset()
         setId(id)
       }}
-      playLabel="Play cv"
+      playLabel={playLabel}
       step={i}
       stepCount={4}
       sig={MODES.find((m) => m.id === id)?.title}
@@ -95,41 +119,70 @@ export function CvQualViz() {
       code={code}
       tone={tone}
     >
-      <div className="fx-lockrow">
-        <div className={`fx-slot${lockPtr ? ' fx-slot--focus' : ''}${id === 'ptr' && writeTry && !writeOk ? ' fx-slot--trap' : ''}`}>
-          <span className="fx-kicker">pointer</span>
-          <span className="fx-value">{id === 'pointee' || id === 'cast' ? 'pc' : id === 'ptr' ? 'cp' : 'this'}</span>
-          {lockPtr && <span className="fx-badge fx-badge--lock">locked handle</span>}
-          {!lockPtr && i >= 1 && id !== 'mutable' && <span className="fx-badge fx-badge--open">may reseat</span>}
+      {id === 'pointee' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${pcIll ? ' fx-rank--trap' : stepped ? ' fx-rank--on' : ''}`}>
+            <code>*pc</code>
+            <span className="fx-note">write pointee</span>
+            <span className="fx-note">{pcIll ? 'ill' : '—'}</span>
+          </div>
+          <div className={`fx-rank${reseatOk ? ' fx-rank--on' : ''}`}>
+            <code>pc =</code>
+            <span className="fx-note">reseat handle</span>
+            <span className="fx-note">{reseatOk ? 'ok' : '—'}</span>
+          </div>
         </div>
-        <div className={`fx-link${linkKind === 'on' ? ' fx-link--on' : ''}${linkKind === 'weld' ? ' fx-link--weld' : ''}${linkKind === 'dead' ? ' fx-link--dead' : ''}`} />
-        <div
-          className={`fx-slot${lockPointee ? ' fx-slot--focus' : ''}${rejected && id === 'pointee' ? ' fx-slot--trap' : ''}${writeOk ? ' fx-slot--ok' : ''}${ub ? ' fx-slot--trap' : ''}`}
-        >
-          <span className="fx-kicker">object</span>
-          <span className="fx-value">{id === 'mutable' ? hits : xVal}</span>
-          {lockPointee && <span className="fx-badge fx-badge--lock">const T</span>}
-          {id === 'mutable' && i >= 1 && <span className="fx-badge fx-badge--open">mutable hits</span>}
+      )}
+      {id === 'ptr' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${cpIll && !writeOk ? ' fx-rank--trap' : stepped ? ' fx-rank--on' : ''}${writeOk ? ' fx-rank--done' : ''}`}>
+            <code>cp =</code>
+            <span className="fx-note">reseat handle</span>
+            <span className="fx-note">{cpIll ? 'ill' : '—'}</span>
+          </div>
+          <div className={`fx-rank${writeOk ? ' fx-rank--on' : ''}`}>
+            <code>*cp</code>
+            <span className="fx-note">write int</span>
+            <span className="fx-note">{writeOk ? '2' : '—'}</span>
+          </div>
         </div>
-      </div>
+      )}
+      {id === 'mutable' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${getOn ? ' fx-rank--on' : ''}${hitsOn ? ' fx-rank--done' : ''}`}>
+            <code>get</code>
+            <span className="fx-note">const method</span>
+            <span className="fx-note">{getOn ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${hitsOn ? ' fx-rank--on' : ''}`}>
+            <code>hits</code>
+            <span className="fx-note">mutable field</span>
+            <span className="fx-note">{hitsOn ? '1' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'cast' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${castOk ? ' fx-rank--on' : ''}${ub ? ' fx-rank--done' : ''}`}>
+            <code>cast</code>
+            <span className="fx-note">
+              <code>const_cast</code>
+            </span>
+            <span className="fx-note">{castOk ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${ub ? ' fx-rank--trap' : decided ? ' fx-rank--on' : ''}`}>
+            <code>*p</code>
+            <span className="fx-note">write through</span>
+            <span className="fx-note">{ub ? 'ub' : '—'}</span>
+          </div>
+        </div>
+      )}
       <div
-        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
-          ub ? 'fx-verdict--trap' : rejected ? 'fx-verdict--trap' : writeOk || (id === 'mutable' && i >= 2) ? 'fx-verdict--ok' : ''
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          ub ? 'fx-verdict--trap' : trap ? 'fx-verdict--trap' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
-        {id === 'pointee' && writeTry
-          ? '*pc = 2  ·  does not compile'
-          : id === 'ptr' && writeTry && !done
-            ? 'cp = &y  ·  does not compile'
-            : id === 'ptr' && writeOk
-              ? '*cp = 2  ·  x is 2'
-              : id === 'mutable' && i >= 2
-                ? '++hits inside const get() · allowed'
-                : ub
-                  ? '*p = 2  ·  UB — object was born const'
-                  : id === 'cast' && writeTry
-                    ? 'const_cast compiles · write is the crime'
-                    : ''}
+        {verdict}
       </div>
     </SceneShell>
   )
