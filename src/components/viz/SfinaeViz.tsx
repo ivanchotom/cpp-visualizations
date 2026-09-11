@@ -23,12 +23,12 @@ export function SfinaeViz() {
   const stepped = i >= 1
   const decided = i >= 2
   const recap = i >= 3
-  const trying = i === 1
-  const sfinae = id === 'int' || id === 'str'
-  const intWin = id === 'int' && decided
   const hard = id === 'str' && decided
+  const intWin = id === 'int' && decided
   const fullWin = id === 'full' && decided
   const partWin = id === 'part' && decided
+  const trap = hard
+  const ok = (intWin && recap) || (fullWin && recap) || (partWin && recap)
 
   const code =
     id === 'int'
@@ -75,31 +75,31 @@ struct Box<T*> { using type = T; };`
           : id === 'full'
             ? 'Play Box<bool>. Full specialization replaces the recipe for exact arguments. template<> class Box<bool> { … };'
             : 'Play Box<int*>. Partial specialization is a more specific recipe — class templates only. Function templates cannot be partially specialized.'
-      : id === 'int' && trying
-        ? 'The compiler substitutes T = int into both signatures. Failure in the body would be a hard error; failure in enable_if is not.'
+      : id === 'int' && i === 1
+        ? 'The compiler substitutes T = int into both signatures. Failure in the body would be a hard error; failure in enable_if is not. Stations light in place.'
         : id === 'int' && i === 2
           ? 'is_integral<int> is true → ::type exists. is_floating_point<int> fails in the signature and that overload vanishes.'
           : id === 'int'
             ? 'The integral overload is the winner. Function templates cannot be partially specialized — overload or enable_if. Errors in the body are not SFINAE.'
-            : id === 'str' && trying
+            : id === 'str' && i === 1
               ? 'T = string. Both enable_if conditions are false. Both substitutions fail in the signature.'
               : id === 'str' && i === 2
                 ? 'No candidate remains. SFINAE is not a constraint (C++20). You still need a viable overload, or a static_assert in a remaining one.'
                 : id === 'str'
                   ? 'Hard error at the call site. enable_if is how you pick an overload from a trait in C++14 without if constexpr.'
-                  : id === 'full' && trying
+                  : id === 'full' && i === 1
                     ? 'T = bool. The primary Box<T> would give type = bool. A full specialization is an exact match for those arguments.'
                     : id === 'full' && i === 2
                       ? 'template<> Box<bool> replaces the primary. type is char, not bool. The primary body is never instantiated for bool.'
                       : id === 'full'
                         ? 'Full specialization is not an overload. It is a different recipe for one argument list. Over-specializing std:: types is undefined except where the standard allows it.'
-                        : trying
+                        : i === 1
                           ? 'T = int*. The primary would be Box<int*>. Partial Box<T*> is more specialized — it wins for any pointer.'
                           : i === 2
                             ? 'Partial specialization is only for class templates. type is int (the pointee). The primary is not used.'
                             : 'Need the same idea on a function? Overload, or enable_if, or tag dispatch. There is no template<class T> void f<T*>();'
 
-  const tone = hard ? 'trap' : intWin || fullWin || partWin ? 'ok' : 'idle'
+  const tone = trap ? 'trap' : ok ? 'ok' : 'idle'
   const playLabel =
     id === 'int'
       ? 'Play describe(42)'
@@ -109,35 +109,32 @@ struct Box<T*> { using type = T; };`
           ? 'Play Box<bool>'
           : 'Play Box<int*>'
 
-  const callText = id === 'int' ? 'describe(42)' : id === 'str' ? 'describe(s)' : id === 'full' ? 'Box<bool>' : 'Box<int*>'
-  const tName = id === 'int' ? 'int' : id === 'str' ? 'string' : id === 'full' ? 'bool' : 'int*'
-
-  const leftName = sfinae ? 'integral' : 'primary'
-  const rightName = sfinae ? 'floating' : id === 'full' ? 'full spec' : 'partial'
-  const leftCode = sfinae ? 'is_integral<T>::value' : 'Box<T>'
-  const rightCode = sfinae ? 'is_floating_point<T>::value' : id === 'full' ? 'Box<bool>' : 'Box<T*>'
-
-  const leftState = intWin ? 'best' : hard || fullWin || partWin ? 'dropped' : trying ? 'trying' : 'candidate'
-  const rightState = hard ? 'dropped' : intWin ? 'dropped' : fullWin || partWin ? 'best' : trying ? 'trying' : 'candidate'
-
   const verdict =
-    intWin
-      ? recap
-        ? 'integral survives · floating SFINAE out'
-        : 'is_integral · ::type exists'
-      : hard
-        ? 'no candidate · hard error'
-        : fullWin && recap
-          ? 'full spec · type is char'
-          : fullWin
-            ? 'Box<bool> replaces Box<T>'
-            : partWin && recap
-              ? 'partial · functions cannot'
-              : partWin
-                ? 'Box<T*> more specialized'
-                : trying
-                  ? `substituting T = ${tName}`
-                  : ''
+    intWin && recap
+      ? 'integral survives · floating SFINAE out'
+      : intWin
+        ? 'is_integral · ::type exists'
+        : hard && recap
+          ? 'no candidate · hard error'
+          : hard
+            ? 'both enable_if failed'
+            : fullWin && recap
+              ? 'full spec · type is char'
+              : fullWin
+                ? 'Box<bool> replaces Box<T>'
+                : partWin && recap
+                  ? 'partial · functions cannot'
+                  : partWin
+                    ? 'Box<T*> more specialized'
+                    : stepped
+                      ? id === 'int'
+                        ? 'substituting T = int'
+                        : id === 'str'
+                          ? 'substituting T = string'
+                          : id === 'full'
+                            ? 'substituting T = bool'
+                            : 'substituting T = int*'
+                      : ''
 
   return (
     <SceneShell
@@ -158,41 +155,65 @@ struct Box<T*> { using type = T; };`
       code={code}
       tone={tone}
     >
-      <div className={`fx-slot${stepped ? ' fx-slot--focus' : ''}${hard ? ' fx-slot--trap' : ''}`}>
-        <span className="fx-kicker">call</span>
-        <span className="fx-value">
-          <code>{callText}</code>
-        </span>
-        <span className="fx-note">T = {stepped ? tName : '?'}</span>
-      </div>
-      <div
-        className={`fx-rank${trying || intWin ? ' fx-rank--on' : ''}${
-          hard || fullWin || partWin ? ' fx-rank--done' : ''
-        }${hard ? ' fx-rank--trap' : ''}`}
-      >
-        <span className="fx-note">{leftName}</span>
-        <code>{leftCode}</code>
-        <span className="fx-note">{leftState}</span>
-      </div>
-      <div
-        className={`fx-rank${trying || fullWin || partWin ? ' fx-rank--on' : ''}${
-          hard ? ' fx-rank--trap' : intWin ? ' fx-rank--done' : ''
-        }`}
-      >
-        <span className="fx-note">{rightName}</span>
-        <code>{rightCode}</code>
-        <span className="fx-note">{rightState}</span>
-      </div>
-      {(fullWin || partWin) && (
-        <div className={`fx-slot${recap ? ' fx-slot--ok' : ' fx-slot--focus'}`}>
-          <span className="fx-kicker">type</span>
-          <span className="fx-value">{id === 'full' ? 'char' : 'int'}</span>
-          <span className="fx-note">{id === 'full' ? 'not bool' : 'pointee, not int*'}</span>
+      {id === 'int' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${intWin ? ' fx-rank--done' : ''}`}>
+            <code>int</code>
+            <span className="fx-note">enable</span>
+            <span className="fx-note">{intWin ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+            <code>fp</code>
+            <span className="fx-note">enable</span>
+            <span className="fx-note">{intWin ? 'no' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'str' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${hard ? ' fx-rank--trap' : ''}`}>
+            <code>int</code>
+            <span className="fx-note">enable</span>
+            <span className="fx-note">{hard ? 'no' : '—'}</span>
+          </div>
+          <div className={`fx-rank${hard ? ' fx-rank--trap' : ''}`}>
+            <code>fp</code>
+            <span className="fx-note">enable</span>
+            <span className="fx-note">{hard ? 'ill' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'full' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+            <code>T</code>
+            <span className="fx-note">primary</span>
+            <span className="fx-note">{fullWin ? 'no' : '—'}</span>
+          </div>
+          <div className={`fx-rank${fullWin ? ' fx-rank--on fx-rank--done' : ''}`}>
+            <code>bool</code>
+            <span className="fx-note">spec</span>
+            <span className="fx-note">{fullWin ? 'ok' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'part' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+            <code>T</code>
+            <span className="fx-note">primary</span>
+            <span className="fx-note">{partWin ? 'no' : '—'}</span>
+          </div>
+          <div className={`fx-rank${partWin ? ' fx-rank--on fx-rank--done' : ''}`}>
+            <code>T*</code>
+            <span className="fx-note">partial</span>
+            <span className="fx-note">{partWin ? 'ok' : '—'}</span>
+          </div>
         </div>
       )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
-          hard ? 'fx-verdict--trap' : intWin || fullWin || partWin ? 'fx-verdict--ok' : ''
+          trap ? 'fx-verdict--trap' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
         {verdict}
