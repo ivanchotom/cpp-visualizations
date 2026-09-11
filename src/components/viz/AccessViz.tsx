@@ -20,25 +20,30 @@ export function AccessViz() {
     setId(next as Mode)
   }
 
-  const bounce = id === 'priv' && i === 2
-  const trapped = (id === 'priv' && i === 2) || (id === 'prot' && i >= 2)
-  const won = id === 'friend' && i >= 2
-  const structOk = id === 'st' && i >= 3
-  const privOk = id === 'priv' && i >= 3
+  const stepped = i >= 1
+  const decided = i >= 2
+  const recap = i >= 3
+  const bounce = id === 'priv' && decided && !recap
+  const privOk = id === 'priv' && recap
+  const won = id === 'friend' && decided
+  const protTrap = id === 'prot' && decided
+  const structOk = id === 'st' && recap
+  const trap = bounce || (protTrap && !recap)
+  const ok = privOk || (id === 'friend' && recap) || structOk || (id === 'prot' && recap)
 
   const code =
     id === 'priv'
-      ? i < 2
-        ? `class Token {
+      ? recap
+        ? `Token t{1};          // ill-formed
+int n = t.id();      // the public name
+// access is a name check, not a sandbox`
+        : `class Token {
 public:
   int id() const { return id_; }
 private:
   explicit Token(int id);
   int id_;
 };`
-        : `Token t{1};          // ill-formed
-int n = t.id();      // the public name
-// access is a name check, not a sandbox`
       : id === 'friend'
         ? `class Token {
   explicit Token(int id);
@@ -47,33 +52,37 @@ int n = t.id();      // the public name
 Token makeToken(int id) { return Token{id}; }
 // friend is not inherited, not transitive`
         : id === 'prot'
-          ? i < 2
+          ? recap
             ? `class Base {
+private:
+  int n_;
+protected:
+  void bump() { n_ = 1; }
+};`
+            : `class Base {
 protected:
   int n_;
-};`
-            : `class Derived : public Base {
-  void bump() { n_ = 1; }   // compiles
 };
-// derived classes couple to n_.
-// prefer private data + protected functions`
-          : i < 2
-            ? `struct Dto { int id; };     // public
-class Token { int id_; };  // private`
-            : `// the only language difference:
+class Derived : public Base {
+  void bump() { n_ = 1; }   // compiles
+};`
+          : recap
+            ? `// the only language difference:
 // default access (and default inheritance)
 // public struct = DTO
-// class with public knobs + broken invariant ≠ DTO`
+// class with an invariant`
+            : `struct Dto { int id; };     // public
+class Token { int id_; };  // private`
 
   const caption =
     i === 0
       ? id === 'priv'
-        ? 'Play private. Access is a compile-time check on names, not a runtime sandbox. class defaults to private. Token{1} from main is ill-formed; id() is the public name.'
+        ? 'Play Token{1}. Access is a compile-time check on names, not a runtime sandbox. class defaults to private. Token{1} from main is ill-formed; id() is the public name.'
         : id === 'friend'
-          ? 'Play friend. friend Token makeToken(int); punches a hole for one function. Not inherited, not transitive. Prefer a single function over friend class Factory.'
+          ? 'Play makeToken. friend Token makeToken(int); punches a hole for one function. Not inherited, not transitive. Prefer a single function over friend class Factory.'
           : id === 'prot'
-            ? 'Play protected. Derived can write n_. That compiles and couples every derived class to the layout. Prefer private data and protected functions.'
-            : 'Play struct. The only language difference vs class is default access (and default inheritance: public vs private). A public struct is a fine DTO.'
+            ? 'Play n_ =. Derived can write n_. That compiles and couples every derived class to the layout. Prefer private data and protected functions.'
+            : 'Play struct vs class. The only language difference is default access (and default inheritance: public vs private). A public struct is a fine DTO.'
       : id === 'priv' && i === 1
         ? 'The constructor is a private name. Access control does not hide the layout from the ABI — only the names from other TUs’ source.'
         : id === 'priv' && i === 2
@@ -98,10 +107,28 @@ class Token { int id_; };  // private`
                             ? 'class C { int id_; } hides the name. Same layout as a struct with that member. Default inheritance is private for class, public for struct.'
                             : 'Pick struct when the type is a public aggregate. Pick class when you have an invariant. The keyword is a signal, not a performance hint.'
 
-  const tone = trapped || bounce ? 'trap' : won || structOk || privOk ? 'ok' : 'idle'
-
+  const tone = trap ? 'trap' : ok ? 'ok' : 'idle'
   const playLabel =
     id === 'priv' ? 'Play Token{1}' : id === 'friend' ? 'Play makeToken' : id === 'prot' ? 'Play n_ =' : 'Play struct vs class'
+
+  const verdict =
+    bounce
+      ? 'Token{1} · ill-formed'
+      : privOk
+        ? 't.id() · the public name'
+        : id === 'friend' && recap
+          ? 'friend hole · not inherited'
+          : won && !recap
+            ? 'makeToken may name the ctor'
+            : protTrap && !recap
+              ? 'n_ = 1 · prefer private data'
+              : id === 'prot' && recap
+                ? 'protected functions · private data'
+                : structOk
+                  ? 'keyword signals invariant vs DTO'
+                  : id === 'st' && decided
+                    ? 'only the default differs'
+                    : ''
 
   return (
     <SceneShell
@@ -124,15 +151,15 @@ class Token { int id_; };  // private`
     >
       {id === 'priv' && (
         <div className="fx-sh">
-          <div className={`fx-slot${i >= 1 ? ' fx-slot--focus' : ''}${bounce ? ' fx-slot--trap' : ''}`}>
+          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ''}${bounce ? ' fx-slot--trap' : ''}`}>
             <span className="fx-kicker">caller</span>
             <span className="fx-value">
               <code>main</code>
             </span>
             <span className="fx-note">{privOk ? 't.id()' : 'not a member'}</span>
           </div>
-          <div className={`fx-link${bounce ? ' fx-link--dead' : privOk ? ' fx-link--weld' : i >= 1 ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${i >= 1 ? ' fx-pane--focus' : ''}${bounce ? ' fx-pane--trap' : ''}`}>
+          <div className={`fx-link${bounce ? ' fx-link--dead' : privOk ? ' fx-link--weld' : stepped ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${bounce ? ' fx-pane--trap' : ''}`}>
             <span className="fx-kicker">Token</span>
             <div className={`fx-slot${bounce ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
               <span className="fx-kicker">private</span>
@@ -148,20 +175,29 @@ class Token { int id_; };  // private`
         </div>
       )}
       {id === 'friend' && (
-        <div className="fx-sh">
-          <div className={`fx-slot${i >= 1 ? ' fx-slot--weld' : ''}`}>
-            <span className="fx-kicker">makeToken</span>
-            <span className="fx-value">
-              <code>friend</code>
-            </span>
-            <span className="fx-note">one function · not a class</span>
+        <div className="fx-own">
+          <div className="fx-pane">
+            <span className="fx-kicker">main</span>
+            <div className={`fx-slot${stepped ? ' fx-slot--dim' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">caller</span>
+              <span className="fx-note">cannot name Token(int)</span>
+            </div>
           </div>
-          <div className={`fx-link${won ? ' fx-link--weld' : i >= 1 ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${i >= 1 ? ' fx-pane--focus' : ''}`}>
+          <div className={`fx-link${won ? ' fx-link--dead' : ''}`} />
+          <div className={`fx-pane${won ? ' fx-pane--focus' : ''}`}>
             <span className="fx-kicker">Token</span>
-            <div className={`fx-slot${won ? ' fx-slot--ok' : i >= 1 ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+            <div className={`fx-slot${won ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
               <span className="fx-kicker">private ctor</span>
-              <span className="fx-note">{won ? 'Token{id} allowed here' : 'named only by friends'}</span>
+              <span className="fx-note">{won ? 'named only by friends' : 'locked'}</span>
+              <span className="fx-badge fx-badge--lock">private</span>
+            </div>
+          </div>
+          <div className={`fx-link${won ? ' fx-link--weld' : stepped ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">makeToken</span>
+            <div className={`fx-slot${won ? ' fx-slot--weld' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">friend</span>
+              <span className="fx-note">{won ? 'Token{id} allowed here' : 'one function'}</span>
               {won && <span className="fx-badge fx-badge--open">ok</span>}
             </div>
           </div>
@@ -169,61 +205,49 @@ class Token { int id_; };  // private`
       )}
       {id === 'prot' && (
         <div className="fx-sh">
-          <div className={`fx-slot${i >= 1 ? ' fx-slot--focus' : ''}`}>
+          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ''}`}>
             <span className="fx-kicker">Derived</span>
             <span className="fx-note">is-a Base</span>
           </div>
-          <div className={`fx-link${trapped ? ' fx-link--dead' : i >= 1 ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${i >= 1 ? ' fx-pane--focus' : ''}${trapped ? ' fx-pane--trap' : ''}`}>
+          <div className={`fx-link${protTrap && !recap ? ' fx-link--dead' : recap ? ' fx-link--weld' : stepped ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${protTrap && !recap ? ' fx-pane--trap' : ''}`}>
             <span className="fx-kicker">Base</span>
-            <div className={`fx-slot${trapped ? ' fx-slot--trap' : i >= 1 ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">protected</span>
+            <div className={`fx-slot${protTrap && !recap ? ' fx-slot--trap' : recap ? ' fx-slot--ok' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">{recap ? 'private n_' : 'protected'}</span>
               <span className="fx-value">
                 <code>n_</code>
               </span>
-              <span className="fx-note">{trapped ? 'n_ = 1 compiles · coupling' : 'visible to derived'}</span>
+              <span className="fx-note">{recap ? 'bump() is protected' : protTrap ? 'n_ = 1 compiles · coupling' : 'visible to derived'}</span>
             </div>
           </div>
         </div>
       )}
       {id === 'st' && (
-        <div className="fx-compare" style={{ gridTemplateColumns: '1fr auto 1fr' }}>
-          <div className={`fx-slot${i >= 1 ? ' fx-slot--ok' : ''}`}>
+        <div className="fx-sh">
+          <div className={`fx-slot${stepped ? ' fx-slot--ok' : ''}`}>
             <span className="fx-kicker">struct Dto</span>
             <span className="fx-value">
               <code>int id</code>
             </span>
             <span className="fx-note">default public · fine DTO</span>
           </div>
-          <span className="fx-op">vs</span>
-          <div className={`fx-slot${i >= 2 ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+          <div className={`fx-link${recap ? ' fx-link--on' : ''}`} />
+          <div className={`fx-slot${decided ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
             <span className="fx-kicker">class Token</span>
             <span className="fx-value">
               <code>int id_</code>
             </span>
-            <span className="fx-note">{i >= 2 ? 'default private · invariant' : 'same layout, hidden name'}</span>
-            {i >= 2 && <span className="fx-badge fx-badge--lock">private</span>}
+            <span className="fx-note">{decided ? 'default private · invariant' : 'same layout, hidden name'}</span>
+            {decided && <span className="fx-badge fx-badge--lock">private</span>}
           </div>
         </div>
       )}
       <div
-        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
-          trapped || bounce ? 'fx-verdict--trap' : won || structOk ? 'fx-verdict--ok' : ''
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          trap ? 'fx-verdict--trap' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
-        {id === 'priv' && bounce
-          ? 'Token{1} · ill-formed'
-          : privOk
-            ? 't.id() · the public name'
-            : won
-              ? 'friend hole · not inherited'
-              : trapped && id === 'prot'
-                ? 'n_ = 1 · prefer private data'
-                : structOk
-                  ? 'keyword signals invariant vs DTO'
-                  : id === 'st' && i >= 2
-                    ? 'only the default differs'
-                    : ''}
+        {verdict}
       </div>
     </SceneShell>
   )
