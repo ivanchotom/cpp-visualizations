@@ -24,12 +24,13 @@ export function PointersViz() {
   const decided = i >= 2
   const recap = i >= 3
 
-  const pAtB = id === 'reseat' ? decided : id === 'write' ? true : false
+  const pAtB = id === 'reseat' && decided
   const pNull = id === 'null' && stepped
-  const dangling = id === 'dangle' && decided
-  const aVal = id === 'write' && recap ? 11 : 10
-  const bVal = id === 'write' && decided ? 21 : 20
+  const starUb = id === 'null' && decided
   const xAlive = id === 'dangle' && stepped && !decided
+  const dangling = id === 'dangle' && decided
+  const writeB = id === 'write' && stepped
+  const writeA = id === 'write' && decided
   const trap = (id === 'null' && decided && !recap) || dangling
   const ok = (id === 'reseat' && recap) || (id === 'write' && recap) || (id === 'null' && recap)
 
@@ -74,19 +75,19 @@ p = nullptr;`
             ? 'Play p = nullptr. Pointers may be null. A reference cannot: it must bind at initialization. *nullptr is undefined behavior.'
             : 'Play return &x. Returning a pointer to a local automatic object is undefined behavior. The address does not keep the object alive.'
       : id === 'reseat' && i === 1
-        ? 'p starts at a. The cyan bar is an address. The green weld is r: another name for a, for life.'
+        ? 'p starts at a. r is another name for a, for life. Stations light in place — nothing hops.'
         : id === 'reseat' && i === 2
-          ? 'p = &b. The cyan bar now names b. r did not move. There is no r = b that rebinds a reference.'
+          ? 'p = &b. p now names b. r did not move. There is no r = b that rebinds a reference.'
           : id === 'reseat'
             ? 'p can be null or reseated. r cannot. Prefer r in APIs; p when absence or reseating is the design.'
             : id === 'write' && i === 1
-              ? '++*p writes through the address. b becomes 21. a is untouched. The flash is in place — nothing hops.'
+              ? '++*p writes through the address. b becomes 21. a is untouched.'
               : id === 'write' && i === 2
-                ? '++r writes a. The weld never left a. Same object, two names. a is 11; b is still 21.'
+                ? '++r writes a. The alias never left a. Same object, two names. a is 11; b is still 21.'
                 : id === 'write'
                   ? 'r = b would also assign to a. That is the classic trap: it looks like reseating and is not.'
                   : id === 'null' && i === 1
-                    ? 'p = nullptr. The cyan bar is dead. p still exists as an object; it holds the null pointer value.'
+                    ? 'p = nullptr. p still exists as an object; it holds the null pointer value.'
                     : id === 'null' && i === 2
                       ? '*p now is undefined behavior. A reference cannot represent this state. That is why APIs use T* for optional objects.'
                       : id === 'null'
@@ -95,7 +96,7 @@ p = nullptr;`
                           ? 'x is automatic. p stores its address. The object is still alive inside f.'
                           : i === 2
                             ? 'f returned. The frame is gone. p still holds a bit pattern. The object is not there.'
-                            : '*p is a dangling load. The address did not keep x alive. Same trap as return &x from a stack-heap demo.'
+                            : '*p is a dangling load. The address did not keep x alive.'
 
   const tone = trap ? 'trap' : ok ? 'ok' : 'idle'
   const playLabel =
@@ -107,28 +108,26 @@ p = nullptr;`
           ? 'Play p = nullptr'
           : 'Play return &x'
 
-  const pNote = pNull ? 'nullptr' : dangling ? 'stale address' : pAtB ? '0xB0 · *p = ' + bVal : '0xA0 · *p = ' + aVal
-  const pLink = pNull || dangling ? 'dead' : 'on'
-  const pPointee = pNull ? '—' : dangling ? 'gone' : pAtB ? String(bVal) : aVal
-
   const verdict =
     id === 'reseat' && recap
       ? 'p → b · r still a · two different bindings'
-      : id === 'reseat' && decided
-        ? 'cyan reseated · green weld stayed'
+      : pAtB
+        ? 'p reseated · r stayed'
         : id === 'write' && recap
-          ? '++r wrote a · weld never moved'
-          : id === 'write' && decided
-            ? '++*p · b is 21 · a unchanged'
-            : id === 'null' && recap
-              ? 'p may be null · r cannot'
-              : id === 'null' && decided
-                ? '*p is UB'
-                : id === 'dangle' && recap
-                  ? 'dangling · UB'
-                  : dangling
-                    ? 'frame gone · p still holds bits'
-                    : ''
+          ? '++r wrote a · alias never moved'
+          : writeA
+            ? '++r · a is 11'
+            : writeB
+              ? '++*p · b is 21'
+              : id === 'null' && recap
+                ? 'p may be null · r cannot'
+                : starUb
+                  ? '*p is UB'
+                  : id === 'dangle' && recap
+                    ? 'dangling · UB'
+                    : dangling
+                      ? 'frame gone · p still holds bits'
+                      : ''
 
   return (
     <SceneShell
@@ -149,78 +148,69 @@ p = nullptr;`
       code={code}
       tone={tone}
     >
-      {id === 'dangle' ? (
-        <div className="fx-sh">
-          <div className={`fx-pane${xAlive ? ' fx-pane--focus' : ''}${dangling ? ' fx-pane--gone' : ''}`}>
-            <span className="fx-kicker">stack</span>
-            <div className={`fx-slot${xAlive ? ' fx-slot--focus' : dangling ? ' fx-slot--dim' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">int x</span>
-              <span className="fx-value">{xAlive ? '7' : '—'}</span>
-              <span className="fx-note">{dangling ? 'destroyed' : stepped ? 'automatic' : 'not in f yet'}</span>
-            </div>
+      {id === 'reseat' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${pAtB ? ' fx-rank--on' : ''}`}>
+            <code>p</code>
+            <span className="fx-note">
+              <code>{'int*'}</code>
+            </span>
+            <span className="fx-note">{pAtB ? 'b' : stepped ? 'a' : '—'}</span>
           </div>
-          <div className={`fx-link${dangling ? ' fx-link--dead' : xAlive ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${dangling ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">caller</span>
-            <div className={`fx-slot${dangling ? ' fx-slot--trap' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">int* p</span>
-              <span className="fx-value">{dangling ? 'stale' : xAlive ? '&x' : '—'}</span>
-              <span className="fx-note">{dangling ? 'does not keep x alive' : 'stores an address'}</span>
-            </div>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${pAtB ? ' fx-rank--done' : ''}`}>
+            <code>r</code>
+            <span className="fx-note">
+              <code>{'int&'}</code>
+            </span>
+            <span className="fx-note">{stepped ? 'a' : '—'}</span>
           </div>
         </div>
-      ) : (
-        <>
-          <div className="fx-sh">
-            <div className={`fx-slot${id === 'write' && recap ? ' fx-slot--flash-ref' : !pAtB && !pNull ? ' fx-slot--focus' : ''}`}>
-              <span className="fx-kicker">int a</span>
-              <span className="fx-value">{aVal}</span>
-              <span className="fx-note">r is always this object</span>
-            </div>
-            <div className="fx-link" />
-            <div
-              className={`fx-slot${pAtB ? ' fx-slot--focus' : ' fx-slot--dim'}${
-                id === 'write' && decided && !recap ? ' fx-slot--flash' : ''
-              }`}
-            >
-              <span className="fx-kicker">int b</span>
-              <span className="fx-value">{bVal}</span>
-              <span className="fx-note">{pAtB ? 'p names b' : 'other object'}</span>
-            </div>
+      )}
+      {id === 'write' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${writeB ? ' fx-rank--on' : ''}${writeA ? ' fx-rank--done' : ''}`}>
+            <code>*p</code>
+            <span className="fx-note">writes b</span>
+            <span className="fx-note">{writeB ? '21' : '—'}</span>
           </div>
-          <div className="fx-lockrow">
-            <div className={`fx-slot${pNull ? ' fx-slot--trap' : ''}`}>
-              <span className="fx-kicker">pointer</span>
-              <span className="fx-value">
-                <code>int* p</code>
-              </span>
-              <span className="fx-note">{pNote}</span>
-              <span className="fx-badge fx-badge--open">may reseat</span>
-            </div>
-            <div className={`fx-link fx-link--${pLink}`} />
-            <div className={`fx-slot${pNull || dangling ? ' fx-slot--dim' : pAtB ? ' fx-slot--focus' : ' fx-slot--focus'}`}>
-              <span className="fx-kicker">{pNull ? 'pointee' : pAtB ? 'pointee b' : 'pointee a'}</span>
-              <span className="fx-value">{pPointee}</span>
-              <span className="fx-note">{pNull ? 'no object' : pAtB ? 'b, not r' : 'same object as r'}</span>
-            </div>
+          <div className={`fx-rank${writeA ? ' fx-rank--on' : ''}`}>
+            <code>r</code>
+            <span className="fx-note">writes a</span>
+            <span className="fx-note">{writeA ? '11' : '—'}</span>
           </div>
-          <div className="fx-lockrow">
-            <div className={`fx-slot fx-slot--weld${id === 'write' && recap ? ' fx-slot--flash-ref' : ''}`}>
-              <span className="fx-kicker">reference</span>
-              <span className="fx-value">
-                <code>int& r</code>
-              </span>
-              <span className="fx-note">r = {aVal}</span>
-              <span className="fx-badge fx-badge--lock">welded to a</span>
-            </div>
-            <div className="fx-link fx-link--weld" />
-            <div className={`fx-slot fx-slot--weld${id === 'write' && recap ? ' fx-slot--flash-ref' : ''}`}>
-              <span className="fx-kicker">alias of a</span>
-              <span className="fx-value">{aVal}</span>
-              <span className="fx-note">cannot reseat</span>
-            </div>
+        </div>
+      )}
+      {id === 'null' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${pNull ? ' fx-rank--on' : ''}${starUb ? ' fx-rank--done' : ''}`}>
+            <code>p</code>
+            <span className="fx-note">
+              <code>nullptr</code>
+            </span>
+            <span className="fx-note">{pNull ? 'ok' : '—'}</span>
           </div>
-        </>
+          <div className={`fx-rank${starUb ? ' fx-rank--trap' : ''}`}>
+            <code>*p</code>
+            <span className="fx-note">deref</span>
+            <span className="fx-note">{starUb ? 'ub' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'dangle' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${xAlive ? ' fx-rank--on' : ''}${dangling ? ' fx-rank--done' : ''}`}>
+            <code>x</code>
+            <span className="fx-note">automatic</span>
+            <span className="fx-note">{xAlive ? '7' : dangling ? 'gone' : '—'}</span>
+          </div>
+          <div className={`fx-rank${xAlive ? ' fx-rank--on' : ''}${dangling ? ' fx-rank--trap' : ''}`}>
+            <code>p</code>
+            <span className="fx-note">
+              <code>{'return &x'}</code>
+            </span>
+            <span className="fx-note">{dangling ? 'ub' : xAlive ? 'ok' : '—'}</span>
+          </div>
+        </div>
       )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${

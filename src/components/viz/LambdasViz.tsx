@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { SceneShell } from './scene/SceneShell.tsx'
 import { useBeats } from './scene/useBeats.ts'
 
@@ -14,86 +14,39 @@ const MODES: { id: Mode; title: string }[] = [
 export function LambdasViz() {
   const [id, setId] = useState<Mode>('copy')
   const { i, playing, play, reset } = useBeats(4)
-  const [flash, setFlash] = useState<'local' | 'closure' | 'both' | null>(null)
 
   function select(next: string) {
     reset()
-    setFlash(null)
     setId(next as Mode)
   }
 
   const captured = i >= 1
   const ran = i >= 2
-  const frameGone = id === 'dangle' && i >= 2
-  const dangled = id === 'dangle' && i >= 3
+  const recap = i >= 3
+  const frameGone = id === 'dangle' && ran
+  const dangled = id === 'dangle' && recap
   const stole = id === 'init' && captured
-  const welded = (id === 'ref' || id === 'dangle') && captured && !dangled && !frameGone
-  const copied = id === 'copy' && captured
-
-  const outerVal =
-    id === 'ref' && ran
-      ? 8
-      : id === 'init'
-        ? stole
-          ? 'empty'
-          : '7'
-        : frameGone
-          ? 'gone'
-          : 7
-
-  const closureVal =
-    id === 'init'
-      ? stole
-        ? 7
-        : '—'
-      : id === 'dangle'
-        ? dangled
-          ? 'UB'
-          : captured
-            ? 7
-            : '—'
-        : id === 'copy'
-          ? captured
-            ? ran
-              ? 8
-              : 7
-            : '—'
-          : captured
-            ? ran
-              ? 8
-              : 7
-            : '—'
-
-  useEffect(() => {
-    if (!playing) return
-    if (i === 2 && id === 'copy') setFlash('closure')
-    else if (i === 2 && id === 'ref') setFlash('both')
-    else if (i === 3 && id === 'dangle') setFlash('closure')
-    else setFlash(null)
-    const t = window.setTimeout(() => setFlash(null), 520)
-    return () => window.clearTimeout(t)
-  }, [i, playing, id])
+  const trap = dangled
+  const ok = (id === 'copy' && ran) || (id === 'ref' && ran) || (stole && ran)
 
   const code =
     id === 'copy'
-      ? i < 2
-        ? `int n = 7;\nauto f = [=]() mutable { ++n; };`
-        : `f();  // closure n is 8, outer n is still 7`
+      ? ran
+        ? `f();  // closure n is 8, outer n is still 7`
+        : `int n = 7;\nauto f = [=]() mutable { ++n; };`
       : id === 'ref'
-        ? i < 2
-          ? `int n = 7;\nauto f = [&] { ++n; };`
-          : `f();  // write-through: outer n is 8`
+        ? ran
+          ? `f();  // write-through: outer n is 8`
+          : `int n = 7;\nauto f = [&] { ++n; };`
         : id === 'dangle'
-          ? i === 0
-            ? `auto make() {\n  int n = 7;\n  return [&] { return n; };\n}`
-            : i === 1
-              ? `return [&] { return n; };  // weld to stack n`
-              : i === 2
-                ? `}  // n is destroyed. The alias is leftover.`
-                : `auto f = make();\nf();  // dangling reference — UB`
-          : i < 2
-            ? `auto p = std::make_unique<int>(7);\nauto f = [p = std::move(p)] {\n  return *p;\n};`
-            : `f();  // *p is 7. Original p is empty.`
+          ? recap
+            ? `auto f = make();\nf();  // dangling reference — UB`
+            : ran
+              ? `}  // n is destroyed. The alias is leftover.`
+              : `auto make() {\n  int n = 7;\n  return [&] { return n; };\n}`
+          : ran
+            ? `f();  // *p is 7. Original p is empty.`
+            : `auto p = std::make_unique<int>(7);\nauto f = [p = std::move(p)] {\n  return *p;\n};`
 
   const caption =
     i === 0
@@ -111,13 +64,13 @@ export function LambdasViz() {
           : id === 'copy'
             ? '[=] is a copy. A captureless lambda converts to a function pointer. Capturing this by [=] copies the pointer, not the object.'
             : id === 'ref' && i === 1
-              ? 'Green weld: no copy. The lambda is an alias for n. Cheap, and dangerous if you outlive n.'
+              ? 'No copy. The lambda is an alias for n. Cheap, and dangerous if you outlive n.'
               : id === 'ref' && i === 2
                 ? 'Write-through: ++n updates the local. Same object, two names — just like T&.'
                 : id === 'ref'
                   ? 'Keep [&] lambdas inside the scope of what they name. Return them and you dangle.'
                   : id === 'dangle' && i === 1
-                    ? 'Green weld to stack n. Returning the lambda takes that alias out of the function.'
+                    ? 'The capture names stack n. Returning the lambda takes that alias out of the function.'
                     : id === 'dangle' && i === 2
                       ? 'make() returned. The frame is gone. n is destroyed. The capture still names that slot.'
                       : id === 'dangle'
@@ -128,9 +81,7 @@ export function LambdasViz() {
                             ? 'f() reads *p. The unique_ptr lives as long as the closure. That is how you ship ownership into a callback in C++14.'
                             : 'Init-capture is C++14. Use it when the member is not a copy of an existing name — move, or a computed value.'
 
-  const tone = dangled ? 'trap' : frameGone ? 'warn' : stole && ran ? 'ok' : ran ? 'ok' : 'idle'
-
-  const linkCls = dangled || frameGone ? 'fx-link--dead' : copied || stole ? 'fx-link--on' : welded ? 'fx-link--weld' : ''
+  const tone = trap ? 'trap' : frameGone ? 'warn' : ok ? 'ok' : 'idle'
   const playLabel =
     id === 'copy'
       ? 'Play [=] mutable'
@@ -140,8 +91,20 @@ export function LambdasViz() {
           ? 'Play make() then f()'
           : 'Play init-capture'
 
-  const localFlash = flash === 'local' || flash === 'both'
-  const closureFlash = flash === 'closure' || flash === 'both'
+  const verdict =
+    id === 'copy' && ran
+      ? '[=] copy · outer still 7'
+      : id === 'ref' && ran
+        ? '[&] weld · write-through'
+        : dangled
+          ? 'dangling [&] · UB'
+          : frameGone
+            ? 'frame gone · alias leftover'
+            : stole && ran
+              ? 'init-capture · C++14 steal'
+              : stole
+                ? 'unique_ptr moved into f'
+                : ''
 
   return (
     <SceneShell
@@ -149,13 +112,9 @@ export function LambdasViz() {
       mode={id}
       onSelect={select}
       playing={playing}
-      onPlay={() => {
-        setFlash(null)
-        play()
-      }}
+      onPlay={play}
       onReset={() => {
         reset()
-        setFlash(null)
         setId(id)
       }}
       playLabel={playLabel}
@@ -166,85 +125,72 @@ export function LambdasViz() {
       code={code}
       tone={tone}
     >
-      <div className="fx-sh">
-        <div
-          className={`fx-pane${captured && !frameGone ? ' fx-pane--focus' : ''}${
-            frameGone ? ' fx-pane--gone' : ''
-          }`}
-        >
-          <span className="fx-kicker">{id === 'dangle' ? 'make() frame' : id === 'init' ? 'unique_ptr' : 'local'}</span>
-          <div
-            className={`fx-slot${
-              stole
-                ? ' fx-slot--dim'
-                : welded
-                  ? ' fx-slot--weld'
-                  : captured
-                    ? ' fx-slot--focus'
-                    : ' fx-slot--dim'
-            }${localFlash ? ' fx-slot--flash-ref' : ''}${frameGone ? ' fx-pane--gone' : ''}`}
-          >
-            <span className="fx-kicker">{id === 'init' ? 'p' : 'n'}</span>
-            <span className="fx-value">{outerVal}</span>
-            <span className="fx-note">
-              {frameGone ? 'destroyed' : stole ? 'moved-from' : id === 'ref' && ran ? 'written through' : 'outer'}
-            </span>
+      {id === 'copy' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${captured ? ' fx-rank--on' : ''}${ran ? ' fx-rank--done' : ''}`}>
+            <code>n</code>
+            <span className="fx-note">outer</span>
+            <span className="fx-note">{captured ? '7' : '—'}</span>
+          </div>
+          <div className={`fx-rank${captured ? ' fx-rank--on' : ''}`}>
+            <code>[=]</code>
+            <span className="fx-note">mutable copy</span>
+            <span className="fx-note">{ran ? '8' : captured ? '7' : '—'}</span>
           </div>
         </div>
-        <div className={`fx-link${linkCls ? ` ${linkCls}` : ''}`} />
-        <div className={`fx-pane${captured ? ' fx-pane--focus' : ''}${dangled ? ' fx-pane--gone' : ''}`}>
-          <span className="fx-kicker">closure f</span>
-          <div
-            className={`fx-slot${
-              dangled
-                ? ' fx-slot--trap'
-                : copied || stole
-                  ? ' fx-slot--focus'
-                  : welded
-                    ? ' fx-slot--weld'
-                    : ' fx-slot--dim'
-            }${closureFlash ? (id === 'copy' ? ' fx-slot--flash' : id === 'dangle' ? '' : ' fx-slot--flash-ref') : ''}`}
-          >
-            <span className="fx-kicker">{id === 'init' ? 'p' : id === 'copy' ? 'n' : '&n'}</span>
-            <span className="fx-value">{closureVal}</span>
-            <span className="fx-note">
-              {copied
-                ? ran
-                  ? 'mutated copy'
-                  : 'copied member'
-                : welded
-                  ? 'alias'
-                  : stole
-                    ? ran
-                      ? '*p is 7'
-                      : 'init-capture'
-                    : dangled
-                      ? 'dangling'
-                      : 'no capture yet'}
-            </span>
-            {copied && <span className="fx-badge">[=] mutable</span>}
-            {stole && <span className="fx-badge fx-badge--owner">moved in</span>}
+      )}
+      {id === 'ref' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${captured ? ' fx-rank--on' : ''}${ran ? ' fx-rank--on' : ''}`}>
+            <code>n</code>
+            <span className="fx-note">local</span>
+            <span className="fx-note">{ran ? '8' : captured ? '7' : '—'}</span>
+          </div>
+          <div className={`fx-rank${captured ? ' fx-rank--on' : ''}`}>
+            <code>[&]</code>
+            <span className="fx-note">alias</span>
+            <span className="fx-note">{ran ? '8' : captured ? '7' : '—'}</span>
           </div>
         </div>
-      </div>
+      )}
+      {id === 'dangle' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${captured ? ' fx-rank--on' : ''}${frameGone ? ' fx-rank--done' : ''}`}>
+            <code>n</code>
+            <span className="fx-note">
+              <code>make()</code>
+            </span>
+            <span className="fx-note">{frameGone ? 'gone' : captured ? '7' : '—'}</span>
+          </div>
+          <div className={`fx-rank${captured ? ' fx-rank--on' : ''}${dangled ? ' fx-rank--trap' : ''}`}>
+            <code>[&]</code>
+            <span className="fx-note">capture</span>
+            <span className="fx-note">{dangled ? 'ub' : captured ? 'ok' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'init' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stole ? ' fx-rank--on' : ''}${ran ? ' fx-rank--done' : ''}`}>
+            <code>p</code>
+            <span className="fx-note">
+              <code>unique_ptr</code>
+            </span>
+            <span className="fx-note">{stole ? 'gone' : '—'}</span>
+          </div>
+          <div className={`fx-rank${stole ? ' fx-rank--on' : ''}`}>
+            <code>f</code>
+            <span className="fx-note">init-capture</span>
+            <span className="fx-note">{ran ? '7' : stole ? 'ok' : '—'}</span>
+          </div>
+        </div>
+      )}
       <div
-        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
-          dangled ? 'fx-verdict--trap' : ran && id !== 'dangle' ? 'fx-verdict--ok' : ''
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          trap ? 'fx-verdict--trap' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
-        {id === 'copy' && ran
-          ? '[=] copy · outer still 7'
-          : id === 'ref' && ran
-            ? '[&] weld · write-through'
-            : dangled
-              ? 'dangling [&] · UB'
-              : id === 'dangle' && frameGone
-                ? 'frame gone · alias leftover'
-                : stole && ran
-                  ? 'init-capture · C++14 steal'
-                  : stole
-                    ? 'unique_ptr moved into f'
-                    : ''}
+        {verdict}
       </div>
     </SceneShell>
   )
