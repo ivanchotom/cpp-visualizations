@@ -2,31 +2,32 @@ import { useState } from 'react'
 import { SceneShell } from './scene/SceneShell.tsx'
 import { useBeats } from './scene/useBeats.ts'
 
-type Scene = 'mul' | 'assign' | 'eq' | 'bit'
+type Mode = 'mul' | 'assign' | 'eq' | 'bit'
 
-const SCENES: { id: Scene; title: string; play: string }[] = [
-  { id: 'mul', title: 'a + b * c', play: 'Play a + b * c' },
-  { id: 'assign', title: 'a = b = 1', play: 'Play a = b = 1' },
-  { id: 'eq', title: 'a < b == c', play: 'Play a < b == c' },
-  { id: 'bit', title: '& vs ==', play: 'Play flags & MASK == 0' },
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'mul', title: 'a + b * c' },
+  { id: 'assign', title: 'a = b = 1' },
+  { id: 'eq', title: 'a < b == c' },
+  { id: 'bit', title: '& vs ==' },
 ]
 
 export function OperatorsViz() {
-  const [id, setId] = useState<Scene>('mul')
+  const [id, setId] = useState<Mode>('mul')
   const { i, playing, play, reset } = useBeats(4)
 
   function select(next: string) {
     reset()
-    setId(next as Scene)
+    setId(next as Mode)
   }
 
-  const scene = SCENES.find((s) => s.id === id) ?? SCENES[0]
   const stepped = i >= 1
   const decided = i >= 2
   const recap = i >= 3
-  const warn = (id === 'eq' && decided) || (id === 'bit' && decided && !recap)
-  const ok = recap && id !== 'eq' && !(id === 'bit' && !recap)
-  const trap = id === 'bit' && decided && !recap
+  const eqWarn = id === 'eq' && decided
+  const bitTrap = id === 'bit' && decided
+  const trap = bitTrap
+  const warn = eqWarn
+  const ok = (id === 'mul' && recap) || (id === 'assign' && recap)
 
   const code =
     id === 'mul'
@@ -42,20 +43,21 @@ export function OperatorsViz() {
             ? `(a < b) == c;  // bool compared to c`
             : `a < b == c;`
           : recap
-            ? `if ((flags & MASK) == 0) { }  // what you meant`
+            ? `if (flags & MASK == 0) { }    // flags & (MASK == 0)
+if ((flags & MASK) == 0) { }  // what you meant`
             : `if (flags & MASK == 0) { }    // flags & (MASK == 0)`
 
   const caption =
     i === 0
       ? id === 'mul'
-        ? 'Tokens in source order. Play to see what actually binds first — not left-to-right reading. When in doubt, parenthesize.'
+        ? 'Play a + b * c. Tokens in source order. Play to see what actually binds first — not left-to-right reading. When in doubt, parenthesize.'
         : id === 'assign'
-          ? 'Two assignments. Right-associative: the right = runs first. Nothing hops; the inner slot fills.'
+          ? 'Play a = b = 1. Two assignments. Right-associative: the right = runs first. Nothing hops; the inner slot fills.'
           : id === 'eq'
-            ? 'Looks like a three-way compare. It is not. Watch the grouping box, not a flying token.'
+            ? 'Play a < b == c. Looks like a three-way compare. It is not. Watch the grouping, not a flying token.'
             : 'Play flags & MASK == 0. Comparison binds tighter than bitwise &. This is the classic “flags test” bug.'
       : id === 'mul' && i === 1
-        ? '* is multiplicative (tighter than +). A grouping box closes around b * c. a waits.'
+        ? '* is multiplicative (tighter than +). b * c binds first. a waits. Stations light in place.'
         : id === 'mul' && i === 2
           ? '+ now combines a with that product. The tree is a + (b * c).'
           : id === 'mul'
@@ -78,30 +80,46 @@ export function OperatorsViz() {
                             ? 'flags & 0 (or 1). Almost never a mask test. The compiler did exactly what the table asked.'
                             : 'Parenthesize: (flags & MASK) == 0. Same story: std::cout << a ? b : c is (cout << a) ? b : c.'
 
-  const tone = trap ? 'trap' : warn ? 'warn' : ok || recap ? 'ok' : 'idle'
+  const tone = trap ? 'trap' : warn ? 'warn' : ok ? 'ok' : 'idle'
+  const playLabel =
+    id === 'mul'
+      ? 'Play a + b * c'
+      : id === 'assign'
+        ? 'Play a = b = 1'
+        : id === 'eq'
+          ? 'Play a < b == c'
+          : 'Play flags & MASK == 0'
 
   const verdict =
     id === 'mul' && recap
       ? 'a + (b * c)'
       : id === 'mul' && decided
         ? '* first · then +'
-        : id === 'assign' && recap
-          ? 'a = (b = 1)'
-          : id === 'assign' && decided
-            ? 'right-associative'
-            : id === 'eq' && recap
-              ? '(a < b) == c  ·  not a 3-way compare'
-              : id === 'eq' && decided
-                ? 'bool compared to c'
-                : id === 'bit' && recap
-                  ? '(flags & MASK) == 0'
-                  : trap
-                    ? 'flags & (MASK == 0) · wrong'
-                    : ''
+        : id === 'mul' && stepped
+          ? 'b * c · first'
+          : id === 'assign' && recap
+            ? 'a = (b = 1)'
+            : id === 'assign' && decided
+              ? 'right-associative'
+              : id === 'assign' && stepped
+                ? 'b = 1 · first'
+                : id === 'eq' && recap
+                  ? '(a < b) == c · not 3-way'
+                  : eqWarn
+                    ? 'bool compared to c'
+                    : id === 'eq' && stepped
+                      ? 'a < b · bool'
+                      : bitTrap && recap
+                        ? '(flags & MASK) == 0'
+                        : bitTrap
+                          ? 'flags & (MASK == 0)'
+                          : id === 'bit' && stepped
+                            ? 'MASK == 0 · first'
+                            : ''
 
   return (
     <SceneShell
-      modes={SCENES}
+      modes={MODES}
       mode={id}
       onSelect={select}
       playing={playing}
@@ -110,74 +128,73 @@ export function OperatorsViz() {
         reset()
         setId(id)
       }}
-      playLabel={scene.play}
+      playLabel={playLabel}
       step={i}
       stepCount={4}
-      sig={scene.title}
+      sig={MODES.find((m) => m.id === id)?.title}
       caption={caption}
       code={code}
       tone={tone}
     >
       {id === 'mul' && (
-        <>
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
-            <code>b * c</code>
-            <span className="fx-note">multiplicative</span>
-            <span className="fx-note">{stepped ? 'first' : 'tighter'}</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>bc</code>
+            <span className="fx-note">b * c</span>
+            <span className="fx-note">{stepped ? '1st' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
-            <code>a + …</code>
-            <span className="fx-note">additive</span>
-            <span className="fx-note">{decided ? 'then +' : 'waits'}</span>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>a</code>
+            <span className="fx-note">then +</span>
+            <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
-        </>
+        </div>
       )}
       {id === 'assign' && (
-        <div className="fx-sh">
-          <div className={`fx-slot${recap ? ' fx-slot--ok' : ''}`}>
-            <span className="fx-kicker">a</span>
-            <span className="fx-value">{recap ? '1' : '—'}</span>
-            <span className="fx-note">{recap ? 'filled last' : 'left ='}</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>b</code>
+            <span className="fx-note">right =</span>
+            <span className="fx-note">{stepped ? '1' : '—'}</span>
           </div>
-          <div className={`fx-link${decided ? ' fx-link--on' : ''}`} />
-          <div className={`fx-slot${decided ? ' fx-slot--ok' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-            <span className="fx-kicker">b</span>
-            <span className="fx-value">{decided ? '1' : '—'}</span>
-            <span className="fx-note">{stepped ? 'right = first' : 'inner assign'}</span>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>a</code>
+            <span className="fx-note">left =</span>
+            <span className="fx-note">{decided ? '1' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'eq' && (
-        <>
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
-            <code>a &lt; b</code>
-            <span className="fx-note">comparison</span>
-            <span className="fx-note">{stepped ? 'bool' : 'first'}</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>lt</code>
+            <span className="fx-note">a &lt; b</span>
+            <span className="fx-note">{stepped ? 'bool' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--trap' : ''}`}>
-            <code>… == c</code>
-            <span className="fx-note">equality</span>
-            <span className="fx-note">{decided ? 'bool vs c' : 'not a 3-way'}</span>
+          <div className={`fx-rank${eqWarn ? ' fx-rank--trap' : ''}`}>
+            <code>eq</code>
+            <span className="fx-note">== c</span>
+            <span className="fx-note">{eqWarn ? 'c' : '—'}</span>
           </div>
-        </>
+        </div>
       )}
       {id === 'bit' && (
-        <>
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${trap ? ' fx-rank--trap' : recap ? ' fx-rank--done' : ''}`}>
-            <code>MASK == 0</code>
-            <span className="fx-note">comparison first</span>
-            <span className="fx-note">{trap ? '0 or 1' : stepped ? 'binds tighter' : '& waits'}</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${bitTrap ? ' fx-rank--trap' : ''}`}>
+            <code>eq</code>
+            <span className="fx-note">MASK == 0</span>
+            <span className="fx-note">{stepped ? '0' : '—'}</span>
           </div>
-          <div className={`fx-rank${trap ? ' fx-rank--trap' : recap ? ' fx-rank--on' : ''}`}>
-            <code>{recap ? '(flags & MASK) == 0' : 'flags & …'}</code>
-            <span className="fx-note">bitwise</span>
-            <span className="fx-note">{recap ? 'what you meant' : trap ? 'flags & 0/1' : 'looser than =='}</span>
+          <div className={`fx-rank${bitTrap ? ' fx-rank--trap' : ''}`}>
+            <code>fl</code>
+            <span className="fx-note">flags &amp;</span>
+            <span className="fx-note">{bitTrap ? 'bad' : '—'}</span>
           </div>
-        </>
+        </div>
       )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
-          trap ? 'fx-verdict--trap' : warn ? 'fx-verdict--warn' : recap ? 'fx-verdict--ok' : ''
+          trap ? 'fx-verdict--trap' : warn ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
         {verdict}

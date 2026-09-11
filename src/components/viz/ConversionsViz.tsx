@@ -28,7 +28,8 @@ export function ConversionsViz() {
   const namedOk = id === 'named' && decided
   const dynFail = id === 'dynamic' && decided
   const trap = rejected || dynFail
-  const ok = namedOk && recap
+  const warn = silent
+  const ok = (id === 'named' && recap) || (id === 'assign' && recap)
 
   const code =
     id === 'assign'
@@ -38,11 +39,16 @@ export function ConversionsViz() {
         : `double d = 3.9;
 int n = d;          // 3, silent`
       : id === 'brace'
-        ? `double d = 3.9;
+        ? recap
+          ? `int n{d};           // error (narrowing)
+// d is unchanged`
+          : `double d = 3.9;
 int n{d};           // error (narrowing)`
         : id === 'named'
-          ? `int n = static_cast<int>(d);  // 3, named
+          ? recap
+            ? `int n = static_cast<int>(d);  // 3, named
 // still truncates; at least it is named`
+            : `int n = static_cast<int>(d);  // 3, named`
           : recap
             ? `B* p = dynamic_cast<B*>(a);
 // nullptr if a is not a B
@@ -79,28 +85,36 @@ int n{d};           // error (narrowing)`
                         ? 'Not a B. The destination is nullptr. No exception on pointer dynamic_cast (a reference throw is a different rule).'
                         : 'Always test the result. C-style (B*)a can mix several cast kinds — avoid it.'
 
-  const tone = trap ? 'trap' : silent ? 'warn' : ok ? 'ok' : 'idle'
+  const tone = trap ? 'trap' : warn ? 'warn' : ok ? 'ok' : 'idle'
   const playLabel =
     id === 'assign' ? 'Play int n = d' : id === 'brace' ? 'Play int n{d}' : id === 'named' ? 'Play static_cast' : 'Play dynamic_cast'
 
   const verdict =
-    silent && !recap
-      ? 'n = 3 · silent'
-      : id === 'assign' && recap
-        ? 'prefer braces or a named cast'
-        : rejected
-          ? 'n{d} · ill'
-          : namedOk && recap
-            ? 'named · still truncates'
-            : namedOk
-              ? 'static_cast<int>(3.9) = 3'
-              : dynFail && !recap
-                ? 'dynamic_cast → nullptr'
-                : id === 'dynamic' && recap
-                  ? 'test the pointer · refs throw'
-                  : id === 'dynamic' && i === 1
-                    ? 'RTTI · polymorphic source'
-                    : ''
+    id === 'assign' && recap
+      ? 'prefer braces or a named cast'
+      : silent
+        ? 'n = 3 · silent'
+        : id === 'assign' && stepped
+          ? 'd · 3.9'
+          : rejected && recap
+            ? 'n{d} · ill'
+            : rejected
+              ? 'narrowing · ill'
+              : id === 'brace' && stepped
+                ? 'd · 3.9'
+                : namedOk && recap
+                  ? 'named · still truncates'
+                  : namedOk
+                    ? 'static_cast · 3'
+                    : id === 'named' && stepped
+                      ? 'gate · int'
+                      : dynFail && recap
+                        ? 'test the pointer · refs throw'
+                        : dynFail
+                          ? 'dynamic_cast · null'
+                          : id === 'dynamic' && stepped
+                            ? 'RTTI · virtual'
+                            : ''
 
   return (
     <SceneShell
@@ -121,47 +135,65 @@ int n{d};           // error (narrowing)`
       code={code}
       tone={tone}
     >
-      {id === 'dynamic' ? (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">A*</span>
-            <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">source</span>
-              <span className="fx-value">
-                <code>a</code>
-              </span>
-              <span className="fx-note">polymorphic</span>
-            </div>
+      {id === 'assign' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>d</code>
+            <span className="fx-note">double</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-link${dynFail ? ' fx-link--dead' : stepped ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${dynFail ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">B*</span>
-            <div className={`fx-slot${dynFail ? ' fx-slot--trap' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">result</span>
-              <span className="fx-value">{dynFail ? 'null' : stepped ? '?' : '—'}</span>
-              <span className="fx-note">{dynFail ? 'not a B' : 'runtime check'}</span>
-            </div>
+          <div className={`fx-rank${silent ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>n</code>
+            <span className="fx-note">copy-init</span>
+            <span className="fx-note">{silent ? '3' : '—'}</span>
           </div>
         </div>
-      ) : (
+      )}
+      {id === 'brace' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${rejected || silent ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>d</code>
-            <span className="fx-note">3.9</span>
-            <span className="fx-note">{stepped ? 'stays' : '—'}</span>
+            <span className="fx-note">double</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div
-            className={`fx-rank${decided ? ' fx-rank--on' : ''}${rejected ? ' fx-rank--trap' : ''}`}
-          >
-            <code>{id === 'assign' ? 'n = d' : id === 'brace' ? 'n{d}' : 'cast'}</code>
-            <span className="fx-note">{id === 'assign' ? 'copy-init' : id === 'brace' ? 'list-init' : 'named'}</span>
-            <span className="fx-note">{rejected ? 'ill' : silent || namedOk ? '3' : '—'}</span>
+          <div className={`fx-rank${rejected ? ' fx-rank--trap' : ''}`}>
+            <code>n</code>
+            <span className="fx-note">list-init</span>
+            <span className="fx-note">{rejected ? 'ill' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'named' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>d</code>
+            <span className="fx-note">double</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${namedOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>n</code>
+            <span className="fx-note">static_cast</span>
+            <span className="fx-note">{namedOk ? '3' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'dynamic' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+            <code>a</code>
+            <span className="fx-note">A*</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${dynFail ? ' fx-rank--trap' : ''}`}>
+            <code>p</code>
+            <span className="fx-note">B*</span>
+            <span className="fx-note">{dynFail ? 'null' : '—'}</span>
           </div>
         </div>
       )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
-          trap ? 'fx-verdict--trap' : silent ? 'fx-verdict--warn' : ok || namedOk ? 'fx-verdict--ok' : ''
+          trap ? 'fx-verdict--trap' : warn ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
         {verdict}
