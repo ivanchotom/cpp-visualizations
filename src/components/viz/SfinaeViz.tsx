@@ -112,43 +112,13 @@ struct Box<T*> { using type = T; };`
   const callText = id === 'int' ? 'describe(42)' : id === 'str' ? 'describe(s)' : id === 'full' ? 'Box<bool>' : 'Box<int*>'
   const tName = id === 'int' ? 'int' : id === 'str' ? 'string' : id === 'full' ? 'bool' : 'int*'
 
-  const leftCode = sfinae ? 'enable_if_t<is_integral<T>::value>' : 'Box<T>  primary'
-  const rightCode = sfinae
-    ? 'enable_if_t<is_floating_point<T>::value>'
-    : id === 'full'
-      ? 'Box<bool>  full spec'
-      : 'Box<T*>  partial'
+  const leftName = sfinae ? 'integral' : 'primary'
+  const rightName = sfinae ? 'floating' : id === 'full' ? 'full spec' : 'partial'
+  const leftCode = sfinae ? 'is_integral<T>::value' : 'Box<T>'
+  const rightCode = sfinae ? 'is_floating_point<T>::value' : id === 'full' ? 'Box<bool>' : 'Box<T*>'
 
-  const leftTag = sfinae
-    ? intWin
-      ? 'survives'
-      : trying
-        ? 'substituting'
-        : hard
-          ? 'SFINAE out'
-          : 'candidate'
-    : fullWin || partWin
-      ? 'not used'
-      : trying
-        ? 'primary'
-        : 'recipe'
-
-  const rightTag = sfinae
-    ? hard
-      ? 'SFINAE out'
-      : trying
-        ? 'substituting'
-        : intWin
-          ? 'SFINAE out'
-          : 'candidate'
-    : fullWin || partWin
-      ? 'selected'
-      : trying
-        ? 'more specific'
-        : 'recipe'
-
-  const leftState = intWin ? 'best' : hard ? 'dropped' : trying ? 'candidate' : 'candidate'
-  const rightState = hard ? 'dropped' : intWin ? 'dropped' : fullWin || partWin ? 'best' : trying ? 'candidate' : 'candidate'
+  const leftState = intWin ? 'best' : hard || fullWin || partWin ? 'dropped' : trying ? 'trying' : 'candidate'
+  const rightState = hard ? 'dropped' : intWin ? 'dropped' : fullWin || partWin ? 'best' : trying ? 'trying' : 'candidate'
 
   const verdict =
     intWin
@@ -200,8 +170,8 @@ struct Box<T*> { using type = T; };`
           hard || fullWin || partWin ? ' fx-rank--done' : ''
         }${hard ? ' fx-rank--trap' : ''}`}
       >
+        <span className="fx-note">{leftName}</span>
         <code>{leftCode}</code>
-        <span className="fx-note">{leftTag}</span>
         <span className="fx-note">{leftState}</span>
       </div>
       <div
@@ -209,8 +179,8 @@ struct Box<T*> { using type = T; };`
           hard ? ' fx-rank--trap' : intWin ? ' fx-rank--done' : ''
         }`}
       >
+        <span className="fx-note">{rightName}</span>
         <code>{rightCode}</code>
-        <span className="fx-note">{rightTag}</span>
         <span className="fx-note">{rightState}</span>
       </div>
       {(fullWin || partWin) && (
