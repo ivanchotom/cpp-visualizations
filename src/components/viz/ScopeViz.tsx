@@ -1,140 +1,39 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { hop, waitNextBeat, type Point } from './motion.ts'
+import { useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'block' | 'stat' | 'dangle' | 'using'
 
-const MODES: { id: Mode; title: string; sig: string }[] = [
-  { id: 'block', title: 'block', sig: '{ int n = 1; }' },
-  { id: 'stat', title: 'static local', sig: 'static int n = 0' },
-  { id: 'dangle', title: 'dangling', sig: 'int& r = local' },
-  { id: 'using', title: 'using ns', sig: 'using namespace std' },
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'block', title: 'block' },
+  { id: 'stat', title: 'static local' },
+  { id: 'dangle', title: 'dangling' },
+  { id: 'using', title: 'using ns' },
 ]
-
-const STEP_MS = 1300
-const HOP_MS = 700
 
 export function ScopeViz() {
   const [id, setId] = useState<Mode>('block')
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [from, setFrom] = useState<Point>({ x: 80, y: 90 })
-  const [to, setTo] = useState<Point>({ x: 360, y: 90 })
+  const { i, playing, play, reset } = useBeats(4)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const srcRef = useRef<HTMLDivElement>(null)
-  const dstRef = useRef<HTMLDivElement>(null)
+  function select(next: string) {
+    reset()
+    setId(next as Mode)
+  }
 
-  const stepCount = 4
-  const alive = (id === 'block' && i >= 1 && i < 3) || (id === 'stat' && i >= 1) || (id === 'dangle' && i >= 1 && i < 2)
-  const gone = (id === 'block' && i >= 3) || (id === 'dangle' && i >= 2)
-  const nVal = id === 'stat' ? (i >= 3 ? 2 : i >= 2 ? 1 : i >= 1 ? 0 : '—') : id === 'block' && alive ? '1' : id === 'dangle' && i === 1 ? '7' : '—'
+  const innerAlive = (id === 'block' && i >= 1 && i < 3) || (id === 'dangle' && i === 1)
+  const innerDead = (id === 'block' && i >= 3) || (id === 'dangle' && i >= 2)
+  const nVal =
+    id === 'stat' ? (i >= 3 ? 2 : i >= 2 ? 1 : i >= 1 ? 0 : '—') : id === 'block' && innerAlive ? '1' : id === 'dangle' && i === 1 ? '7' : '—'
   const polluted = id === 'using' && i >= 2
-
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    if (!stage || !srcRef.current || !dstRef.current) return
-    const origin = stage.getBoundingClientRect()
-    const a = srcRef.current.getBoundingClientRect()
-    const b = dstRef.current.getBoundingClientRect()
-    const bounce = id === 'block' && i >= 3
-    const src = { x: a.left - origin.left + a.width / 2, y: a.top - origin.top + a.height / 2 }
-    const dst = { x: b.left - origin.left + b.width / 2, y: b.top - origin.top + b.height / 2 }
-    if (bounce) {
-      setFrom(dst)
-      setTo(src)
-    } else {
-      setFrom(src)
-      setTo(dst)
-    }
-  }, [id, i])
-
-  useEffect(() => {
-    if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
-    }
-    raf = requestAnimationFrame(hopLoop)
-    const stopBeat = waitNextBeat(STEP_MS, () => {
-      if (i >= stepCount - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stopBeat()
-    }
-  }, [playing, i, stepCount])
-
-  function select(next: Mode) {
-    setPlaying(false)
-    setId(next)
-    setI(0)
-    setHopT(1)
-  }
-
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
-  }
-
-  const pos = hopT < 1 && i >= 1 ? hop(from, to, hopT) : null
-  const flyerText =
-    id === 'block'
-      ? i >= 3
-        ? '~n'
-        : 'n'
-      : id === 'stat'
-        ? i === 1
-          ? 'init'
-          : '++n'
-        : id === 'dangle'
-          ? i === 1
-            ? 'bind'
-            : i === 2
-              ? '~local'
-              : 'UB'
-          : i === 1
-            ? 'using'
-            : 'cout'
 
   const code =
     id === 'block'
-      ? i < 3
-        ? `{
-  int n = 1;   // automatic
-}  // n destroyed here`
-        : `// n is gone. The name is not in scope.
-// A pointer to n would dangle.`
+      ? `{\n  int n = 1;   // automatic\n}  // n destroyed here`
       : id === 'stat'
-        ? i < 2
-          ? `int counter() {
-  static int n = 0;
-  return ++n;
-}`
-          : `counter();  // 1
-counter();  // 2  same n, no re-init`
+        ? `int counter() {\n  static int n = 0;\n  return ++n;\n}`
         : id === 'dangle'
-          ? i < 2
-            ? `int& leak() {
-  int local = 7;
-  return local;  // binds, then dies
-}`
-            : `int& r = leak();  // r dangles
-// using r is UB`
-          : i < 2
-            ? `// header.hpp — don't
-using namespace std;`
-            : `// every TU that includes this
-// sees cout, vector, … in global`
+          ? `int& leak() {\n  int local = 7;\n  return local;\n}`
+          : `// header.hpp — don't\nusing namespace std;`
 
   const caption =
     i === 0
@@ -146,19 +45,19 @@ using namespace std;`
             ? 'Play a returned reference. The name r is in scope in the caller. The object it bound died with the callee’s block.'
             : 'Play using namespace. A using-directive dumps names into the enclosing scope. In a header that is every TU.'
       : id === 'block' && i === 1
-        ? 'n is constructed in the block. The name n is only visible here. Outer code cannot say n.'
+        ? 'n is constructed in the inner frame. The name n is only visible here. Outer code cannot say n.'
         : id === 'block' && i === 2
           ? 'Still in the block. Reverse destruction: last constructed, first destroyed, when the closing brace runs.'
           : id === 'block'
-            ? 'Brace closed. n is gone. Scope and lifetime lined up. Heap and static are the cases where they don’t.'
+            ? 'Brace closed. The inner frame is dead. n is gone. Scope and lifetime lined up.'
             : id === 'stat' && i === 1
-              ? 'First call. n is initialized to 0, once. Not each call. Thread-safety of that init is later (C++11 magic statics).'
+              ? 'First call. n is initialized to 0, once. Not each call.'
               : id === 'stat' && i === 2
                 ? '++n → 1. The initializer does not run again. That is why a Meyers singleton works.'
                 : id === 'stat'
                   ? 'Second call. Same object, now 2. Destroyed at program end, not when counter returns.'
                   : id === 'dangle' && i === 1
-                    ? 'r binds to local. The reference is just another name. It does not extend local’s lifetime (except temporary binding, not this).'
+                    ? 'r binds to local. The reference is another name. It does not extend local’s lifetime.'
                     : id === 'dangle' && i === 2
                       ? 'local’s block ended. The object is gone. r still exists in the caller — a name with no object.'
                       : id === 'dangle'
@@ -166,98 +65,83 @@ using namespace std;`
                         : i === 1
                           ? 'using namespace std; makes std’s names visible as if they were here. Fine in a .cpp, poison in a header.'
                           : i === 2
-                            ? 'cout hops into the global soup. Every include of this header injects that lookup into another TU.'
+                            ? 'cout is now in the surrounding soup. Every include of this header injects that lookup into another TU.'
                             : 'Prefer using std::cout; at function scope, or just std::. Named namespaces beat static at namespace scope.'
 
-  const m = MODES.find((x) => x.id === id) ?? MODES[0]
-  const stageKind = gone ? 'sc-stage--dead' : polluted ? 'sc-stage--pollute' : id === 'stat' && i >= 1 ? 'sc-stage--static' : ''
+  const tone = innerDead && id === 'dangle' ? 'trap' : polluted ? 'warn' : innerDead && id === 'block' ? 'ok' : 'idle'
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        {MODES.map((x) => (
-          <button
-            key={x.id}
-            className={`chip${id === x.id ? ' chip--active' : ''}`}
-            onClick={() => select(x.id)}
-            disabled={playing}
-          >
-            {x.title}
-          </button>
-        ))}
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play scope
-        </button>
-        <button className="chip chip--ghost" onClick={() => select(id)}>
-          reset
-        </button>
-      </div>
-
-      <div ref={stageRef} className={`viz-stage sc-stage viz-stage--live ${stageKind}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{stepCount} · <code>{m.sig}</code>
-        </p>
-        <div className="sc-row">
-          <div ref={srcRef} className={`own-card${i >= 1 ? ' own-card--unique' : ''}${gone && id === 'block' ? ' own-ctrl--ghost' : ''}`}>
-            <span className="lf-tag">
-              {id === 'block' ? 'block' : id === 'stat' ? 'call' : id === 'dangle' ? 'callee' : 'std'}
-            </span>
-            <span className="own-name">
-              {id === 'block' ? (gone ? '{ }' : '{ n }') : id === 'stat' ? (i >= 3 ? '2nd call' : '1st call') : id === 'dangle' ? (gone ? 'local dead' : 'local') : 'namespace std'}
-            </span>
-            <span className="mem-val">{id === 'dangle' ? (i >= 1 && i < 2 ? '7' : gone ? '∅' : '7') : id === 'using' ? 'cout' : nVal}</span>
-            <span className="mem-note">{id === 'stat' && i >= 1 ? 'same n' : id === 'using' ? 'named scope' : 'automatic'}</span>
+    <SceneShell
+      modes={MODES}
+      mode={id}
+      onSelect={select}
+      playing={playing}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setId(id)
+      }}
+      playLabel="Play scope"
+      step={i}
+      stepCount={4}
+      sig={MODES.find((m) => m.id === id)?.title}
+      caption={caption}
+      code={code}
+      tone={tone}
+    >
+      {id === 'using' ? (
+        <div className="fx-split">
+          <div className={`fx-ns${i >= 1 ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">namespace std</span>
+            <div className="fx-ns-item">cout</div>
+            <div className="fx-ns-item">vector</div>
           </div>
-          <div
-            ref={dstRef}
-            className={`own-card${id === 'dangle' && i >= 1 ? ' own-card--shared' : ''}${id === 'dangle' && gone ? ' nd-card--ub' : ''}${polluted ? ' nd-card--ub' : ''}${id === 'stat' && i >= 1 ? ' own-card--unique' : ''}${alive ? ' own-card--unique' : ''}`}
-          >
-            <span className="lf-tag">
-              {id === 'block' ? 'n' : id === 'stat' ? 'n' : id === 'dangle' ? 'r' : 'global'}
-            </span>
-            <span className="own-name">
-              {id === 'block'
-                ? gone
-                  ? 'destroyed'
-                  : alive
-                    ? '1'
-                    : '—'
-                : id === 'stat'
-                  ? String(nVal)
-                  : id === 'dangle'
-                    ? gone
-                      ? 'dangling'
-                      : i >= 1
-                        ? 'alias'
-                        : '—'
-                    : polluted
-                      ? 'cout visible'
-                      : '—'}
-            </span>
-            <span className="mem-note">
-              {id === 'dangle' && gone
-                ? 'name lives, object dead'
-                : id === 'stat' && i >= 3
-                  ? 'no re-init'
-                  : id === 'using' && polluted
-                    ? 'header pollution'
-                    : gone
-                      ? 'out of scope'
-                      : 'waiting'}
-            </span>
+          <div className="fx-gutter">using</div>
+          <div className={`fx-ns${polluted ? ' fx-ns--leak' : ''}`}>
+            <span className="fx-kicker">enclosing scope</span>
+            <div className={`fx-ns-item${polluted ? ' fx-ns-item--out' : ''}`}>{polluted ? 'cout  (leaked)' : '—'}</div>
           </div>
         </div>
-        {pos && (
-          <span className={`ptr-pulse sc-flyer${gone || polluted ? ' sc-flyer--trap' : id === 'dangle' && i === 1 ? ' sc-flyer--weld' : ''}`} style={{ left: pos.x, top: pos.y }}>
-            {flyerText}
-          </span>
-        )}
+      ) : (
+        <div className="fx-frames">
+          <div className="fx-frame">
+            <span className="fx-kicker">{id === 'stat' ? 'function counter()' : id === 'dangle' ? 'caller' : 'function'}</span>
+            {id === 'dangle' && i >= 1 && (
+              <div className="fx-var">
+                int& r {i >= 2 ? '· dangling' : '= local'}
+              </div>
+            )}
+            {id === 'stat' && i >= 1 && (
+              <div className="fx-var">
+                static int n = {nVal} · lives until exit
+              </div>
+            )}
+            {(id === 'block' || id === 'dangle') && (
+              <div className={`fx-frame fx-frame--inner${innerDead ? ' fx-frame--dead' : ''}${innerAlive ? '' : i === 0 ? ' fx-slot--dim' : ''}`}>
+                <span className="fx-kicker">{innerDead ? 'block ended' : 'block'}</span>
+                {(innerAlive || innerDead) && (
+                  <div className="fx-var">{id === 'block' ? `int n = ${innerAlive ? nVal : 'gone'}` : `int local = ${innerAlive ? '7' : 'destroyed'}`}</div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      <div
+        className={`fx-verdict${i >= 3 ? ' fx-verdict--show' : ''} ${
+          id === 'dangle' ? 'fx-verdict--trap' : polluted ? 'fx-verdict--warn' : 'fx-verdict--ok'
+        }`}
+      >
+        {id === 'block' && i >= 3
+          ? 'n destroyed with the brace'
+          : id === 'stat' && i >= 3
+            ? 'same n · 2 · not re-initialized'
+            : id === 'dangle' && i >= 3
+              ? 'r is in scope · local is dead · UB'
+              : id === 'using' && i >= 3
+                ? 'header pollution · every TU sees cout'
+                : ''}
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{code}</code>
-      </pre>
-      <p className="layout-hint">{caption}</p>
-    </div>
+    </SceneShell>
   )
 }

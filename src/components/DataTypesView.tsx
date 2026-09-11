@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   cppTypes,
   categoryLabels,
@@ -6,7 +6,8 @@ import {
   type CppType,
   type TypeCategory,
 } from '../data/types.ts'
-import { centerOf, hop, waitNextBeat, type Point } from './viz/motion.ts'
+import { SceneShell } from './viz/scene/SceneShell.tsx'
+import { useBeats } from './viz/scene/useBeats.ts'
 
 const filters: Array<{ id: TypeCategory | 'all'; label: string }> = [
   { id: 'all', label: 'All' },
@@ -18,47 +19,35 @@ const filters: Array<{ id: TypeCategory | 'all'; label: string }> = [
 ]
 
 function ByteBar({ bytes, color }: { bytes: number; color: string }) {
-  const cells = Array.from({ length: bytes }, (_, i) => i)
+  const cells = Array.from({ length: bytes }, (_, n) => n)
   return (
     <div className="byte-bar" title={`${bytes} byte${bytes === 1 ? '' : 's'} = ${bytes * 8} bits`}>
-      {cells.map((i) => (
-        <span key={i} className="byte-cell" style={{ background: color }} />
+      {cells.map((n) => (
+        <span key={n} className="byte-cell" style={{ background: color }} />
       ))}
     </div>
   )
 }
 
-interface RankFrame {
-  name: string
-  bytes: number
-  color: string
-  trap: boolean
-  hint: string
-  code: string
-}
-
-const RANK: RankFrame[] = [
+const RANK: { name: string; bytes: number; color: string; hint: string; code: string }[] = [
   {
     name: 'char',
     bytes: 1,
     color: categoryColors.character,
-    trap: false,
-    hint: 'sizeof(char) is 1 by definition. The ranking starts here.',
+    hint: 'sizeof(char) is 1 by definition. The ranking of integer types starts here.',
     code: `sizeof(char) == 1`,
   },
   {
     name: 'short',
     bytes: 2,
     color: categoryColors.integer,
-    trap: false,
-    hint: 'short is at least 16 bits. Typically 2 bytes.',
+    hint: 'short is at least 16 bits. Typically 2 bytes. Ranking is required; exact width is not.',
     code: `sizeof(char) <= sizeof(short)`,
   },
   {
     name: 'int',
     bytes: 4,
     color: categoryColors.integer,
-    trap: false,
     hint: 'int is the default integer. Typically 32 bits — not guaranteed, but ranking is.',
     code: `sizeof(short) <= sizeof(int)`,
   },
@@ -66,7 +55,6 @@ const RANK: RankFrame[] = [
     name: 'long',
     bytes: 8,
     color: categoryColors.integer,
-    trap: false,
     hint: 'LP64 (Linux/macOS): long is 8. Windows LLP64 keeps long at 4. Do not assume.',
     code: `sizeof(int) <= sizeof(long)  // 8 on LP64`,
   },
@@ -74,247 +62,177 @@ const RANK: RankFrame[] = [
     name: 'void*',
     bytes: 8,
     color: categoryColors.pointer,
-    trap: false,
     hint: 'A pointer is an address. 8 bytes on 64-bit. Use nullptr, never NULL.',
     code: `void* p = nullptr;  // 8 bytes on LP64`,
   },
-  {
-    name: 'int / unsigned',
-    bytes: 4,
-    color: categoryColors.integer,
-    trap: true,
-    hint: '−1 converts to a huge unsigned before the compare. −1 < 1u is false. Mixing signed and unsigned is a classic trap.',
-    code: `-1 < 1u;  // false — −1 becomes UINT_MAX`,
-  },
 ]
-
-const STEP_MS = 1300
-const HOP_MS = 640
 
 export function DataTypesView() {
   const [active, setActive] = useState<TypeCategory | 'all'>('all')
   const [selected, setSelected] = useState<CppType>(cppTypes[0])
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [from, setFrom] = useState<Point>({ x: 40, y: 40 })
-  const [to, setTo] = useState<Point>({ x: 200, y: 80 })
+  const { i, playing, play, reset, jump } = useBeats(6)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const srcRef = useRef<HTMLDivElement>(null)
-  const dstRef = useRef<HTMLDivElement>(null)
-
-  const f = RANK[Math.min(i, RANK.length - 1)]
+  const trap = i >= 5
+  const rankI = Math.min(i, 4)
+  const f = trap ? null : RANK[rankI]
 
   const visible = useMemo(
     () => (active === 'all' ? cppTypes : cppTypes.filter((t) => t.category === active)),
     [active],
   )
 
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    if (!stage || !srcRef.current || !dstRef.current) return
-    const origin = stage.getBoundingClientRect()
-    setFrom(centerOf(srcRef.current, origin))
-    setTo(centerOf(dstRef.current, origin))
-  }, [i])
-
   useEffect(() => {
-    if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
+    if (f) {
+      const match = cppTypes.find((t) => t.name === f.name)
+      if (match) setSelected(match)
     }
-    raf = requestAnimationFrame(hopLoop)
-    const stop = waitNextBeat(STEP_MS, () => {
-      if (i >= RANK.length - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stop()
-    }
-  }, [playing, i])
+  }, [f])
 
-  useEffect(() => {
-    const match = cppTypes.find((t) => t.name === f.name)
-    if (match) setSelected(match)
-  }, [f.name])
+  const caption = trap
+    ? 'Usual arithmetic conversions: −1 is converted to unsigned before <. −1 < 1u is false. Mixing signed and unsigned is a classic trap.'
+    : (f?.hint ?? '')
 
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
-  }
-
-  const pos = hopT < 1 ? hop(from, to, hopT) : null
+  const code = trap ? `-1 < 1u;  // false — −1 becomes UINT_MAX` : (f?.code ?? '')
 
   return (
-    <div className="viz-root">
-      <div className="stepper">
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play LP64 ranking then −1 &lt; 1u
-        </button>
-        <button className="chip" onClick={() => setI((n) => Math.max(0, n - 1))} disabled={playing || i === 0}>
-          ◂ prev
-        </button>
-        <button className="chip" onClick={() => setI((n) => Math.min(RANK.length - 1, n + 1))} disabled={playing || i === RANK.length - 1}>
-          next ▸
-        </button>
-        <button
-          className="chip chip--ghost"
-          onClick={() => {
-            setPlaying(false)
-            setI(0)
-            setHopT(1)
-          }}
-        >
-          reset
-        </button>
-      </div>
-
-      <div ref={stageRef} className={`viz-stage ty-stage viz-stage--live${f.trap ? ' ty-stage--trap' : ''}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{RANK.length} · {f.trap ? 'signed/unsigned' : f.name}
-        </p>
-        <div className="lf-beats" aria-hidden>
-          {RANK.map((_, n) => (
-            <span
-              key={n}
-              className={`lf-beat${n === i ? ' lf-beat--on' : ''}${n < i ? ' lf-beat--done' : ''}${n === RANK.length - 1 ? ' lf-beat--dtor' : ''}`}
-            />
-          ))}
-        </div>
-        {f.trap ? (
-          <div className="ty-trap">
-            <div ref={srcRef} className="own-card">
-              <span className="lf-tag">signed</span>
-              <span className="own-name">-1</span>
-              <span className="mem-note">int</span>
-            </div>
-            <span className="pipe-arrow">&lt;</span>
-            <div className="own-card own-card--shared">
-              <span className="lf-tag">unsigned</span>
-              <span className="own-name">1u</span>
-              <span className="mem-note">unsigned int</span>
-            </div>
-            <div ref={dstRef} className="own-card own-card--unique">
-              <span className="lf-tag">usual arithmetic</span>
-              <span className="own-name">UINT_MAX</span>
-              <span className="mem-note">-1 converted</span>
-            </div>
+    <SceneShell
+      playing={playing}
+      onPlay={play}
+      onReset={reset}
+      playLabel="Play LP64 ranking then −1 < 1u"
+      step={i}
+      stepCount={6}
+      sig={trap ? 'signed / unsigned' : f?.name}
+      caption={caption}
+      code={code}
+      tone={trap ? 'trap' : 'idle'}
+      footer={
+        <>
+          <div className="filters">
+            {filters.map((fil) => (
+              <button
+                key={fil.id}
+                className={`chip${active === fil.id ? ' chip--active' : ''}`}
+                onClick={() => setActive(fil.id)}
+                disabled={playing}
+              >
+                {fil.label}
+              </button>
+            ))}
           </div>
-        ) : (
-          <div className="ty-rank">
-            <div ref={srcRef} className="ty-name">
-              <span className="tpl-kicker">type</span>
-              <code>{f.name}</code>
-            </div>
-            <div ref={dstRef} className="ty-bytes">
-              {Array.from({ length: f.bytes }, (_, n) => (
-                <span key={n} className="ty-cell" style={{ background: f.color }} />
+          <div className="types-grid">
+            <div className="type-table" role="table">
+              <div className="type-row type-row--head" role="row">
+                <span>Type</span>
+                <span>Size</span>
+                <span className="hide-narrow">Width</span>
+                <span className="hide-narrow">Range</span>
+              </div>
+              {visible.map((t) => (
+                <button
+                  key={t.name}
+                  className={`type-row${selected.name === t.name ? ' type-row--active' : ''}`}
+                  role="row"
+                  onClick={() => {
+                    if (playing) return
+                    setSelected(t)
+                  }}
+                >
+                  <span className="type-name">
+                    <span className="type-dot" style={{ background: categoryColors[t.category] }} />
+                    <code>{t.name}</code>
+                  </span>
+                  <span className="type-size">
+                    {t.bytes} <small>byte{t.bytes === 1 ? '' : 's'}</small>
+                  </span>
+                  <span className="hide-narrow">
+                    <ByteBar bytes={t.bytes} color={categoryColors[t.category]} />
+                  </span>
+                  <span className="type-range hide-narrow">{t.range}</span>
+                </button>
               ))}
-              <span className="ty-width">
-                {f.bytes} byte{f.bytes === 1 ? '' : 's'}
-              </span>
             </div>
+            <aside className="detail-card" aria-live="polite">
+              <div className="detail-badge" style={{ background: categoryColors[selected.category] }}>
+                {categoryLabels[selected.category]}
+              </div>
+              <h2>
+                <code>{selected.name}</code>
+              </h2>
+              <ByteBar bytes={selected.bytes} color={categoryColors[selected.category]} />
+              <dl className="detail-list">
+                <div>
+                  <dt>Size</dt>
+                  <dd>
+                    {selected.bytes} bytes ({selected.bytes * 8} bits)
+                  </dd>
+                </div>
+                <div>
+                  <dt>Range</dt>
+                  <dd>{selected.range}</dd>
+                </div>
+                {selected.signed !== undefined && (
+                  <div>
+                    <dt>Signedness</dt>
+                    <dd>{selected.signed ? 'signed' : 'unsigned'}</dd>
+                  </div>
+                )}
+              </dl>
+              <p className="detail-note">{selected.note}</p>
+            </aside>
           </div>
-        )}
-        {pos && (
-          <span className={`ty-flyer${f.trap ? ' ty-flyer--trap' : ''}`} style={{ left: pos.x, top: pos.y }}>
-            {f.trap ? '-1' : f.name}
-          </span>
-        )}
-        {f.trap && <span className="sf-hard">false</span>}
-      </div>
-
-      <pre className="code-block sh-code">
-        <code>{f.code}</code>
-      </pre>
-      <p className="layout-hint">{f.hint}</p>
-
-      <div className="filters">
-        {filters.map((fil) => (
-          <button
-            key={fil.id}
-            className={`chip${active === fil.id ? ' chip--active' : ''}`}
-            onClick={() => setActive(fil.id)}
-            disabled={playing}
-          >
-            {fil.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="types-grid">
-        <div className="type-table" role="table">
-          <div className="type-row type-row--head" role="row">
-            <span>Type</span>
-            <span>Size</span>
-            <span className="hide-narrow">Width</span>
-            <span className="hide-narrow">Range</span>
+        </>
+      }
+    >
+      {trap ? (
+        <div className="fx-compare">
+          <div className="fx-slot fx-slot--trap">
+            <span className="fx-kicker">signed int</span>
+            <span className="fx-value">-1</span>
+            <span className="fx-note">what you wrote</span>
           </div>
-          {visible.map((t) => (
+          <span className="fx-op">&lt;</span>
+          <div className="fx-slot fx-slot--focus">
+            <span className="fx-kicker">unsigned int</span>
+            <span className="fx-value">1u</span>
+            <span className="fx-note">usual conversions</span>
+          </div>
+          <span className="fx-op">→</span>
+          <div className="fx-slot fx-slot--trap">
+            <span className="fx-kicker">after conversion</span>
+            <span className="fx-value">UINT_MAX</span>
+            <span className="fx-note">-1 converted, then compared</span>
+          </div>
+        </div>
+      ) : (
+        <div className="fx-ladder">
+          {RANK.map((row, n) => (
             <button
-              key={t.name}
-              className={`type-row${selected.name === t.name ? ' type-row--active' : ''}`}
-              role="row"
-              onClick={() => {
-                if (playing) return
-                setSelected(t)
-              }}
+              key={row.name}
+              type="button"
+              className={`fx-rank${n === rankI ? ' fx-rank--on' : ''}${n < rankI ? ' fx-rank--done' : ''}`}
+              onClick={() => jump(n)}
             >
-              <span className="type-name">
-                <span className="type-dot" style={{ background: categoryColors[t.category] }} />
-                <code>{t.name}</code>
+              <code>{row.name}</code>
+              <span className="fx-cells">
+                {Array.from({ length: row.bytes }, (_, b) => (
+                  <span
+                    key={b}
+                    className={`fx-cell${n <= rankI ? ' fx-cell--on' : ''}`}
+                    style={{ background: n <= rankI ? row.color : undefined }}
+                  />
+                ))}
               </span>
-              <span className="type-size">
-                {t.bytes} <small>byte{t.bytes === 1 ? '' : 's'}</small>
+              <span className="fx-note">
+                {row.bytes} B
               </span>
-              <span className="hide-narrow">
-                <ByteBar bytes={t.bytes} color={categoryColors[t.category]} />
-              </span>
-              <span className="type-range hide-narrow">{t.range}</span>
             </button>
           ))}
         </div>
-
-        <aside className="detail-card" aria-live="polite">
-          <div className="detail-badge" style={{ background: categoryColors[selected.category] }}>
-            {categoryLabels[selected.category]}
-          </div>
-          <h2>
-            <code>{selected.name}</code>
-          </h2>
-          <ByteBar bytes={selected.bytes} color={categoryColors[selected.category]} />
-          <dl className="detail-list">
-            <div>
-              <dt>Size</dt>
-              <dd>
-                {selected.bytes} bytes ({selected.bytes * 8} bits)
-              </dd>
-            </div>
-            <div>
-              <dt>Range</dt>
-              <dd>{selected.range}</dd>
-            </div>
-            {selected.signed !== undefined && (
-              <div>
-                <dt>Signedness</dt>
-                <dd>{selected.signed ? 'signed' : 'unsigned'}</dd>
-              </div>
-            )}
-          </dl>
-          <p className="detail-note">{selected.note}</p>
-        </aside>
+      )}
+      <div className={`fx-verdict${trap ? ' fx-verdict--show fx-verdict--trap' : ''}`}>
+        {trap ? '-1 < 1u  →  false' : ''}
       </div>
-    </div>
+    </SceneShell>
   )
 }

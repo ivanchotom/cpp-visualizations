@@ -1,282 +1,139 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { hop, waitNextBeat, type Point } from './motion.ts'
+import { useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'octal' | 'suffix' | 'nullptr' | 'brace'
 
-const MODES: { id: Mode; title: string; sig: string }[] = [
-  { id: 'octal', title: '010', sig: 'int x = 010' },
-  { id: 'suffix', title: '42u', sig: 'auto n = 42u' },
-  { id: 'nullptr', title: 'nullptr', sig: 'auto p = nullptr' },
-  { id: 'brace', title: 'auto x{1}', sig: 'auto x{1}' },
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'octal', title: '010' },
+  { id: 'suffix', title: '42u' },
+  { id: 'nullptr', title: 'nullptr' },
+  { id: 'brace', title: 'auto x{1}' },
 ]
-
-const STEP_MS = 1300
-const HOP_MS = 700
 
 export function LiteralsViz() {
   const [id, setId] = useState<Mode>('octal')
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [from, setFrom] = useState<Point>({ x: 80, y: 90 })
-  const [to, setTo] = useState<Point>({ x: 360, y: 90 })
+  const { i, playing, play, reset } = useBeats(4)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const srcRef = useRef<HTMLDivElement>(null)
-  const dstRef = useRef<HTMLDivElement>(null)
-
-  const stepCount = 4
-  const arrived = i >= 1
-  const decided = i >= 2
-  const done = i >= 3
-  const trap = (id === 'octal' && done) || (id === 'brace' && decided)
-
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    if (!stage || !srcRef.current || !dstRef.current) return
-    const origin = stage.getBoundingClientRect()
-    const a = srcRef.current.getBoundingClientRect()
-    const b = dstRef.current.getBoundingClientRect()
-    setFrom({ x: a.left - origin.left + a.width / 2, y: a.top - origin.top + a.height / 2 })
-    setTo({ x: b.left - origin.left + b.width / 2, y: b.top - origin.top + b.height / 2 })
-  }, [id, i])
-
-  useEffect(() => {
-    if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
-    }
-    raf = requestAnimationFrame(hopLoop)
-    const stopBeat = waitNextBeat(STEP_MS, () => {
-      if (i >= stepCount - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stopBeat()
-    }
-  }, [playing, i, stepCount])
-
-  function select(next: Mode) {
-    setPlaying(false)
-    setId(next)
-    setI(0)
-    setHopT(1)
+  function select(next: string) {
+    reset()
+    setId(next as Mode)
   }
 
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
-  }
-
-  const pos = hopT < 1 && i >= 1 ? hop(from, to, hopT) : null
-  const flyerText =
-    id === 'octal'
-      ? i === 1
-        ? '010'
-        : '8'
-      : id === 'suffix'
-        ? i === 1
-          ? '42'
-          : '42u'
-        : id === 'nullptr'
-          ? i === 1
-            ? '0'
-            : 'nullptr'
-          : i === 1
-            ? '{1}'
-            : 'list'
-
-  const srcVal =
-    id === 'octal'
-      ? '010'
-      : id === 'suffix'
-        ? i >= 2
-          ? '42u'
-          : '42'
-        : id === 'nullptr'
-          ? i >= 2
-            ? 'nullptr'
-            : '0'
-          : '{1}'
-
-  const srcNote =
-    id === 'octal'
-      ? 'looks like ten'
-      : id === 'suffix'
-        ? i >= 2
-          ? 'unsigned suffix'
-          : 'no suffix → int'
-        : id === 'nullptr'
-          ? i >= 2
+  const source = id === 'octal' ? '010' : id === 'suffix' ? '42u' : id === 'nullptr' ? 'nullptr' : 'auto x{1}'
+  const base = i === 0 ? '—' : id === 'octal' ? '8 (leading 0)' : id === 'suffix' ? '10' : id === 'nullptr' ? 'pointer' : 'list'
+  const type =
+    i < 2
+      ? '—'
+      : id === 'octal'
+        ? 'int'
+        : id === 'suffix'
+          ? 'unsigned int'
+          : id === 'nullptr'
             ? 'std::nullptr_t'
-            : 'int zero'
-          : 'one token in braces'
-
-  const dstVal =
-    id === 'octal'
-      ? arrived
+            : 'std::initializer_list<int>'
+  const value =
+    i < 3
+      ? '—'
+      : id === 'octal'
         ? '8'
-        : '—'
-      : id === 'suffix'
-        ? i >= 2
-          ? 'unsigned'
-          : arrived
-            ? 'int'
-            : '—'
-        : id === 'nullptr'
-          ? i >= 2
-            ? 'nullptr_t → T*'
-            : arrived
-              ? 'null int*'
-              : '—'
-          : decided
-            ? 'initializer_list<int>'
-            : arrived
-              ? 'int?'
-              : '—'
+        : id === 'suffix'
+          ? '42u'
+          : id === 'nullptr'
+            ? 'null pointer'
+            : '{1}  (not int)'
 
-  const dstNote =
-    id === 'octal'
-      ? arrived
-        ? 'leading 0 = octal'
-        : 'waiting'
-      : id === 'suffix'
-        ? i >= 2
-          ? 'first that fits unsigned'
-          : arrived
-            ? 'first that fits int'
-            : 'auto n'
-        : id === 'nullptr'
-          ? i >= 2
-            ? 'typed null pointer'
-            : arrived
-              ? '0 converts to T*'
-              : 'waiting'
-          : decided
-            ? 'C++14 auto + braces'
-            : 'waiting'
+  const trap = (id === 'octal' && i >= 3) || (id === 'brace' && i >= 2)
 
   const code =
     id === 'octal'
-      ? i === 0
-        ? `int x = 010;`
-        : i === 1
-          ? `// leading 0 → octal, not decimal`
-          : i === 2
-            ? `int x = 010;  // 1*8 + 0`
-            : `// x is 8. int y = 10; if you meant ten.`
+      ? `int x = 010;     // 8, not ten`
       : id === 'suffix'
-        ? i < 2
-          ? `auto n = 42;     // int`
-          : `auto n = 42u;    // unsigned
-auto w = 42ll;   // long long`
+        ? `auto n = 42u;    // unsigned int`
         : id === 'nullptr'
-          ? i < 2
-            ? `int* p = 0;      // 0 is int, converts`
-            : `auto p = nullptr; // std::nullptr_t
-int* q = p;      // then to T*`
-          : i < 2
-            ? `auto x{1};`
-            : `// C++14: std::initializer_list<int>
-// not int. Prefer auto x = 1;`
+          ? `auto p = nullptr;\n// std::nullptr_t, not int`
+          : `auto x{1};       // C++14: initializer_list\nauto y = 1;      // int`
 
   const caption =
     i === 0
-      ? id === 'octal'
-        ? 'Play 010. A literal has a type and a value. Leading 0 is octal, not a style for tens.'
-        : id === 'suffix'
-          ? 'Play 42 then 42u. Suffixes pick the type: the first that fits in that literal’s list.'
-          : id === 'nullptr'
-            ? 'Play 0 then nullptr. 0 is an int that converts to any pointer. nullptr is a typed null.'
-            : 'Play auto x{1}. In C++14 this is not an int. Brace + auto is a one-element initializer_list.'
-      : id === 'octal' && i === 1
-        ? '010 hops in as written. The 0 prefix is the radix, not padding.'
-        : id === 'octal' && i === 2
-          ? '1×8 + 0 = 8. Same token, different value. 052 is 42. Hex is 0x.'
+      ? 'Play the decoder. A literal is source text with a type and a value. The spelling is not the value.'
+      : i === 1
+        ? id === 'octal'
+          ? 'A leading 0 means octal, not a style of decimal. 010 is base 8.'
+          : id === 'suffix'
+            ? 'u (or U) is a suffix. It is part of the token. 42u is not “42, then convert”.'
+            : id === 'nullptr'
+              ? 'nullptr is a keyword. It is not 0, and it is not NULL (which is often 0).'
+              : 'Braces in C++14 with auto do not mean “this is an int”. Direct-list-init of auto is a list.'
+        : i === 2
+          ? id === 'octal'
+            ? 'Type is int. Value is 1×8 + 0 = 8. The trap is thinking you wrote ten.'
+            : id === 'suffix'
+              ? 'Type is unsigned int. That changes overload resolution and usual arithmetic conversions.'
+              : id === 'nullptr'
+                ? 'Type is std::nullptr_t. It converts to any pointer type, not to bool via 0 in the same way 0 does in every context.'
+                : 'auto x{1} is std::initializer_list<int> in C++14. auto x = 1 is int. This was a defect; C++17 changed it.'
           : id === 'octal'
-            ? 'x is 8. This compiles. Write 10, 0xA, or 0b1010 later — never a leading 0 for decimal.'
-            : id === 'suffix' && i === 1
-              ? '42 has no suffix. The list is int → long → long long. 42 fits in int.'
-              : id === 'suffix' && i === 2
-                ? '42u is unsigned. 3.14 is double; 3.14f is float. The suffix is the type.'
-                : id === 'suffix'
-                  ? 'auto n = 42u is unsigned. Mixing with signed in comparisons is the usual trap — see types.'
-                  : id === 'nullptr' && i === 1
-                    ? '0 hops into int*. It becomes a null pointer by conversion. Overload resolution still sees an int.'
-                    : id === 'nullptr' && i === 2
-                      ? 'nullptr is std::nullptr_t. It converts to any pointer (and to bool). It does not pick a numeric overload.'
-                      : id === 'nullptr'
-                        ? 'Prefer nullptr. 0 and NULL are ints (or macros). Overloads that take int* vs int will surprise you.'
-                        : i === 1
-                          ? 'Braces wrap the 1. auto + a braced-init-list is a special rule, not “whatever T would have been.”'
-                          : i === 2
-                            ? 'C++14: auto x{1} is std::initializer_list<int>. One element, list type. x.size() is 1.'
-                            : 'Prefer auto x = 1; or int x{1}. C++17 later made auto x{1} an int. Do not write to that future yet.'
-
-  const m = MODES.find((x) => x.id === id) ?? MODES[0]
-  const stageKind = trap ? 'lit-stage--trap' : id === 'nullptr' && done ? 'lit-stage--ok' : ''
+            ? 'Print 010 and you get 8. Prefer 0x or just 10. Leading zeros are not padding.'
+            : id === 'suffix'
+              ? 'Write 42u when you mean unsigned. Mixing with signed -1 is the same trap as −1 < 1u.'
+              : id === 'nullptr'
+                ? 'Use nullptr. NULL is a macro; 0 is an int. Overload sets treat them differently.'
+                : 'C++14: auto x{1} is a list of one int. If you wanted int, write auto x = 1; or int x{1}.'
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        {MODES.map((x) => (
-          <button
-            key={x.id}
-            className={`chip${id === x.id ? ' chip--active' : ''}`}
-            onClick={() => select(x.id)}
-            disabled={playing}
-          >
-            {x.title}
-          </button>
-        ))}
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play literal
-        </button>
-        <button className="chip chip--ghost" onClick={() => select(id)}>
-          reset
-        </button>
-      </div>
-
-      <div ref={stageRef} className={`viz-stage lit-stage viz-stage--live ${stageKind}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{stepCount} · <code>{m.sig}</code>
-        </p>
-        <div className="lit-row">
-          <div ref={srcRef} className={`own-card${arrived ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">literal</span>
-            <span className="own-name">{srcVal}</span>
-            <span className="mem-note">{srcNote}</span>
-          </div>
-          <div
-            ref={dstRef}
-            className={`own-card${arrived ? (trap ? ' nd-card--ub' : ' own-card--shared') : ''}${id === 'nullptr' && i >= 2 ? ' own-card--unique' : ''}`}
-          >
-            <span className="lf-tag">{id === 'brace' ? 'auto x' : id === 'nullptr' ? 'p' : id === 'suffix' ? 'auto n' : 'int x'}</span>
-            <span className="own-name">{dstVal}</span>
-            <span className="mem-note">{dstNote}</span>
-          </div>
+    <SceneShell
+      modes={MODES}
+      mode={id}
+      onSelect={select}
+      playing={playing}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setId(id)
+      }}
+      playLabel="Play literal"
+      step={i}
+      stepCount={4}
+      sig={source}
+      caption={caption}
+      code={code}
+      tone={trap ? 'warn' : 'idle'}
+    >
+      <div className="fx-decode">
+        <div className={`fx-slot${i === 0 ? ' fx-slot--focus' : ''}`}>
+          <span className="fx-kicker">spelling</span>
+          <span className="fx-value">{source}</span>
+          <span className="fx-note">what you typed</span>
         </div>
-        {pos && (
-          <span className={`ptr-pulse lit-flyer${trap ? ' lit-flyer--trap' : id === 'nullptr' && i >= 2 ? ' lit-flyer--ok' : ''}`} style={{ left: pos.x, top: pos.y }}>
-            {flyerText}
+        <div className={`fx-slot${i === 1 ? ' fx-slot--focus' : ''}`}>
+          <span className="fx-kicker">decode</span>
+          <span className="fx-value" style={{ fontSize: 16 }}>
+            {base}
           </span>
-        )}
+          <span className="fx-note">base / form</span>
+        </div>
+        <div className={`fx-slot${i >= 2 ? ' fx-slot--focus' : ''}${trap ? ' fx-slot--trap' : i >= 3 ? ' fx-slot--ok' : ''}`}>
+          <span className="fx-kicker">type · value</span>
+          <span className="fx-value" style={{ fontSize: 16 }}>
+            {type}
+          </span>
+          <span className="fx-note">{value}</span>
+        </div>
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{code}</code>
-      </pre>
-      <p className="layout-hint">{caption}</p>
-    </div>
+      <div
+        className={`fx-verdict${i >= 3 ? ' fx-verdict--show' : ''} ${trap ? 'fx-verdict--warn' : 'fx-verdict--ok'}`}
+      >
+        {id === 'octal' && i >= 3
+          ? '010 is eight'
+          : id === 'suffix' && i >= 3
+            ? '42u is unsigned int'
+            : id === 'nullptr' && i >= 3
+              ? 'nullptr_t, not int 0'
+              : id === 'brace' && i >= 3
+                ? 'C++14 auto x{1} is initializer_list'
+                : ''}
+      </div>
+    </SceneShell>
   )
 }

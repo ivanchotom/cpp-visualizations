@@ -1,266 +1,146 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { hop, waitNextBeat, type Point } from './motion.ts'
+import { useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'assign' | 'brace' | 'named' | 'dynamic'
 
-const MODES: { id: Mode; title: string; sig: string }[] = [
-  { id: 'assign', title: 'int n = d', sig: 'int n = 3.9' },
-  { id: 'brace', title: 'int n{d}', sig: 'int n{3.9}' },
-  { id: 'named', title: 'static_cast', sig: 'static_cast<int>(d)' },
-  { id: 'dynamic', title: 'dynamic_cast', sig: 'dynamic_cast<D*>(p)' },
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'assign', title: 'int n = d' },
+  { id: 'brace', title: 'int n{d}' },
+  { id: 'named', title: 'static_cast' },
+  { id: 'dynamic', title: 'dynamic_cast' },
 ]
-
-const STEP_MS = 1300
-const HOP_MS = 700
 
 export function ConversionsViz() {
   const [id, setId] = useState<Mode>('assign')
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [from, setFrom] = useState<Point>({ x: 80, y: 90 })
-  const [to, setTo] = useState<Point>({ x: 360, y: 90 })
+  const { i, playing, play, reset } = useBeats(4)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const srcRef = useRef<HTMLDivElement>(null)
-  const dstRef = useRef<HTMLDivElement>(null)
+  function select(next: string) {
+    reset()
+    setId(next as Mode)
+  }
 
-  const stepCount = 4
-  const arrived = i >= 1
-  const done = i >= 3
-  const silent = id === 'assign' && arrived
+  const silent = id === 'assign' && i >= 1
   const rejected = id === 'brace' && i >= 2
-  const named = id === 'named' && arrived
-  const dynTry = id === 'dynamic' && i === 1
+  const named = id === 'named' && i >= 1
   const dynFail = id === 'dynamic' && i >= 2
-  const bounce = rejected || dynFail
 
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    if (!stage || !srcRef.current || !dstRef.current) return
-    const origin = stage.getBoundingClientRect()
-    const a = srcRef.current.getBoundingClientRect()
-    const b = dstRef.current.getBoundingClientRect()
-    const src = { x: a.left - origin.left + a.width / 2, y: a.top - origin.top + a.height / 2 }
-    const dst = { x: b.left - origin.left + b.width / 2, y: b.top - origin.top + b.height / 2 }
-    if (bounce) {
-      setFrom(dst)
-      setTo(src)
-    } else {
-      setFrom(src)
-      setTo(dst)
-    }
-  }, [id, i, bounce])
-
-  useEffect(() => {
-    if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
-    }
-    raf = requestAnimationFrame(hopLoop)
-    const stopBeat = waitNextBeat(STEP_MS, () => {
-      if (i >= stepCount - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stopBeat()
-    }
-  }, [playing, i, stepCount])
-
-  function select(next: Mode) {
-    setPlaying(false)
-    setId(next)
-    setI(0)
-    setHopT(1)
-  }
-
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
-  }
-
-  const pos = hopT < 1 && i >= 1 ? hop(from, to, hopT) : null
-  const flyerText =
-    id === 'dynamic'
-      ? dynFail
-        ? 'nullptr'
-        : 'D*?'
-      : i === 1
-        ? '3.9'
-        : id === 'brace'
-          ? 'error'
-          : '3'
-
+  const srcVal = '3.9'
   const dstVal =
-    id === 'brace'
-      ? rejected
-        ? 'ill-formed'
-        : '—'
-      : id === 'named'
-        ? named
-          ? '3'
+    id === 'assign' && i >= 2
+      ? '3'
+      : id === 'named' && i >= 2
+        ? '3'
+        : id === 'dynamic' && i >= 2
+          ? 'nullptr'
           : '—'
-        : id === 'assign'
-          ? silent
-            ? '3'
-            : '—'
-          : dynFail
-            ? 'nullptr'
-            : dynTry
-              ? 'trying D*'
-              : '—'
 
   const code =
     id === 'assign'
-      ? i === 0
-        ? `double d = 3.9;\nint n;`
-        : i === 1
-          ? `int n = d;  // implicit`
-          : i === 2
-            ? `int n = d;  // 3, fraction dropped`
-            : `// compiles. The 0.9 is gone. Prefer braces.`
+      ? `double d = 3.9;\nint n = d;          // 3, silent`
       : id === 'brace'
-        ? i === 0
-          ? `double d = 3.9;`
-          : i === 1
-            ? `int n{d};  // list-init`
-            : i === 2
-              ? `int n{d};  // error: narrowing`
-              : `// braces refuse silent truncation.`
+        ? `double d = 3.9;\nint n{d};           // error (narrowing)`
         : id === 'named'
-          ? i === 0
-            ? `double d = 3.9;`
-            : i === 1
-              ? `auto n = static_cast<int>(d);`
-              : i === 2
-                ? `auto n = static_cast<int>(d);  // 3`
-                : `// named, related, documented.`
-          : i === 0
-            ? `struct B { virtual ~B() {} };
-struct D : B { void only(); };
-B b;
-B* p = &b;`
-            : i === 1
-              ? `D* q = dynamic_cast<D*>(p);`
-              : i === 2
-                ? `// p points at a B, not a D`
-                : `q == nullptr;  // pointer form does not throw`
+          ? `int n = static_cast<int>(d);  // 3, named`
+          : `B* p = dynamic_cast<B*>(a);\n// nullptr if a is not a B`
 
   const caption =
     i === 0
       ? id === 'assign'
-        ? 'Play the assignment. C++ converts more eagerly than you might like. = will silently narrow.'
+        ? 'Play copy-init. double sits in its slot. int is empty. Assignment will narrow without asking.'
         : id === 'brace'
-          ? 'Play brace init. int n{3.9} is an error. That is why braces are the modern default.'
+          ? 'Play list-init. Brace initialization is the narrowing firewall. 3.9 cannot become int here.'
           : id === 'named'
-            ? 'Play static_cast. Named casts document intent. Related conversions only — numeric, void*, upcast.'
-            : 'Play dynamic_cast. Safe downcast of a polymorphic type. Pointer failure is nullptr; a reference would throw.'
+            ? 'Play static_cast. The conversion is explicit in the source. Still truncates; at least it is named.'
+            : 'Play dynamic_cast on a pointer. If the object is not that type, you get nullptr — not a flying failure.'
       : id === 'assign' && i === 1
-        ? '3.9 hops into an int. The conversion is implicit. No cast in the source, so readers miss the truncation.'
+        ? 'The conversion is underway. The double is still 3.9. The int slot is about to receive a truncated copy.'
         : id === 'assign' && i === 2
-          ? 'n is 3. The 0.9 is gone. This compiles. Signed/unsigned mixes in arithmetic are the same family of surprise.'
+          ? 'n is 3. The fractional part is gone. No diagnostic. This is why braces exist.'
           : id === 'assign'
-            ? 'Prefer int n{d} (ill-formed) or static_cast<int>(d) when you mean it. C-style (int)d can mix several cast kinds — avoid it.'
+            ? 'Prefer int n{d} or a named cast. Silent narrowing is a defect magnet.'
             : id === 'brace' && i === 1
-              ? 'List-initialization is the narrowing gate. The compiler must reject a floating-to-int drop here.'
-              : id === 'brace' && i === 2
-                ? 'Ill-formed. No object n. That bounce is the whole point of uniform initialization.'
-                : id === 'brace'
-                  ? 'Use braces at variable declarations. C-style (int)d and = both stay silent. Name a static_cast when you must truncate.'
-                  : id === 'named' && i === 1
-                    ? 'static_cast<int>(d) is a well-defined related conversion. The name is the documentation.'
-                    : id === 'named' && i === 2
-                      ? '3, on purpose. Not reinterpret, not const_cast. One job.'
-                      : id === 'named'
-                        ? 'C-style (int)d can act like static, const, or reinterpret depending on the types. Don’t give it that range.'
-                        : i === 1
-                          ? 'dynamic_cast needs a virtual function (here ~B). RTTI walks the real type. p points at a plain B.'
-                          : i === 2
-                            ? 'The source is not a D. The pointer form returns nullptr. A D& cast would throw std::bad_cast.'
-                            : 'Check the pointer. No new in the lesson — Base b; B* p = &b is enough to fail the downcast.'
+              ? 'd is 3.9. The int slot stays empty. List-init checks narrowing at compile time.'
+              : id === 'brace'
+                ? 'Rejected. The program does not compile. The value never moved. That is the point of the braces.'
+                : id === 'named' && i === 1
+                  ? 'static_cast is a gate. You asked for int. The compiler will truncate on purpose.'
+                  : id === 'named'
+                    ? 'n is 3. Readers see the cast. Prefer this over assignment when the loss is intended.'
+                    : i === 1
+                      ? 'The pointer is tested against B’s type info. This is a runtime check, not a hop.'
+                      : i === 2
+                        ? 'Not a B. The pointer slot becomes nullptr. No exception on pointer dynamic_cast (references throw).'
+                        : 'Always test the result. C++14: dynamic_cast needs a polymorphic source (virtual function).'
 
-  const m = MODES.find((x) => x.id === id) ?? MODES[0]
-  const trap = silent && done
-  const stageKind = rejected ? 'cvn-stage--reject' : trap ? 'cvn-stage--narrow' : dynFail ? 'cvn-stage--null' : ''
+  const tone = rejected || dynFail ? 'trap' : named && i >= 3 ? 'ok' : silent && i >= 3 ? 'warn' : 'idle'
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        {MODES.map((x) => (
-          <button
-            key={x.id}
-            className={`chip${id === x.id ? ' chip--active' : ''}`}
-            onClick={() => select(x.id)}
-            disabled={playing}
-          >
-            {x.title}
-          </button>
-        ))}
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play cast
-        </button>
-        <button className="chip chip--ghost" onClick={() => select(id)}>
-          reset
-        </button>
-      </div>
-
-      <div ref={stageRef} className={`viz-stage cvn-stage viz-stage--live ${stageKind}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{stepCount} · <code>{m.sig}</code>
-        </p>
-        <div className="cvn-row">
-          <div ref={srcRef} className={`own-card${arrived ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">{id === 'dynamic' ? 'static type B*' : 'source'}</span>
-            <span className="own-name">{id === 'dynamic' ? 'p' : 'd'}</span>
-            <span className="mem-val">{id === 'dynamic' ? '&b' : '3.9'}</span>
-            <span className="mem-note">{id === 'dynamic' ? 'points at B, not D' : 'double'}</span>
-          </div>
-          <div
-            ref={dstRef}
-            className={`own-card${arrived && !rejected && !dynFail ? (id === 'named' ? ' own-card--unique' : silent ? ' nd-card--ub' : ' own-card--shared') : ''}${rejected ? ' own-ctrl--ghost' : ''}${dynFail ? ' nd-card--ub' : ''}`}
-          >
-            <span className="lf-tag">{id === 'dynamic' ? 'D*' : 'int'}</span>
-            <span className="own-name">{id === 'dynamic' ? 'q' : 'n'}</span>
-            <span className="mem-val">{dstVal}</span>
-            <span className="mem-note">
-              {id === 'assign' && silent
-                ? 'silent narrow'
-                : id === 'brace' && rejected
-                  ? 'narrowing error'
-                  : id === 'named' && named
-                    ? 'named, related'
-                    : dynFail
-                      ? 'pointer form'
-                      : dynTry
-                        ? 'needs virtual'
-                        : 'waiting'}
-            </span>
-          </div>
+    <SceneShell
+      modes={MODES}
+      mode={id}
+      onSelect={select}
+      playing={playing}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setId(id)
+      }}
+      playLabel="Play convert"
+      step={i}
+      stepCount={4}
+      sig={MODES.find((m) => m.id === id)?.title}
+      caption={caption}
+      code={code}
+      tone={tone}
+    >
+      <div className="fx-compare">
+        <div className={`fx-slot${i === 0 ? ' fx-slot--focus' : ''}`}>
+          <span className="fx-kicker">{id === 'dynamic' ? 'A*' : 'double d'}</span>
+          <span className="fx-value">{id === 'dynamic' ? 'pA' : srcVal}</span>
+          <span className="fx-note">source stays</span>
         </div>
-        {pos && (
-          <span
-            className={`ptr-pulse cvn-flyer${rejected || trap || dynFail ? ' cvn-flyer--trap' : id === 'named' ? ' cx-flyer--gold' : ''}`}
-            style={{ left: pos.x, top: pos.y }}
-          >
-            {flyerText}
+        <span className="fx-op">{id === 'brace' ? '{ }' : id === 'named' ? 'cast' : id === 'dynamic' ? 'RTTI' : '='}</span>
+        <div
+          className={`fx-slot${i >= 1 ? ' fx-slot--focus' : ' fx-slot--dim'}${rejected ? ' fx-slot--trap' : ''}${
+            (id === 'named' && i >= 2) || (id === 'assign' && i >= 2) ? ' fx-slot--ok' : ''
+          }${dynFail ? ' fx-slot--trap' : ''}`}
+        >
+          <span className="fx-kicker">{id === 'dynamic' ? 'B*' : 'int n'}</span>
+          <span className="fx-value">{rejected ? '∅' : dstVal}</span>
+          <span className="fx-note">
+            {rejected ? 'narrowing blocked' : dynFail ? 'not a B' : id === 'assign' && i >= 2 ? 'silent truncate' : 'destination'}
           </span>
-        )}
+        </div>
+        <span className="fx-op" />
+        <div className="fx-slot fx-slot--dim">
+          <span className="fx-kicker">rule</span>
+          <span className="fx-note">
+            {id === 'assign'
+              ? 'copy-init allows narrowing'
+              : id === 'brace'
+                ? 'list-init forbids it'
+                : id === 'named'
+                  ? 'explicit, still truncates'
+                  : 'pointer: nullptr on miss'}
+          </span>
+        </div>
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{code}</code>
-      </pre>
-      <p className="layout-hint">{caption}</p>
-    </div>
+      <div
+        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
+          rejected || dynFail ? 'fx-verdict--trap' : id === 'assign' && i >= 2 ? 'fx-verdict--warn' : 'fx-verdict--ok'
+        }`}
+      >
+        {id === 'assign' && i >= 2
+          ? 'n = 3  ·  silent'
+          : id === 'brace' && rejected
+            ? 'does not compile · d unchanged'
+            : id === 'named' && i >= 2
+              ? 'static_cast<int>(3.9) = 3'
+              : dynFail
+                ? 'dynamic_cast → nullptr'
+                : ''}
+      </div>
+    </SceneShell>
   )
 }

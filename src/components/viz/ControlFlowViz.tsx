@@ -1,13 +1,14 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { hop, waitNextBeat, type Point } from './motion.ts'
+import { useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'copy' | 'ref' | 'fall' | 'skip'
 
-const MODES: { id: Mode; title: string; sig: string }[] = [
-  { id: 'copy', title: 'auto x', sig: 'for (auto x : v)' },
-  { id: 'ref', title: 'auto& x', sig: 'for (auto& x : v)' },
-  { id: 'fall', title: 'fallthrough', sig: 'case A: case B:' },
-  { id: 'skip', title: 'continue', sig: 'if (skip) continue' },
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'copy', title: 'auto x' },
+  { id: 'ref', title: 'auto& x' },
+  { id: 'fall', title: 'fallthrough' },
+  { id: 'skip', title: 'continue' },
 ]
 
 const VEC = ['10', '20', '30']
@@ -17,296 +18,155 @@ const ITEMS = [
   { label: 'c', skip: false },
 ]
 
-const STEP_MS = 1300
-const HOP_MS = 700
-
 export function ControlFlowViz() {
   const [id, setId] = useState<Mode>('copy')
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [from, setFrom] = useState<Point>({ x: 80, y: 90 })
-  const [to, setTo] = useState<Point>({ x: 360, y: 90 })
+  const { i, playing, play, reset } = useBeats(4)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const srcRef = useRef<HTMLDivElement>(null)
-  const dstRef = useRef<HTMLDivElement>(null)
+  function select(next: string) {
+    reset()
+    setId(next as Mode)
+  }
 
-  const stepCount = 4
   const idx = Math.max(0, i - 1)
-  const copied = id === 'copy' && i >= 1
-  const welded = id === 'ref' && i >= 1
   const wrote = id === 'ref' && i >= 3
-  const fell = id === 'fall' && i >= 2
-  const skipped = id === 'skip' && i >= 1
-
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    if (!stage || !srcRef.current || !dstRef.current) return
-    const origin = stage.getBoundingClientRect()
-    const a = srcRef.current.getBoundingClientRect()
-    const b = dstRef.current.getBoundingClientRect()
-    setFrom({ x: a.left - origin.left + a.width / 2, y: a.top - origin.top + a.height / 2 })
-    setTo({ x: b.left - origin.left + b.width / 2, y: b.top - origin.top + b.height / 2 })
-  }, [id, i])
-
-  useEffect(() => {
-    if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
-    }
-    raf = requestAnimationFrame(hopLoop)
-    const stopBeat = waitNextBeat(STEP_MS, () => {
-      if (i >= stepCount - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stopBeat()
-    }
-  }, [playing, i, stepCount])
-
-  function select(next: Mode) {
-    setPlaying(false)
-    setId(next)
-    setI(0)
-    setHopT(1)
-  }
-
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
-  }
-
-  const pos = hopT < 1 && i >= 1 ? hop(from, to, hopT) : null
-  const flyerText =
-    id === 'copy'
-      ? VEC[idx]
-      : id === 'ref'
-        ? i >= 3
-          ? '++'
-          : VEC[0]
-        : id === 'fall'
-          ? i === 1
-            ? 'A'
-            : 'fall'
-          : skipped && i === 1
-            ? 'skip'
-            : ITEMS[Math.min(idx, 2)].label
-
+  const vec0 = wrote ? '11' : '10'
   const xVal =
     id === 'copy'
-      ? copied
+      ? i >= 1
         ? VEC[idx]
         : '—'
       : id === 'ref'
-        ? wrote
+        ? i >= 3
           ? '11'
-          : welded
+          : i >= 1
             ? '10'
             : '—'
-        : id === 'fall'
-          ? fell
-            ? 'handleAB()'
-            : i >= 1
-              ? 'case A'
-              : '—'
-          : i === 1
-            ? 'continue'
-            : i >= 2
-              ? `use(${ITEMS[idx].label})`
-              : '—'
-
-  const vec0 = wrote ? '11' : '10'
+        : '—'
 
   const code =
     id === 'copy'
-      ? i === 0
-        ? `std::vector<int> v{10, 20, 30};
-for (auto x : v) { }`
-        : i < 3
-          ? `for (auto x : v) {  // copy
-  use(x);
-}`
-          : `// three copies. v is unchanged.`
+      ? `std::vector<int> v{10, 20, 30};\nfor (auto x : v) { use(x); }`
       : id === 'ref'
-        ? i < 3
-          ? `for (auto& x : v) {
-  ++x;
-}`
-          : `// v is {11, 20, 30}. The weld writes through.`
+        ? `for (auto& x : v) {\n  ++x;\n}`
         : id === 'fall'
-          ? i < 2
-            ? `switch (kind) {
-  case Kind::A:
-  case Kind::B:
-    handleAB();
-    break;
-}`
-            : `case Kind::A:     // no break
-case Kind::B:
-  handleAB();     // A falls into B
-  break;`
-          : i === 0
-            ? `for (const auto& item : items) {
-  if (item.skip) continue;
-  use(item);
-}`
-            : i === 1
-              ? `if (item.skip) continue;  // a`
-              : `use(item);  // b, then c`
+          ? `switch (kind) {\n  case Kind::A:\n  case Kind::B:\n    handleAB();\n    break;\n}`
+          : `for (const auto& item : items) {\n  if (item.skip) continue;\n  use(item);\n}`
 
   const caption =
     i === 0
       ? id === 'copy'
-        ? 'Play range-for with auto x. Each element is copied into the loop variable. Cheap for int; a tax for string.'
+        ? 'Play range-for with auto x. Each element is copied into the loop variable. The vector cells stay put.'
         : id === 'ref'
-          ? 'Play auto&. The name x is welded to the element. ++x writes through. const auto& if you only read.'
+          ? 'Play auto&. x is a name welded to the element. ++x writes through. const auto& if you only read.'
           : id === 'fall'
-            ? 'Play fallthrough. switch cases fall unless you break (or return). A missing break is a defect unless you mark it.'
-            : 'Play continue. It skips the rest of this iteration. The container is not modified — only this pass is.'
+            ? 'Play fallthrough. The program counter walks down the cases. A missing break is a defect unless you mark it.'
+            : 'Play continue. The counter skips the rest of this iteration. The container is not modified.'
       : id === 'copy' && i === 1
-        ? '10 hops into x. That is a copy. Mutating x would not change v[0].'
+        ? 'x holds a copy of 10. Mutating x would not change v[0]. The original cell is dim, not emptied.'
         : id === 'copy' && i === 2
-          ? '20 hops into a fresh x. Range-for is sugar over begin/end. The original cells stay.'
+          ? 'A fresh x holds 20. Range-for is sugar over begin/end. Three copies for three elements.'
           : id === 'copy'
-            ? '30 copied. Three copies, vector unchanged. Use auto& or const auto& unless you want the copy.'
+            ? 'v is still {10,20,30}. auto x is cheap for int; a tax for string.'
             : id === 'ref' && i === 1
-              ? 'x welds to v[0]. No clone. The cyan copy is gone; this is the green alias.'
+              ? 'x is welded to v[0]. Same bytes, two names. No copy.'
               : id === 'ref' && i === 2
-                ? 'Still the same object. Range-for with auto& is the default when you mean “each element.”'
+                ? 'Still welded. The next steps write through that name.'
                 : id === 'ref'
-                  ? '++x writes 11 into the vector. That is the point — and why modifying while iterating can invalidate.'
+                  ? '++x stored 11 in the cell. v is {11, 20, 30}.'
                   : id === 'fall' && i === 1
-                    ? 'kind is A. Enter case A. There is no break. Execution does not stop at the label.'
+                    ? 'kind is A. The PC is on case A. There is no break here.'
                     : id === 'fall' && i === 2
-                      ? 'Fall into case B. handleAB() runs for A and for B. That is the deliberate sharing, or the bug.'
+                      ? 'Control falls into case B. handleAB runs for A and B. That can be intentional.'
                       : id === 'fall'
-                        ? 'break. default is not required. Comment fallthrough in review; C++14 has no [[fallthrough]] yet (C++17).'
+                        ? 'break leaves the switch. C++14 has no [[fallthrough]]; comment the intent.'
                         : i === 1
-                          ? 'a.skip is true. continue hops past use(). The next item still runs. Not a break out of the loop.'
+                          ? 'item a has skip. continue jumps to the next iteration. use() is not called.'
                           : i === 2
-                            ? 'b is used. Range-for still holds the iterator. continue only skipped a’s body.'
-                            : 'c is used. Prefer this over a boolean flag. goto stays in the museum.'
+                            ? 'item b is used. The PC sits on use().'
+                            : 'item c is used. continue did not erase a — it only skipped the body.'
 
-  const m = MODES.find((x) => x.id === id) ?? MODES[0]
-  const stageKind = id === 'copy' && i >= 3 ? 'cf-stage--copy' : wrote ? 'cf-stage--write' : fell ? 'cf-stage--fall' : ''
+  const pcTop = id === 'fall' || id === 'skip' ? 12 + Math.min(i, 3) * 48 : 12
+  const tone = id === 'ref' && wrote ? 'ok' : id === 'copy' && i >= 3 ? 'ok' : 'idle'
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        {MODES.map((x) => (
-          <button
-            key={x.id}
-            className={`chip${id === x.id ? ' chip--active' : ''}`}
-            onClick={() => select(x.id)}
-            disabled={playing}
-          >
-            {x.title}
-          </button>
-        ))}
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play flow
-        </button>
-        <button className="chip chip--ghost" onClick={() => select(id)}>
-          reset
-        </button>
-      </div>
-
-      <div ref={stageRef} className={`viz-stage cf-stage viz-stage--live ${stageKind}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{stepCount} · <code>{m.sig}</code>
-        </p>
-        {(id === 'copy' || id === 'ref') && (
-          <div className="cf-cells">
-            {VEC.map((v, n) => (
-              <div
-                key={v}
-                ref={id === 'copy' ? (n === idx ? srcRef : undefined) : n === 0 ? srcRef : undefined}
-                className={`ar-cell${id === 'copy' && i >= 1 && n <= idx ? ' cf-cell--on' : ''}${id === 'ref' && welded && n === 0 ? ' cf-cell--on' : ''}`}
-              >
-                {n === 0 ? vec0 : v}
-              </div>
-            ))}
-          </div>
-        )}
-        {id === 'fall' && (
-          <div className="cf-cases">
-            <div ref={srcRef} className={`cf-case${i >= 1 ? ' cf-case--on' : ''}`}>
-              <span className="lf-tag">case A</span>
-              <span className="own-name">Kind::A</span>
-              <span className="mem-note">{i >= 1 ? 'no break' : 'kind'}</span>
-            </div>
-            <div className={`cf-case${fell ? ' cf-case--on' : ''}`}>
-              <span className="lf-tag">case B</span>
-              <span className="own-name">Kind::B</span>
-              <span className="mem-note">{fell ? 'shared body' : 'waits'}</span>
-            </div>
-            <div className="cf-case">
-              <span className="lf-tag">default</span>
-              <span className="own-name">other</span>
-              <span className="mem-note">not taken</span>
-            </div>
-          </div>
-        )}
-        {id === 'skip' && (
-          <div className="cf-cells">
-            {ITEMS.map((item, n) => (
-              <div
-                key={item.label}
-                ref={n === (i <= 1 ? 0 : idx) ? srcRef : undefined}
-                className={`ar-cell${item.skip && skipped ? ' nd-cell--dead' : ''}${n === idx && i >= 1 ? ' cf-cell--on' : ''}`}
-              >
-                {item.label}
-              </div>
-            ))}
-          </div>
-        )}
-        <div className="cf-row">
-          <div
-            ref={dstRef}
-            className={`own-card${copied ? ' own-card--unique' : ''}${welded ? ' own-card--shared' : ''}${fell ? ' own-card--unique' : ''}${id === 'skip' && i >= 2 ? ' own-card--unique' : ''}${id === 'skip' && i === 1 ? ' own-ctrl--ghost' : ''}`}
-          >
-            <span className="lf-tag">{id === 'fall' ? 'body' : id === 'skip' ? 'loop' : 'x'}</span>
-            <span className="own-name">{xVal}</span>
-            <span className="mem-note">
-              {id === 'copy' && copied
-                ? 'copy of element'
-                : id === 'ref' && wrote
-                  ? 'write-through'
-                  : id === 'ref' && welded
-                    ? 'alias, not a clone'
-                    : id === 'fall' && fell
-                      ? 'A and B share this'
-                      : id === 'skip' && i === 1
-                        ? 'body skipped'
-                        : 'waiting'}
+    <SceneShell
+      modes={MODES}
+      mode={id}
+      onSelect={select}
+      playing={playing}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setId(id)
+      }}
+      playLabel="Play flow"
+      step={i}
+      stepCount={4}
+      sig={MODES.find((m) => m.id === id)?.title}
+      caption={caption}
+      code={code}
+      tone={tone}
+    >
+      {(id === 'copy' || id === 'ref') && (
+        <div className="fx-compare" style={{ gridTemplateColumns: '1fr auto 1fr' }}>
+          <div className="fx-slot">
+            <span className="fx-kicker">v</span>
+            <span className="fx-cells">
+              {[vec0, '20', '30'].map((v, n) => (
+                <span
+                  key={n}
+                  className={`fx-tok${id === 'ref' && i >= 1 && n === 0 ? ' fx-tok--hot' : ''}${id === 'copy' && i >= 1 && n === idx ? ' fx-slot--dim' : ''}`}
+                  style={{ fontSize: 16 }}
+                >
+                  {v}
+                </span>
+              ))}
             </span>
+            <span className="fx-note">elements stay here</span>
+          </div>
+          <span className={`fx-op${id === 'ref' && i >= 1 ? ' fx-op--on' : ''}`}>{id === 'ref' && i >= 1 ? '≡' : '→'}</span>
+          <div className={`fx-slot${id === 'ref' && i >= 1 ? ' fx-slot--weld' : i >= 1 ? ' fx-slot--focus' : ''}`}>
+            <span className="fx-kicker">{id === 'ref' ? 'auto& x' : 'auto x'}</span>
+            <span className="fx-value">{xVal}</span>
+            <span className="fx-note">{id === 'ref' ? 'welded name' : 'copy'}</span>
           </div>
         </div>
-        {pos && (
-          <span
-            className={`ptr-pulse cf-flyer${id === 'copy' ? '' : id === 'ref' ? ' cf-flyer--weld' : id === 'skip' && i === 1 ? ' cf-flyer--trap' : ''}`}
-            style={{ left: pos.x, top: pos.y }}
-          >
-            {flyerText}
-          </span>
-        )}
+      )}
+      {id === 'fall' && (
+        <div className="fx-flow">
+          <div className="fx-rail" />
+          <div className="fx-pc" style={{ top: pcTop }} />
+          <div className={`fx-node${i >= 1 ? ' fx-node--on' : ''}${i >= 2 ? ' fx-node--done' : ''}`}>case A</div>
+          <div className={`fx-node${i >= 2 ? ' fx-node--on' : ''}`}>case B · handleAB()</div>
+          <div className={`fx-node${i >= 3 ? ' fx-node--on' : ''}`}>break</div>
+        </div>
+      )}
+      {id === 'skip' && (
+        <div className="fx-flow">
+          <div className="fx-rail" />
+          <div className="fx-pc" style={{ top: pcTop }} />
+          {ITEMS.map((it, n) => (
+            <div
+              key={it.label}
+              className={`fx-node${i === n + 1 ? ' fx-node--on' : ''}${it.skip && i >= 1 && n === 0 ? ' fx-node--skip' : ''}${!it.skip && i > n + 1 ? ' fx-node--done' : ''}`}
+            >
+              {it.label}
+              {it.skip ? ' · continue' : ' · use()'}
+            </div>
+          ))}
+        </div>
+      )}
+      <div className={`fx-verdict${i >= 3 ? ' fx-verdict--show fx-verdict--ok' : ''}`}>
+        {id === 'copy' && i >= 3
+          ? 'three copies · v unchanged'
+          : id === 'ref' && i >= 3
+            ? 'v[0] is 11 · write-through'
+            : id === 'fall' && i >= 3
+              ? 'A fell into B · then break'
+              : id === 'skip' && i >= 3
+                ? 'a skipped · b and c used'
+                : ''}
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{code}</code>
-      </pre>
-      <p className="layout-hint">{caption}</p>
-    </div>
+    </SceneShell>
   )
 }

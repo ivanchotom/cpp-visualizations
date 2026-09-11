@@ -1,5 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { clamp01, easeInOutCubic, lerp } from './motion.ts'
+import { SceneShell } from './scene/SceneShell.tsx'
 
 const STATIONS = [
   { id: 'src', title: 'Source', sub: '.cpp' },
@@ -11,20 +12,13 @@ const STATIONS = [
 ] as const
 
 const CAPTIONS = [
-  'Two translation units. The compiler never sees the whole program at once — only one .cpp plus the headers it includes.',
-  'Preprocess is still text: paste headers, expand macros. math.cpp and main.cpp are still separate files.',
-  'Compile type-checks and emits IR/assembly per TU. main cannot “see” add’s body. Missing headers fail here.',
-  'Assemble writes object files with defined and undefined symbols. main.o has U add; math.o has T add.',
-  'The linker resolves names. Duplicate definitions or a missing .o show up here — not during compile.',
-  'One executable. Relocations are applied. Run it. Modules (C++20) change this model; C++14 is headers + TUs.',
+  'Two translation units ride the same pipeline. The compiler never sees the whole program — only one .cpp plus the headers it includes.',
+  'Preprocess is still text: paste headers, expand macros. math.cpp and main.cpp stay separate files on separate lanes.',
+  'Compile type-checks and emits IR per TU. main cannot see add’s body. Missing headers fail at this station, not later.',
+  'Assemble writes object files. math.o defines T add. main.o still has U add — an undefined symbol waiting for the linker.',
+  'The linker matches names. Duplicate definitions or a missing .o show up here, never during compile.',
+  'One executable. Relocations applied. C++14 is still headers + TUs; modules are a later model.',
 ]
-
-type PacketId = 'math' | 'main' | 'exe'
-
-interface Layout {
-  xs: number[]
-  ty: number
-}
 
 export function CompilationViz() {
   const [playing, setPlaying] = useState(false)
@@ -32,37 +26,9 @@ export function CompilationViz() {
   const [math, setMath] = useState(0)
   const [main, setMain] = useState(0)
   const [showExe, setShowExe] = useState(false)
-  const [layout, setLayout] = useState<Layout>({ xs: [], ty: 0 })
-
-  const stageRef = useRef<HTMLDivElement>(null)
-  const trackRef = useRef<HTMLDivElement>(null)
-  const stationRefs = useRef<(HTMLButtonElement | null)[]>([])
   const rafRef = useRef(0)
 
   const stageIndex = showExe ? 5 : Math.max(Math.round(math), Math.round(main))
-
-  useLayoutEffect(() => {
-    const measure = () => {
-      const stage = stageRef.current
-      const track = trackRef.current
-      if (!stage || !track) return
-      const origin = stage.getBoundingClientRect()
-      const tr = track.getBoundingClientRect()
-      const xs = stationRefs.current.map((el) => {
-        if (!el) return 0
-        const r = el.getBoundingClientRect()
-        return r.left - origin.left + r.width / 2
-      })
-      setLayout({ xs, ty: tr.top - origin.top + tr.height / 2 })
-    }
-    measure()
-    const id = window.requestAnimationFrame(measure)
-    window.addEventListener('resize', measure)
-    return () => {
-      window.cancelAnimationFrame(id)
-      window.removeEventListener('resize', measure)
-    }
-  }, [])
 
   function reset() {
     cancelAnimationFrame(rafRef.current)
@@ -80,9 +46,8 @@ export function CompilationViz() {
     setMath(0)
     setMain(0)
     setPlaying(true)
-
     const t0 = performance.now()
-    const tickRaf = (now: number) => {
+    const tick = (now: number) => {
       const t = (now - t0) / 1000
       setMath(pathAt(t))
       setMain(pathAt(t - 0.16))
@@ -92,9 +57,9 @@ export function CompilationViz() {
         setPlaying(false)
         return
       }
-      rafRef.current = requestAnimationFrame(tickRaf)
+      rafRef.current = requestAnimationFrame(tick)
     }
-    rafRef.current = requestAnimationFrame(tickRaf)
+    rafRef.current = requestAnimationFrame(tick)
   }
 
   useEffect(() => () => cancelAnimationFrame(rafRef.current), [])
@@ -109,66 +74,68 @@ export function CompilationViz() {
     setMain(p)
   }
 
-  const packets: { id: PacketId; label: string; progress: number }[] = [
-    ...(!showExe
-      ? [
-          { id: 'math' as const, label: labelFor('math', math, resolved), progress: math },
-          { id: 'main' as const, label: labelFor('main', main, resolved), progress: main },
-        ]
-      : []),
-    ...(showExe ? [{ id: 'exe' as const, label: 'a.out', progress: 5 }] : []),
-  ]
+  const progress = showExe ? 1 : Math.min(1, Math.max(math, main) / 4)
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play compile + link
-        </button>
-        <button className="chip chip--ghost" onClick={reset}>
-          reset
-        </button>
-      </div>
-
-      <div ref={stageRef} className="viz-stage cc-stage viz-stage--live">
-        <div ref={trackRef} className="cc-track" />
-        <div className="cc-stations">
-          {STATIONS.map((s, i) => (
-            <button
-              key={s.id}
-              ref={(el) => {
-                stationRefs.current[i] = el
-              }}
-              className={`cc-stop${stageIndex === i ? ' cc-stop--on' : ''}${i === 5 && showExe ? ' cc-stop--out' : ''}`}
-              onClick={() => jump(i)}
-            >
-              <span className="pipe-idx">{i + 1}</span>
-              <span className="pipe-title">{s.title}</span>
-              <span className="pipe-io">{s.sub}</span>
-            </button>
-          ))}
-        </div>
-
-        {packets.map((p) => {
-          const pos = posAt(p.progress, layout, p.id)
-          if (!pos) return null
-          return (
-            <span
-              key={p.id}
-              className={`cc-packet cc-packet--${p.id}${p.id === 'main' && !resolved && p.progress >= 3 ? ' cc-packet--undef' : ''}`}
-              style={{ left: pos.x, top: pos.y }}
-            >
-              {p.label}
+    <SceneShell
+      playing={playing}
+      onPlay={play}
+      onReset={reset}
+      playLabel="Play compile + link"
+      step={stageIndex}
+      stepCount={6}
+      sig={STATIONS[stageIndex].title}
+      caption={CAPTIONS[stageIndex]}
+      tone={showExe ? 'ok' : 'idle'}
+      code={
+        showExe
+          ? `// one process image\n./a.out`
+          : `// math.cpp                // main.cpp\nint add(int, int);        int main() {\n                          return add(1, 2);\n                        }`
+      }
+    >
+      <div className="fx-pipe">
+        {STATIONS.map((s, i) => (
+          <button
+            key={s.id}
+            type="button"
+            className={`fx-stop${stageIndex === i ? ' fx-stop--on' : ''}${i < stageIndex ? ' fx-stop--done' : ''}`}
+            onClick={() => jump(i)}
+          >
+            <span className="fx-stop-idx">{i + 1}</span>
+            <span className="fx-stop-title">{s.title}</span>
+            <span className="fx-stop-io">{s.sub}</span>
+          </button>
+        ))}
+        <div className="fx-pipe-rail" style={{ ['--fx-progress' as string]: String(progress) }} />
+        <div className="fx-lanes">
+          {!showExe && (
+            <>
+              <span className="fx-token fx-token--math" style={{ left: pct(math), transition: 'none' }}>
+                {labelFor('math', math, resolved)}
+              </span>
+              <span className="fx-token fx-token--main" style={{ left: pct(main), transition: 'none' }}>
+                {labelFor('main', main, resolved)}
+              </span>
+            </>
+          )}
+          {showExe && (
+            <span className="fx-token fx-token--exe" style={{ left: '92%' }}>
+              a.out
             </span>
-          )
-        })}
-
-        {resolved && !showExe && <span className="cc-spark">add resolved</span>}
+          )}
+        </div>
       </div>
-
-      <p className="layout-hint">{CAPTIONS[Math.min(CAPTIONS.length - 1, stageIndex)]}</p>
-    </div>
+      <div
+        className={`fx-verdict${resolved ? ' fx-verdict--show' : ''} ${showExe ? 'fx-verdict--ok' : resolved ? 'fx-verdict--ok' : ''}`}
+      >
+        {showExe ? 'lanes merged · one executable' : resolved ? 'linker: U add ← T add' : 'two TUs, two lanes'}
+      </div>
+    </SceneShell>
   )
+}
+
+function pct(progress: number): string {
+  return `${8 + (Math.min(5, progress) / 5) * 84}%`
 }
 
 function labelFor(id: 'math' | 'main', progress: number, resolved: boolean): string {
@@ -206,18 +173,4 @@ function pathAt(seconds: number): number {
     }
   }
   return 4
-}
-
-function posAt(progress: number, layout: Layout, id: PacketId): { x: number; y: number } | null {
-  const { xs, ty } = layout
-  if (xs.length < 6) return null
-  const max = STATIONS.length - 1
-  const p = Math.min(max, Math.max(0, progress))
-  const i = Math.min(max - 1, Math.floor(p))
-  const t = p - i
-  const lane = id === 'math' ? -22 : id === 'main' ? 22 : 0
-  return {
-    x: lerp(xs[i], xs[Math.min(max, i + 1)], t),
-    y: ty + (id === 'exe' ? 0 : lane),
-  }
 }
