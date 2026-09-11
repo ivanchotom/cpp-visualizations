@@ -11,15 +11,6 @@ const MODES: { id: Mode; title: string }[] = [
   { id: 'dtor', title: 'dtor' },
 ]
 
-const FRAMES = [
-  { id: 'parse', fn: 'parse()' },
-  { id: 'openFile', fn: 'openFile()' },
-  { id: 'run', fn: 'run()' },
-  { id: 'main', fn: 'main()' },
-] as const
-
-type FrameId = (typeof FRAMES)[number]['id']
-
 export function ExceptionsViz() {
   const [id, setId] = useState<Mode>('catch')
   const { i, playing, play, reset } = useBeats(4)
@@ -32,38 +23,12 @@ export function ExceptionsViz() {
   const stepped = i >= 1
   const decided = i >= 2
   const recap = i >= 3
-
-  const parseDead = id === 'noexcept' ? false : decided
-  const fileDead = id === 'catch' ? recap : id === 'uncaught' ? decided : id === 'dtor' ? recap : false
-  const fileThrow = id === 'dtor' && decided
-  const parseThrow = stepped && !(id === 'dtor' && recap)
   const caught = id === 'catch' && recap
-  const terminated = (id === 'uncaught' && recap) || (id === 'noexcept' && recap) || (id === 'dtor' && recap)
-  const trap = (parseThrow && !caught) || fileThrow || terminated
+  const uncaughtTrap = id === 'uncaught' && decided
+  const noexceptTrap = id === 'noexcept' && decided
+  const dtorTrap = id === 'dtor' && decided
+  const trap = uncaughtTrap || noexceptTrap || dtorTrap
   const ok = caught
-
-  const pc: FrameId =
-    id === 'noexcept'
-      ? 'parse'
-      : id === 'dtor'
-        ? decided
-          ? 'openFile'
-          : 'parse'
-        : id === 'uncaught'
-          ? recap
-            ? 'main'
-            : decided
-              ? 'run'
-              : stepped
-                ? 'parse'
-                : 'parse'
-          : recap
-            ? 'run'
-            : decided
-              ? 'openFile'
-              : 'parse'
-
-  const pcTop = 10 + FRAMES.findIndex((f) => f.id === pc) * 48
 
   const code =
     id === 'catch'
@@ -110,7 +75,7 @@ int main() { parse(); }`
             ? 'Play noexcept. A throw that would leave a noexcept function calls std::terminate. Unwind of callers does not happen.'
             : 'Play throw in dtor. Since C++11 a destructor is noexcept by default. Throw from it and you get std::terminate, not a second exception.'
       : id === 'catch' && i === 1
-        ? 'parse() throws. The exception object exists. This frame has no handler, so it will die and its locals will run destructors.'
+        ? 'parse() throws. The exception object exists. This frame has no handler, so it will die and its locals will run destructors. Stations light in place.'
         : id === 'catch' && i === 2
           ? 'parse() is gone. openFile() still has an fstream. Unwind will run ~fstream — that is why RAII exists.'
           : id === 'catch'
@@ -143,57 +108,26 @@ int main() { parse(); }`
           ? 'Play noexcept'
           : 'Play throw in dtor'
 
-  function dead(fid: FrameId): boolean {
-    if (fid === 'parse') return parseDead
-    if (fid === 'openFile') return fileDead
-    return false
-  }
-
-  function noteFor(fid: FrameId): string {
-    if (fid === 'parse') {
-      if (parseDead) return 'frame destroyed'
-      if (id === 'noexcept') return 'noexcept · must not throw'
-      if (parseThrow) return 'throw runtime_error'
-      return 'locals alive'
-    }
-    if (fid === 'openFile') {
-      if (fileThrow && !fileDead) return '~File throws'
-      if (fileDead)
-        return id === 'dtor' ? '~File · terminate' : id === 'uncaught' ? 'frame destroyed' : '~fstream closed the file'
-      return id === 'dtor' ? 'File file  (dtor will run)' : 'fstream file  (will close)'
-    }
-    if (fid === 'run') {
-      if (id === 'uncaught' || id === 'noexcept') return 'no try in this demo'
-      return caught ? 'catch (const std::exception&)' : 'try { openFile(); }'
-    }
-    if (id === 'uncaught') return recap ? 'uncaught → terminate' : 'no try'
-    if (id === 'noexcept') return 'not unwound'
-    return 'waiting'
-  }
-
-  const exNote = caught
-    ? 'bound to e · const ref'
-    : terminated
-      ? 'abandoned · terminate'
-      : stepped
-        ? 'in flight'
-        : 'none'
-
-  const verdict = caught
-    ? 'caught in run() · file already closed'
-    : id === 'uncaught' && recap
-      ? 'uncaught → std::terminate'
-      : id === 'noexcept' && recap
-        ? 'throw in noexcept → terminate'
-        : id === 'dtor' && recap
-          ? '~File threw · std::terminate'
-          : id === 'dtor' && decided
-            ? '~File() is noexcept · throw'
-            : id === 'catch' && decided
-              ? '~fstream ran · file closed on the way out'
-              : stepped
-                ? 'throw std::runtime_error · no catch here'
-                : ''
+  const verdict =
+    caught
+      ? 'caught in run() · file already closed'
+      : id === 'uncaught' && recap
+        ? 'uncaught → std::terminate'
+        : uncaughtTrap
+          ? 'no handler · still unwinding'
+          : id === 'noexcept' && recap
+            ? 'throw in noexcept → terminate'
+            : noexceptTrap
+              ? 'no unwind of callers'
+              : id === 'dtor' && recap
+                ? '~File threw · std::terminate'
+                : dtorTrap
+                  ? '~File() is noexcept · throw'
+                  : id === 'catch' && decided
+                    ? '~fstream ran · file closed on the way out'
+                    : stepped
+                      ? 'throw std::runtime_error · no catch here'
+                      : ''
 
   return (
     <SceneShell
@@ -214,46 +148,62 @@ int main() { parse(); }`
       code={code}
       tone={tone}
     >
-      <div className="fx-flow">
-        <div className="fx-rail" />
-        <div className="fx-pc" style={{ top: pcTop }} />
-        {FRAMES.map((f) => {
-          const gone = dead(f.id)
-          const isThrow =
-            (f.id === 'parse' && parseThrow && !fileThrow && !caught && !terminated) ||
-            (f.id === 'openFile' && fileThrow && !terminated)
-          const isCatch = f.id === 'run' && caught
-          const isTerm = terminated && f.id === pc
-          return (
-            <div
-              key={f.id}
-              className={`fx-node${gone ? ' fx-node--skip' : ' fx-node--live'}${isThrow ? ' fx-node--on fx-slot--trap' : ''}${
-                isCatch ? ' fx-node--done' : ''
-              }${isTerm ? ' fx-slot--trap' : ''}`}
-            >
-              <span className="fx-kicker">{f.fn}</span>
-              <span className="fx-note">{noteFor(f.id)}</span>
-              {isThrow && <span className="fx-badge fx-badge--lock">throw</span>}
-              {isCatch && <span className="fx-badge fx-badge--open">caught</span>}
-              {isTerm && <span className="fx-badge fx-badge--lock">terminate</span>}
-              {id === 'noexcept' && f.id === 'parse' && !gone && (
-                <span className="fx-badge fx-badge--lock">noexcept</span>
-              )}
-            </div>
-          )
-        })}
-      </div>
-      <div
-        className={`fx-slot${stepped ? '' : ' fx-slot--dim'}${caught ? ' fx-slot--weld' : ''}${
-          terminated ? ' fx-slot--trap' : parseThrow && !caught ? ' fx-slot--trap' : ''
-        }`}
-      >
-        <span className="fx-kicker">exception object</span>
-        <span className="fx-value">
-          <code>{stepped ? 'runtime_error' : '—'}</code>
-        </span>
-        <span className="fx-note">{exNote}</span>
-      </div>
+      {id === 'catch' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>un</code>
+            <span className="fx-note">unwind</span>
+            <span className="fx-note">{decided ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : ''}`}>
+            <code>ct</code>
+            <span className="fx-note">catch</span>
+            <span className="fx-note">{recap ? 'ok' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'uncaught' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+            <code>un</code>
+            <span className="fx-note">unwind</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${uncaughtTrap ? ' fx-rank--trap' : ''}`}>
+            <code>tm</code>
+            <span className="fx-note">term</span>
+            <span className="fx-note">{uncaughtTrap ? 'ill' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'noexcept' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${noexceptTrap ? ' fx-rank--trap' : ''}`}>
+            <code>un</code>
+            <span className="fx-note">unwind</span>
+            <span className="fx-note">{noexceptTrap ? 'no' : '—'}</span>
+          </div>
+          <div className={`fx-rank${noexceptTrap ? ' fx-rank--trap' : ''}`}>
+            <code>tm</code>
+            <span className="fx-note">term</span>
+            <span className="fx-note">{noexceptTrap ? 'ill' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'dtor' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${dtorTrap ? ' fx-rank--trap' : ''}`}>
+            <code>dt</code>
+            <span className="fx-note">~File</span>
+            <span className="fx-note">{dtorTrap ? 'ill' : '—'}</span>
+          </div>
+          <div className={`fx-rank${dtorTrap ? ' fx-rank--trap' : ''}`}>
+            <code>tm</code>
+            <span className="fx-note">term</span>
+            <span className="fx-note">{dtorTrap ? 'ill' : '—'}</span>
+          </div>
+        </div>
+      )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
           ok ? 'fx-verdict--ok' : trap ? 'fx-verdict--trap' : ''

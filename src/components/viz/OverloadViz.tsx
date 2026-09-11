@@ -20,39 +20,41 @@ export function OverloadViz() {
     setId(next as Mode)
   }
 
-  const ranked = i >= 2
-  const rejected = (id === 'del' && i >= 2) || (id === 'hide' && i >= 3)
-  const leftWin = id === 'rank' && ranked
-  const rightWin = (id === 'del' && i >= 1) || (id === 'boolp' && ranked) || (id === 'hide' && ranked)
-  const leftSkip = id === 'hide' && i >= 1
-  const leftDead = id === 'boolp' && i >= 1
+  const stepped = i >= 1
+  const decided = i >= 2
+  const recap = i >= 3
+  const delTrap = id === 'del' && decided
+  const hideTrap = id === 'hide' && decided
+  const boolWarn = id === 'boolp' && decided
+  const trap = delTrap || hideTrap
+  const ok = id === 'rank' && recap
 
   const code =
     id === 'rank'
-      ? i < 2
-        ? `void f(int);
+      ? recap
+        ? `f('a');  // char → int  (promotion)
+// not char → double (standard)`
+        : `void f(int);
 void f(double);
 f('a');`
-        : `f('a');  // char → int  (promotion)
-// not char → double (standard)`
       : id === 'del'
-        ? i < 2
-          ? `void draw(int);
+        ? recap
+          ? `draw(1.2);  // deleted double wins
+// then the program is ill-formed`
+          : `void draw(int);
 void draw(double) = delete;
 draw(1.2);`
-          : `draw(1.2);  // deleted double wins
-// then the program is ill-formed`
         : id === 'boolp'
           ? `void f(int);
 void f(bool);
 void* p = nullptr;
 f(p);  // f(bool)  — pointer → bool`
-          : i < 2
-            ? `struct B { void f(int); };
+          : recap
+            ? `d.f(1);  // D::f(double)
+// B::f(int) is hidden, not overloaded`
+            : `struct B { void f(int); };
 struct D : B { void f(double); };
 d.f(1);`
-            : `d.f(1);  // D::f(double)
-// B::f(int) is hidden, not overloaded`
 
   const caption =
     i === 0
@@ -64,7 +66,7 @@ d.f(1);`
             ? 'Play f(p). A pointer converts to bool surprisingly well. That is why bool overloads next to pointer overloads are a footgun.'
             : 'Play d.f(1). Overloading in a derived class hides the base. You need a using B::f; to overload across the hierarchy.'
       : id === 'rank' && i === 1
-        ? "'a' is char. Both f(int) and f(double) are viable. Ranking decides, not “closest type name.”"
+        ? "'a' is char. Both f(int) and f(double) are viable. Ranking decides, not “closest type name.” Stations light in place."
         : id === 'rank' && i === 2
           ? 'char → int is a promotion. char → double is a standard conversion. Promotion wins. Identity would beat both.'
           : id === 'rank'
@@ -87,35 +89,36 @@ d.f(1);`
                             ? 'D::f(double) via int → double. A worse conversion than B::f(int) would have been — but B::f was never a candidate.'
                             : 'Hidden, not overloaded. using B::f; in D brings the int overload back into the set, then ranking applies.'
 
-  const arg =
-    id === 'rank' ? "'a'" : id === 'del' ? '1.2' : id === 'boolp' ? 'p' : '1'
-  const argTy = id === 'rank' ? 'char' : id === 'del' ? 'double' : id === 'boolp' ? 'void*' : 'int'
-  const leftName = id === 'rank' ? 'f(int)' : id === 'del' ? 'draw(int)' : id === 'boolp' ? 'f(int)' : 'B::f(int)'
-  const rightName = id === 'rank' ? 'f(double)' : id === 'del' ? 'draw(double)' : id === 'boolp' ? 'f(bool)' : 'D::f(double)'
-  const leftRank =
-    id === 'rank'
-      ? ranked
-        ? 'promotion'
-        : 'viable'
-      : id === 'del'
-        ? 'standard'
-        : id === 'boolp'
-          ? 'not viable'
-          : 'hidden'
-  const rightRank =
-    id === 'rank'
-      ? 'standard'
-      : id === 'del'
-        ? rejected
-          ? '= delete'
-          : 'exact'
-        : id === 'boolp'
-          ? 'ptr → bool'
-          : 'int → double'
-
-  const tone = rejected ? 'trap' : leftWin ? 'ok' : id === 'boolp' && ranked ? 'warn' : 'idle'
+  const tone = trap ? 'trap' : boolWarn ? 'warn' : ok ? 'ok' : 'idle'
   const playLabel =
     id === 'rank' ? "Play f('a')" : id === 'del' ? 'Play draw(1.2)' : id === 'boolp' ? 'Play f(p)' : 'Play d.f(1)'
+
+  const verdict =
+    id === 'rank' && recap
+      ? 'promotion beats standard · f(int)'
+      : id === 'rank' && decided
+        ? 'char → int · promotion'
+        : id === 'rank' && stepped
+          ? 'both viable'
+          : delTrap && recap
+            ? 'deleted double wins · ill-formed'
+            : delTrap
+              ? 'deleted still participates'
+              : id === 'del' && stepped
+                ? 'exact match · double'
+                : boolWarn && recap
+                  ? 'ptr → bool · f(bool)'
+                  : boolWarn
+                    ? 'pointer converts to bool'
+                    : id === 'boolp' && stepped
+                      ? 'f(int) not viable'
+                      : hideTrap && recap
+                        ? 'B::f hidden · using B::f;'
+                        : hideTrap
+                          ? 'D::f(double) · worse but only candidate'
+                          : id === 'hide' && stepped
+                            ? 'lookup stops in D'
+                            : ''
 
   return (
     <SceneShell
@@ -136,41 +139,68 @@ d.f(1);`
       code={code}
       tone={tone}
     >
-      <div className={`fx-slot${i >= 1 ? ' fx-slot--focus' : ''}`}>
-        <span className="fx-kicker">call site</span>
-        <span className="fx-value">
-          <code>{arg}</code>
-        </span>
-        <span className="fx-note">{argTy}</span>
-      </div>
-      <div className={`fx-rank${i >= 1 ? ' fx-rank--on' : ''}${leftWin ? ' fx-rank--on' : ''}${leftSkip || leftDead ? ' fx-rank--done' : ''}`}>
-        <code>{leftName}</code>
-        <span className="fx-note">{leftRank}</span>
-        <span className="fx-note">{leftWin ? 'best' : leftSkip ? 'hidden' : leftDead ? '—' : 'candidate'}</span>
-      </div>
+      {id === 'rank' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>int</code>
+            <span className="fx-note">promo</span>
+            <span className="fx-note">{decided ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+            <code>dbl</code>
+            <span className="fx-note">std</span>
+            <span className="fx-note">{decided ? 'no' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'del' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+            <code>int</code>
+            <span className="fx-note">std</span>
+            <span className="fx-note">{delTrap ? 'no' : '—'}</span>
+          </div>
+          <div className={`fx-rank${delTrap ? ' fx-rank--trap' : ''}`}>
+            <code>dbl</code>
+            <span className="fx-note">del</span>
+            <span className="fx-note">{delTrap ? 'ill' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'boolp' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+            <code>int</code>
+            <span className="fx-note">via</span>
+            <span className="fx-note">{stepped ? 'no' : '—'}</span>
+          </div>
+          <div className={`fx-rank${boolWarn ? ' fx-rank--trap' : ''}`}>
+            <code>bool</code>
+            <span className="fx-note">ptr</span>
+            <span className="fx-note">{boolWarn ? 'yes' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'hide' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${hideTrap ? ' fx-rank--trap' : ''}`}>
+            <code>B</code>
+            <span className="fx-note">hid</span>
+            <span className="fx-note">{hideTrap ? 'no' : '—'}</span>
+          </div>
+          <div className={`fx-rank${hideTrap ? ' fx-rank--on' : ''}`}>
+            <code>D</code>
+            <span className="fx-note">dbl</span>
+            <span className="fx-note">{hideTrap ? 'ok' : '—'}</span>
+          </div>
+        </div>
+      )}
       <div
-        className={`fx-rank${i >= 1 ? ' fx-rank--on' : ''}${rejected ? ' fx-rank--trap' : rightWin && !rejected ? ' fx-rank--on' : ''}`}
-      >
-        <code>{rightName}</code>
-        <span className="fx-note">{rightRank}</span>
-        <span className="fx-note">{rejected ? 'ill-formed' : rightWin ? 'best' : 'candidate'}</span>
-      </div>
-      <div
-        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
-          rejected ? 'fx-verdict--trap' : leftWin ? 'fx-verdict--ok' : id === 'boolp' && ranked ? 'fx-verdict--warn' : ''
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          trap ? 'fx-verdict--trap' : boolWarn ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
-        {id === 'rank' && ranked
-          ? 'promotion beats standard · f(int)'
-          : rejected && id === 'del'
-            ? 'deleted double wins · ill-formed'
-            : id === 'boolp' && ranked
-              ? 'ptr → bool · f(bool)'
-              : rejected && id === 'hide'
-                ? 'B::f hidden · using B::f;'
-                : id === 'hide' && ranked
-                  ? 'D::f(double) · worse but only candidate'
-                  : ''}
+        {verdict}
       </div>
     </SceneShell>
   )
