@@ -4676,6 +4676,7 @@ pre {
 .fx-cell--on {
   opacity: 1;
   transform: none;
+  background: var(--accent);
 }
 
 .fx-compare {
@@ -5255,6 +5256,13 @@ button.fx-slot {
 
 .fx-footer-gap {
   margin-top: 10px;
+}
+
+.fx-struct-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .fx-members {
