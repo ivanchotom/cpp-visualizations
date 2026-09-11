@@ -1,178 +1,45 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { hop, waitNextBeat, type Point } from './motion.ts'
+import { useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'steady' | 'jump' | 'cast' | 'mix'
 
-const MODES: { id: Mode; title: string; sig: string }[] = [
-  { id: 'steady', title: 'steady', sig: 'steady_clock::now()' },
-  { id: 'jump', title: 'jump', sig: 'system_clock' },
-  { id: 'cast', title: 'cast', sig: 'duration_cast' },
-  { id: 'mix', title: 'clocks', sig: 'tp_a - tp_b' },
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'steady', title: 'steady' },
+  { id: 'jump', title: 'jump' },
+  { id: 'cast', title: 'cast' },
+  { id: 'mix', title: 'clocks' },
 ]
 
-const STEP_MS = 1300
-const HOP_MS = 700
+function Pips({ n, of, trap }: { n: number; of: number; trap?: boolean }) {
+  return (
+    <div className="fx-size" aria-hidden>
+      {Array.from({ length: of }, (_, k) => (
+        <span
+          key={k}
+          className={`fx-size-unit${k < n ? ' fx-size-unit--on' : ''}${trap && k < n ? ' fx-size-unit--trap' : ''}`}
+        />
+      ))}
+    </div>
+  )
+}
 
 export function ChronoViz() {
   const [id, setId] = useState<Mode>('steady')
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [from, setFrom] = useState<Point>({ x: 80, y: 90 })
-  const [to, setTo] = useState<Point>({ x: 360, y: 90 })
+  const { i, playing, play, reset } = useBeats(4)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const srcRef = useRef<HTMLDivElement>(null)
-  const midRef = useRef<HTMLDivElement>(null)
-  const rightRef = useRef<HTMLDivElement>(null)
-
-  const stepCount = 4
-  const bounce = (id === 'mix' && i >= 2) || (id === 'jump' && i >= 3)
-  const trapped = id === 'jump' && i >= 2
-  const won = (id === 'steady' && i >= 3) || (id === 'cast' && i >= 2)
-
-  const useRight =
-    (id === 'steady' && i >= 2) ||
-    (id === 'jump' && i >= 2) ||
-    (id === 'cast' && i >= 2) ||
-    (id === 'mix' && i >= 2)
-
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    const srcEl = srcRef.current
-    const dstEl = useRight ? rightRef.current : midRef.current
-    if (!stage || !srcEl || !dstEl) return
-    const origin = stage.getBoundingClientRect()
-    const a = srcEl.getBoundingClientRect()
-    const b = dstEl.getBoundingClientRect()
-    const src = { x: a.left - origin.left + a.width / 2, y: a.top - origin.top + a.height / 2 }
-    const dst = { x: b.left - origin.left + b.width / 2, y: b.top - origin.top + b.height / 2 }
-    if (bounce) {
-      setFrom(dst)
-      setTo(src)
-    } else {
-      setFrom(src)
-      setTo(dst)
-    }
-  }, [id, i, bounce, useRight])
-
-  useEffect(() => {
-    if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
-    }
-    raf = requestAnimationFrame(hopLoop)
-    const stopBeat = waitNextBeat(STEP_MS, () => {
-      if (i >= stepCount - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stopBeat()
-    }
-  }, [playing, i, stepCount])
-
-  function select(next: Mode) {
-    setPlaying(false)
-    setId(next)
-    setI(0)
-    setHopT(1)
+  function select(next: string) {
+    reset()
+    setId(next as Mode)
   }
 
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
-  }
-
-  const pos = hopT < 1 && i >= 1 ? hop(from, to, hopT) : null
-  const flyerText =
-    id === 'steady'
-      ? i === 1
-        ? 't0'
-        : i === 2
-          ? 'now'
-          : '42 ms'
-      : id === 'jump'
-        ? i === 1
-          ? 't0'
-          : i === 2
-            ? 'NTP -2s'
-            : 'neg'
-        : id === 'cast'
-          ? i === 1
-            ? '1500 ms'
-            : '1 s'
-          : i === 1
-            ? 'steady'
-            : 'no convert'
-
-  const leftName =
-    id === 'steady' ? 'steady_clock' : id === 'jump' ? 'system_clock' : id === 'cast' ? 'milliseconds' : 'steady tp'
-  const leftVal =
-    id === 'steady'
-      ? 'monotonic'
-      : id === 'jump'
-        ? i >= 2
-          ? 'jumped'
-          : 'wall'
-        : id === 'cast'
-          ? '1500'
-          : 'epoch A'
-  const midName =
-    id === 'steady' ? 'work()' : id === 'jump' ? 'work()' : id === 'cast' ? 'duration_cast<seconds>' : 'system tp'
-  const midVal =
-    id === 'steady' && i >= 1
-      ? 'running'
-      : id === 'jump' && i >= 1
-        ? 'running'
-        : id === 'cast' && i >= 1
-          ? 'toward 0'
-          : id === 'mix'
-            ? 'different epoch'
-            : '—'
-  const midNote =
-    id === 'steady'
-      ? 'does not jump'
-      : id === 'jump'
-        ? 'NTP / user can step it'
-        : id === 'cast'
-          ? 'truncate, not round'
-          : 'no implicit conversion'
-  const rightName =
-    id === 'steady' ? 'duration' : id === 'jump' ? 'now - t0' : id === 'cast' ? 'count()' : 'minus'
-  const rightVal =
-    id === 'steady' && i >= 3
-      ? '42 ms'
-      : id === 'jump' && i >= 2
-        ? i >= 3
-          ? '-2000 ms'
-          : '??'
-        : id === 'cast' && i >= 2
-          ? '1'
-          : '—'
-  const rightNote =
-    id === 'steady' && won
-      ? 'elapsed, .count()'
-      : id === 'steady'
-        ? 'how long, not when'
-        : id === 'jump' && trapped
-          ? 'wall clock lied'
-          : id === 'jump'
-            ? 'can go backwards'
-            : id === 'cast' && i >= 2
-              ? '1500 ms → 1 s'
-              : id === 'cast'
-                ? 'you pick the unit'
-                : 'ill-formed mix'
+  const stepped = i >= 1
+  const decided = i >= 2
+  const recap = i >= 3
+  const jumped = id === 'jump' && decided
+  const mixTrap = id === 'mix' && decided
+  const steadyOk = id === 'steady' && recap
+  const castOk = id === 'cast' && decided
 
   const code =
     id === 'steady'
@@ -183,12 +50,12 @@ auto ms = std::chrono::duration_cast<
     std::chrono::milliseconds>(clock::now() - t0);
 std::cout << ms.count() << " ms\\n";`
       : id === 'jump'
-        ? i < 2
-          ? `auto t0 = std::chrono::system_clock::now();
+        ? decided
+          ? `// NTP stepped the clock -2s
+// dt can be negative. Not elapsed time.`
+          : `auto t0 = std::chrono::system_clock::now();
 work();
 auto dt = std::chrono::system_clock::now() - t0;`
-          : `// NTP stepped the clock -2s
-// dt can be negative. Not elapsed time.`
         : id === 'cast'
           ? `auto d = std::chrono::milliseconds{1500};
 auto s = std::chrono::duration_cast<
@@ -208,9 +75,9 @@ auto b = std::chrono::system_clock::now();
             ? 'Play duration_cast. You pick the unit. The conversion truncates toward zero — 1500 ms becomes 1 second, not 2.'
             : 'Play clocks. time_points from different clocks do not convert. You cannot subtract them. That is a type error, not a runtime surprise.'
       : id === 'steady' && i === 1
-        ? 't0 = now(). A time_point on this clock’s epoch. Not a wall-clock date.'
+        ? 't0 = now(). A time_point on this clock’s epoch. Not a wall-clock date. The bar is empty until work finishes.'
         : id === 'steady' && i === 2
-          ? 'work() runs. now() hops forward. The difference is a duration — milliseconds here via duration_cast.'
+          ? 'work() runs. now() is later on the same clock. The difference is a duration — milliseconds via duration_cast.'
           : id === 'steady'
             ? '.count() is the integer tick count. C++14 has no operator<< for durations — print the count and the unit yourself.'
             : id === 'jump' && i === 1
@@ -220,7 +87,7 @@ auto b = std::chrono::system_clock::now();
                 : id === 'jump'
                   ? 'now - t0 can be negative. Use steady_clock for elapsed time. system_clock::to_time_t for C APIs.'
                   : id === 'cast' && i === 1
-                    ? '1500 milliseconds. duration<Rep, Period>. The Period is a std::ratio.'
+                    ? '1500 milliseconds. duration<Rep, Period>. The Period is a std::ratio. The pips are the count, in place.'
                     : id === 'cast' && i === 2
                       ? 'duration_cast<seconds> truncates toward zero → 1. There is no rounding helper in C++14.'
                       : id === 'cast'
@@ -231,68 +98,145 @@ auto b = std::chrono::system_clock::now();
                             ? 'Minus is not defined across clocks. The types do not match. That is the feature.'
                             : 'Need a wall time? system_clock. Need a duration? subtract two points from the same clock, then duration_cast.'
 
-  const m = MODES.find((x) => x.id === id) ?? MODES[0]
-  const stageKind = trapped || (id === 'mix' && i >= 2) ? 'ch-stage--reject' : won ? 'ch-stage--win' : ''
+  const tone = jumped || mixTrap ? 'trap' : steadyOk || castOk ? 'ok' : 'idle'
+  const playLabel =
+    id === 'steady'
+      ? 'Play steady_clock'
+      : id === 'jump'
+        ? 'Play system_clock'
+        : id === 'cast'
+          ? 'Play duration_cast'
+          : 'Play a - b'
+
+  const inName =
+    id === 'steady' ? 'steady_clock' : id === 'jump' ? 'system_clock' : id === 'cast' ? 'milliseconds' : 'steady tp'
+  const inVal =
+    id === 'steady' ? 'monotonic' : id === 'jump' ? (jumped ? 'jumped' : 'wall') : id === 'cast' ? '1500' : 'epoch A'
+  const midName =
+    id === 'steady' ? 'work()' : id === 'jump' ? 'work()' : id === 'cast' ? 'duration_cast<seconds>' : 'system tp'
+  const midVal =
+    id === 'steady' && stepped
+      ? decided
+        ? 'done'
+        : 'running'
+      : id === 'jump' && stepped
+        ? jumped
+          ? 'NTP −2s'
+          : 'running'
+        : id === 'cast' && stepped
+          ? 'toward 0'
+          : id === 'mix' && stepped
+            ? 'different epoch'
+            : '—'
+  const outName = id === 'steady' ? 'duration' : id === 'jump' ? 'now − t0' : id === 'cast' ? 'count()' : 'minus'
+  const outVal = steadyOk ? '42 ms' : jumped ? (recap ? '−2000 ms' : '??') : castOk ? '1' : mixTrap ? 'ill-formed' : '—'
+
+  const leftLink = stepped ? 'fx-link--on' : ''
+  const rightLink = jumped || mixTrap ? 'fx-link--dead' : steadyOk || castOk ? 'fx-link--weld' : decided ? 'fx-link--on' : ''
+
+  const verdict =
+    id === 'steady' && i === 2
+      ? 'same clock · duration'
+      : steadyOk
+        ? '42 ms · .count()'
+        : jumped && !recap
+          ? 'wall jumped backward'
+          : jumped
+            ? 'negative elapsed · not a stopwatch'
+            : id === 'cast' && i === 1
+              ? '1500 ms'
+              : castOk
+                ? '1500 ms → 1 s · toward 0'
+                : id === 'mix' && i === 1
+                  ? 'two epochs'
+                  : mixTrap
+                    ? 'different clocks · no minus'
+                    : ''
+
+  const pipN =
+    id === 'steady' ? (recap ? 8 : decided ? 5 : 0) : id === 'cast' ? (castOk ? 1 : stepped ? 15 : 0) : jumped ? 3 : 0
+  const pipOf = id === 'cast' ? (castOk ? 2 : 15) : 8
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        {MODES.map((x) => (
-          <button
-            key={x.id}
-            className={`chip${id === x.id ? ' chip--active' : ''}`}
-            onClick={() => select(x.id)}
-            disabled={playing}
-          >
-            {x.title}
-          </button>
-        ))}
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play chrono
-        </button>
-        <button className="chip chip--ghost" onClick={() => select(id)}>
-          reset
-        </button>
-      </div>
-
-      <div ref={stageRef} className={`viz-stage ch-stage viz-stage--live ${stageKind}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{stepCount} · <code>{m.sig}</code>
-        </p>
-        <div className="ch-row">
-          <div ref={srcRef} className={`own-card${i >= 1 ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">clock</span>
-            <span className="own-name">{leftName}</span>
-            <span className="mem-val">{leftVal}</span>
-            <span className="mem-note">when / how long</span>
-          </div>
-          <div ref={midRef} className={`own-card${i >= 1 && !useRight ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">step</span>
-            <span className="own-name">{midName}</span>
-            <span className="mem-val">{midVal}</span>
-            <span className="mem-note">{midNote}</span>
-          </div>
-          <div
-            ref={rightRef}
-            className={`own-card${won ? ' own-card--unique' : ''}${trapped || (id === 'mix' && i >= 2) ? ' nd-card--ub' : ''}`}
-          >
-            <span className="lf-tag">out</span>
-            <span className="own-name">{rightName}</span>
-            <span className="mem-val">{rightVal}</span>
-            <span className="mem-note">{rightNote}</span>
+    <SceneShell
+      modes={MODES}
+      mode={id}
+      onSelect={select}
+      playing={playing}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setId(id)
+      }}
+      playLabel={playLabel}
+      step={i}
+      stepCount={4}
+      sig={MODES.find((m) => m.id === id)?.title}
+      caption={caption}
+      code={code}
+      tone={tone}
+    >
+      <div className="fx-own">
+        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+          <span className="fx-kicker">clock</span>
+          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+            <span className="fx-kicker">{inName}</span>
+            <span className="fx-value">{inVal}</span>
+            <span className="fx-note">when / how long</span>
           </div>
         </div>
-        {pos && (
-          <span className={`ptr-pulse ch-flyer${trapped || bounce ? ' ch-flyer--trap' : ''}`} style={{ left: pos.x, top: pos.y }}>
-            {flyerText}
-          </span>
-        )}
+        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
+        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${mixTrap ? ' fx-pane--trap' : ''}`}>
+          <span className="fx-kicker">step</span>
+          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+            <span className="fx-kicker">{midName}</span>
+            <span className="fx-value">{midVal}</span>
+            <span className="fx-note">
+              {id === 'steady'
+                ? 'does not jump'
+                : id === 'jump'
+                  ? 'NTP / user can step it'
+                  : id === 'cast'
+                    ? 'truncate, not round'
+                    : 'no implicit conversion'}
+            </span>
+          </div>
+        </div>
+        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
+        <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}${jumped || mixTrap ? ' fx-pane--trap' : ''}`}>
+          <span className="fx-kicker">out</span>
+          <div
+            className={`fx-slot${
+              jumped || mixTrap ? ' fx-slot--trap' : steadyOk || castOk ? ' fx-slot--ok' : ' fx-slot--dim'
+            }`}
+          >
+            <span className="fx-kicker">{outName}</span>
+            <span className="fx-value">{outVal}</span>
+            {(id === 'steady' || id === 'cast') && stepped && (
+              <Pips n={pipN} of={pipOf} trap={false} />
+            )}
+            {jumped && recap && <Pips n={3} of={8} trap />}
+            <span className="fx-note">
+              {steadyOk
+                ? 'elapsed, .count()'
+                : jumped
+                  ? 'wall clock lied'
+                  : castOk
+                    ? '1500 ms → 1 s'
+                    : mixTrap
+                      ? 'ill-formed mix'
+                      : 'waiting'}
+            </span>
+          </div>
+        </div>
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{code}</code>
-      </pre>
-      <p className="layout-hint">{caption}</p>
-    </div>
+      <div
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          jumped || mixTrap ? 'fx-verdict--trap' : verdict ? 'fx-verdict--ok' : ''
+        }`}
+      >
+        {verdict}
+      </div>
+    </SceneShell>
   )
 }

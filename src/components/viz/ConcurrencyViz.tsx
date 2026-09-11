@@ -1,190 +1,44 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { hop, waitNextBeat, type Point } from './motion.ts'
+import { useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'race' | 'guard' | 'join' | 'atomic'
 
-const MODES: { id: Mode; title: string; sig: string }[] = [
-  { id: 'race', title: 'data race', sig: '++hits' },
-  { id: 'guard', title: 'lock_guard', sig: 'lock_guard<mutex>' },
-  { id: 'join', title: 'join', sig: '~thread' },
-  { id: 'atomic', title: 'atomic', sig: 'atomic<int>' },
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'race', title: 'data race' },
+  { id: 'guard', title: 'lock_guard' },
+  { id: 'join', title: 'join' },
+  { id: 'atomic', title: 'atomic' },
 ]
-
-const STEP_MS = 1300
-const HOP_MS = 700
 
 export function ConcurrencyViz() {
   const [id, setId] = useState<Mode>('race')
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [from, setFrom] = useState<Point>({ x: 80, y: 90 })
-  const [to, setTo] = useState<Point>({ x: 360, y: 90 })
+  const { i, playing, play, reset } = useBeats(4)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const srcRef = useRef<HTMLDivElement>(null)
-  const midRef = useRef<HTMLDivElement>(null)
-  const rightRef = useRef<HTMLDivElement>(null)
-
-  const stepCount = 4
-  const bounce = id === 'join' && i >= 3
-  const trapped = (id === 'race' && i >= 2) || (id === 'join' && i >= 2)
-  const won = (id === 'guard' && i >= 3) || (id === 'atomic' && i >= 2)
-
-  const useRight =
-    (id === 'race' && i >= 2) ||
-    (id === 'guard' && i >= 2) ||
-    (id === 'join' && i >= 2) ||
-    (id === 'atomic' && i >= 2)
-
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    const srcEl = srcRef.current
-    const dstEl = useRight ? rightRef.current : midRef.current
-    if (!stage || !srcEl || !dstEl) return
-    const origin = stage.getBoundingClientRect()
-    const a = srcEl.getBoundingClientRect()
-    const b = dstEl.getBoundingClientRect()
-    const src = { x: a.left - origin.left + a.width / 2, y: a.top - origin.top + a.height / 2 }
-    const dst = { x: b.left - origin.left + b.width / 2, y: b.top - origin.top + b.height / 2 }
-    if (bounce) {
-      setFrom(dst)
-      setTo(src)
-    } else {
-      setFrom(src)
-      setTo(dst)
-    }
-  }, [id, i, bounce, useRight])
-
-  useEffect(() => {
-    if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
-    }
-    raf = requestAnimationFrame(hopLoop)
-    const stopBeat = waitNextBeat(STEP_MS, () => {
-      if (i >= stepCount - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stopBeat()
-    }
-  }, [playing, i, stepCount])
-
-  function select(next: Mode) {
-    setPlaying(false)
-    setId(next)
-    setI(0)
-    setHopT(1)
+  function select(next: string) {
+    reset()
+    setId(next as Mode)
   }
 
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
-  }
-
-  const pos = hopT < 1 && i >= 1 ? hop(from, to, hopT) : null
-  const flyerText =
-    id === 'race'
-      ? i === 1
-        ? 't1 ++'
-        : 't2 ++'
-      : id === 'guard'
-        ? i === 1
-          ? 'lock'
-          : i === 2
-            ? 't1 ++'
-            : 't2 ++'
-        : id === 'join'
-          ? i === 1
-            ? 't'
-            : i === 2
-              ? '~t'
-              : 'term'
-          : i === 1
-            ? 't1'
-            : 't2'
-
-  const leftName = id === 'race' ? 'thread t1' : id === 'guard' ? 'thread t1' : id === 'join' ? 'std::thread t' : 'thread t1'
-  const leftVal =
-    id === 'race'
-      ? '++hits'
-      : id === 'guard'
-        ? 'lock then ++'
-        : id === 'join'
-          ? i >= 2
-            ? 'joinable'
-            : 'running'
-          : 'fetch_add'
-  const midName =
-    id === 'race' ? 'int hits' : id === 'guard' ? 'mutex m' : id === 'join' ? 'destructor' : 'atomic<int>'
-  const midVal =
-    id === 'race' && i >= 2
-      ? 'UB'
-      : id === 'guard' && i >= 1
-        ? i >= 3
-          ? 'unlocked'
-          : 'held'
-        : id === 'join' && i >= 2
-          ? 'joinable still'
-          : id === 'atomic' && i >= 1
-            ? 'seq_cst'
-            : '—'
-  const midNote =
-    id === 'race'
-      ? 'not “just an int”'
-      : id === 'guard'
-        ? 'RAII: all exit paths'
-        : id === 'join'
-          ? 'must join or detach'
-          : 'one object, not a mutex'
-  const rightName =
-    id === 'race' ? 'thread t2' : id === 'guard' ? 'thread t2' : id === 'join' ? 'std::terminate' : 'hits'
-  const rightVal =
-    id === 'race' && i >= 2
-      ? 'same object'
-      : id === 'guard' && i >= 3
-        ? 'after unlock'
-        : id === 'join' && i >= 2
-          ? 'abort'
-          : id === 'atomic' && i >= 2
-            ? 'defined'
-            : '—'
-  const rightNote =
-    id === 'race' && trapped
-      ? 'data race = UB'
-      : id === 'race'
-        ? 'unsynchronized write'
-        : id === 'guard' && won
-          ? 'serialized'
-          : id === 'guard'
-            ? 'waits on the lock'
-            : id === 'join' && trapped
-              ? 'no catch'
-              : id === 'join'
-                ? 'C++14: not jthread'
-                : 'not a data race'
+  const stepped = i >= 1
+  const decided = i >= 2
+  const recap = i >= 3
+  const raced = id === 'race' && decided
+  const joinTrap = id === 'join' && decided
+  const locked = id === 'guard' && i === 1
+  const serialized = id === 'guard' && recap
+  const atomicOk = id === 'atomic' && decided
 
   const code =
     id === 'race'
-      ? i < 2
-        ? `int hits = 0;
+      ? decided
+        ? `// two threads, one int, no mutex
+// data race → UB, not “maybe 1”`
+        : `int hits = 0;
 std::thread t1([&] { ++hits; });
 std::thread t2([&] { ++hits; });
 t1.join();
 t2.join();`
-        : `// two threads, one int, no mutex
-// data race → UB, not “maybe 1”`
       : id === 'guard'
         ? `std::mutex m;
 int hits = 0;
@@ -194,11 +48,11 @@ std::thread t([&] {
 });
 t.join();`
         : id === 'join'
-          ? i < 2
-            ? `std::thread t(work);
-// forgot t.join();`
-            : `}  // ~thread while joinable
+          ? decided
+            ? `}  // ~thread while joinable
 // std::terminate. C++14 has no jthread.`
+            : `std::thread t(work);
+// forgot t.join();`
           : `std::atomic<int> hits{0};
 std::thread t1([&] { hits.fetch_add(1); });
 std::thread t2([&] { hits.fetch_add(1); });
@@ -215,13 +69,13 @@ t2.join();`
             ? 'Play join. A joinable std::thread whose destructor runs calls terminate. join() or detach() every thread. C++20 adds jthread; this page is C++14.'
             : 'Play atomic. A single atomic object is free of data races for that object. It is not a substitute for a mutex around a bigger invariant.'
       : id === 'race' && i === 1
-        ? 't1 hops ++ into hits. Alone, that write is fine. The object is still a plain int.'
+        ? 't1 writes ++hits. Alone, that write is fine. The object is still a plain int — no happens-before with anyone else yet.'
         : id === 'race' && i === 2
-          ? 't2 hops ++ into the same int with no happens-before. That is a data race. UB, not a “torn 1.”'
+          ? 't2 writes ++ into the same int with no happens-before. That is a data race. UB, not a “torn 1.”'
           : id === 'race'
             ? 'TSan would report this. “It’s just an int” is the most common C++ concurrency myth. Protect it or make it atomic.'
             : id === 'guard' && i === 1
-              ? 'lock_guard locks m. If this constructor throws, you never entered the critical section — and you never leak a lock you didn’t take.'
+              ? 'lock_guard locks m. The green weld is the lock, not a copy. If this constructor throws, you never entered the critical section.'
               : id === 'guard' && i === 2
                 ? 't1 increments under the lock. t2 cannot enter yet. The critical section is the scope of the guard.'
                 : id === 'guard'
@@ -233,73 +87,182 @@ t2.join();`
                       : id === 'join'
                         ? 'No catch, no unwind of other threads. Join in the same scope you started, or use a wrapper that joins in its destructor (that wrapper is jthread in C++20).'
                         : i === 1
-                          ? 't1 fetch_add. Default memory order is seq_cst. The modification is a single atomic RMW.'
+                          ? 't1 fetch_add. Default memory order is seq_cst. The modification is a single atomic RMW. The pip fills in place.'
                           : i === 2
                             ? 't2 fetch_add on the same atomic. No data race. The sum is 2. This does not protect a whole struct of fields.'
                             : 'Need a bigger invariant? mutex. Need one counter? atomic. Need a condition? wait on a predicate in a loop — spurious wakeups exist.'
 
-  const m = MODES.find((x) => x.id === id) ?? MODES[0]
-  const stageKind = trapped ? 'th-stage--reject' : won ? 'th-stage--win' : ''
+  const tone = raced || joinTrap ? 'trap' : serialized || atomicOk ? 'ok' : 'idle'
+  const playLabel =
+    id === 'race' ? 'Play ++hits' : id === 'guard' ? 'Play lock_guard' : id === 'join' ? 'Play ~thread' : 'Play fetch_add'
+
+  const inName = id === 'join' ? 'std::thread t' : 'thread t1'
+  const inVal =
+    id === 'race'
+      ? '++hits'
+      : id === 'guard'
+        ? 'lock then ++'
+        : id === 'join'
+          ? decided
+            ? 'joinable'
+            : 'running'
+          : 'fetch_add'
+  const midName = id === 'race' ? 'int hits' : id === 'guard' ? 'mutex m' : id === 'join' ? 'destructor' : 'atomic<int>'
+  const midVal =
+    raced
+      ? 'UB'
+      : id === 'guard' && stepped
+        ? recap
+          ? 'unlocked'
+          : 'held'
+        : joinTrap
+          ? 'joinable still'
+          : id === 'atomic' && stepped
+            ? 'seq_cst'
+            : '—'
+  const outName = id === 'join' ? 'std::terminate' : id === 'atomic' ? 'hits' : 'thread t2'
+  const outVal = raced ? 'same object' : serialized ? 'after unlock' : joinTrap ? 'abort' : atomicOk ? '2' : '—'
+
+  const leftLink = stepped ? (id === 'guard' && !recap ? 'fx-link--weld' : raced || joinTrap ? 'fx-link--dead' : 'fx-link--on') : ''
+  const rightLink = raced || joinTrap ? 'fx-link--dead' : serialized || atomicOk ? 'fx-link--weld' : locked ? 'fx-link--on' : ''
+
+  const hits =
+    id === 'race'
+      ? raced
+        ? 2
+        : i === 1
+          ? 1
+          : 0
+      : id === 'guard'
+        ? recap
+          ? 2
+          : i === 2
+            ? 1
+            : 0
+        : id === 'atomic'
+          ? atomicOk
+            ? 2
+            : i === 1
+              ? 1
+              : 0
+          : 0
+
+  const verdict =
+    id === 'race' && i === 1
+      ? 't1 wrote · still a plain int'
+      : raced
+        ? 'data race · UB'
+        : locked
+          ? 'lock_guard · m held'
+          : id === 'guard' && i === 2
+            ? 'critical section · t2 waits'
+            : serialized
+              ? 'serialized · RAII unlock'
+              : id === 'join' && i === 1
+                ? 'joinable · must join or detach'
+                : joinTrap
+                  ? '~thread joinable · terminate'
+                  : id === 'atomic' && i === 1
+                    ? 'fetch_add · seq_cst'
+                    : atomicOk
+                      ? 'no data race · hits = 2'
+                      : ''
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        {MODES.map((x) => (
-          <button
-            key={x.id}
-            className={`chip${id === x.id ? ' chip--active' : ''}`}
-            onClick={() => select(x.id)}
-            disabled={playing}
-          >
-            {x.title}
-          </button>
-        ))}
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play thread
-        </button>
-        <button className="chip chip--ghost" onClick={() => select(id)}>
-          reset
-        </button>
-      </div>
-
-      <div ref={stageRef} className={`viz-stage th-stage viz-stage--live ${stageKind}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{stepCount} · <code>{m.sig}</code>
-        </p>
-        <div className="th-row">
-          <div ref={srcRef} className={`own-card${i >= 1 ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">t1</span>
-            <span className="own-name">{leftName}</span>
-            <span className="mem-val">{leftVal}</span>
-            <span className="mem-note">callable</span>
-          </div>
-          <div ref={midRef} className={`own-card${i >= 1 && !useRight ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">shared</span>
-            <span className="own-name">{midName}</span>
-            <span className="mem-val">{midVal}</span>
-            <span className="mem-note">{midNote}</span>
-          </div>
-          <div
-            ref={rightRef}
-            className={`own-card${won ? ' own-card--unique' : ''}${trapped ? ' nd-card--ub' : ''}`}
-          >
-            <span className="lf-tag">{id === 'join' ? 'out' : 't2'}</span>
-            <span className="own-name">{rightName}</span>
-            <span className="mem-val">{rightVal}</span>
-            <span className="mem-note">{rightNote}</span>
+    <SceneShell
+      modes={MODES}
+      mode={id}
+      onSelect={select}
+      playing={playing}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setId(id)
+      }}
+      playLabel={playLabel}
+      step={i}
+      stepCount={4}
+      sig={MODES.find((m) => m.id === id)?.title}
+      caption={caption}
+      code={code}
+      tone={tone}
+    >
+      <div className="fx-own">
+        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
+          <span className="fx-kicker">t1</span>
+          <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+            <span className="fx-kicker">{inName}</span>
+            <span className="fx-value">{inVal}</span>
+            <span className="fx-note">callable</span>
           </div>
         </div>
-        {pos && (
-          <span className={`ptr-pulse th-flyer${trapped || bounce ? ' th-flyer--trap' : ''}`} style={{ left: pos.x, top: pos.y }}>
-            {flyerText}
-          </span>
-        )}
+        <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
+        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${raced || joinTrap ? ' fx-pane--trap' : ''}`}>
+          <span className="fx-kicker">shared</span>
+          <div
+            className={`fx-slot${
+              raced || joinTrap
+                ? ' fx-slot--trap'
+                : id === 'guard' && stepped && !recap
+                  ? ' fx-slot--weld'
+                  : atomicOk
+                    ? ' fx-slot--ok'
+                    : ' fx-slot--dim'
+            }`}
+          >
+            <span className="fx-kicker">{midName}</span>
+            <span className="fx-value">{midVal}</span>
+            {id !== 'join' && (
+              <div className="fx-count" aria-hidden>
+                {[0, 1].map((n) => (
+                  <span key={n} className={`fx-count-pip${n < hits ? ' fx-count-pip--on' : ''}`} />
+                ))}
+              </div>
+            )}
+            <span className="fx-note">
+              {id === 'race'
+                ? 'not “just an int”'
+                : id === 'guard'
+                  ? 'RAII: all exit paths'
+                  : id === 'join'
+                    ? 'must join or detach'
+                    : 'one object, not a mutex'}
+            </span>
+          </div>
+        </div>
+        <div className={`fx-link${rightLink ? ` ${rightLink}` : ''}`} />
+        <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}${raced || joinTrap ? ' fx-pane--trap' : ''}`}>
+          <span className="fx-kicker">{id === 'join' ? 'out' : 't2'}</span>
+          <div
+            className={`fx-slot${
+              raced || joinTrap ? ' fx-slot--trap' : serialized || atomicOk ? ' fx-slot--ok' : ' fx-slot--dim'
+            }`}
+          >
+            <span className="fx-kicker">{outName}</span>
+            <span className="fx-value">{outVal}</span>
+            <span className="fx-note">
+              {raced
+                ? 'data race = UB'
+                : serialized
+                  ? 'serialized'
+                  : joinTrap
+                    ? 'no catch'
+                    : atomicOk
+                      ? 'not a data race'
+                      : id === 'guard'
+                        ? 'waits on the lock'
+                        : 'waiting'}
+            </span>
+          </div>
+        </div>
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{code}</code>
-      </pre>
-      <p className="layout-hint">{caption}</p>
-    </div>
+      <div
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          raced || joinTrap ? 'fx-verdict--trap' : verdict ? 'fx-verdict--ok' : ''
+        }`}
+      >
+        {verdict}
+      </div>
+    </SceneShell>
   )
 }
