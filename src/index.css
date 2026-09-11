@@ -4868,6 +4868,7 @@ pre {
   gap: 0;
   position: relative;
   padding-left: 28px;
+  overflow: hidden;
 }
 
 .fx-node {

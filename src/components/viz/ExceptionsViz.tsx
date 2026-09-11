@@ -63,7 +63,7 @@ export function ExceptionsViz() {
               ? 'openFile'
               : 'parse'
 
-  const pcTop = 12 + FRAMES.findIndex((f) => f.id === pc) * 56
+  const pcTop = 10 + FRAMES.findIndex((f) => f.id === pc) * 48
 
   const code =
     id === 'catch'
@@ -158,7 +158,8 @@ int main() { parse(); }`
     }
     if (fid === 'openFile') {
       if (fileThrow && !fileDead) return '~File throws'
-      if (fileDead) return id === 'dtor' ? '~File · terminate' : '~fstream closed the file'
+      if (fileDead)
+        return id === 'dtor' ? '~File · terminate' : id === 'uncaught' ? 'frame destroyed' : '~fstream closed the file'
       return id === 'dtor' ? 'File file  (dtor will run)' : 'fstream file  (will close)'
     }
     if (fid === 'run') {
