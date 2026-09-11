@@ -11,8 +11,6 @@ const MODES: { id: Mode; title: string }[] = [
   { id: 'ec', title: 'error_code' },
 ]
 
-const OLD = ['A', 'B', 'C', 'D'] as const
-
 export function NoexceptViz() {
   const [id, setId] = useState<Mode>('move')
   const { i, playing, play, reset } = useBeats(4)
@@ -31,6 +29,9 @@ export function NoexceptViz() {
   const copied = id === 'move' && recap
   const throwing = id === 'move' && decided
   const queried = id === 'query' && decided
+  const trap = termTrap
+  const warn = ignored
+  const ok = copied || queried || checked
 
   const code =
     id === 'move'
@@ -67,14 +68,14 @@ open(path, ec);  // no throw
   const caption =
     i === 0
       ? id === 'move'
-        ? 'Play vector move. vector will not use a throwing move on resize — it copies instead (move_if_noexcept). Mark moves noexcept or you pay copies. C++14: is_nothrow_move_constructible<T>::value, not _v.'
+        ? 'Play move_if_noexcept. vector will not use a throwing move on resize — it copies instead. Mark moves noexcept or you pay copies. C++14: is_nothrow_move_constructible<T>::value, not _v.'
         : id === 'term'
-          ? 'Play terminate. noexcept is a contract. If anything throws out of that function, there is no catch: std::terminate runs.'
+          ? 'Play f() noexcept. noexcept is a contract. If anything throws out of that function, there is no catch: std::terminate runs.'
           : id === 'query'
-            ? 'Play query. noexcept(expr) is a compile-time bool. Templates use it to pick copy vs move.'
-            : 'Play error_code. No unwind. The error sits in a value that is trivial to ignore. Pick a policy and stick to it.'
+            ? 'Play noexcept(f()). noexcept(expr) is a compile-time bool. Templates use it to pick copy vs move.'
+            : 'Play open(path, ec). No unwind. The error sits in a value that is trivial to ignore. Pick a policy and stick to it.'
       : id === 'move' && i === 1
-        ? 'The vector is full. Resize must relocate every element into a new buffer.'
+        ? 'The vector is full. Resize must relocate every element into a new buffer. Stations light in place — nothing hops.'
         : id === 'move' && i === 2
           ? 'is_nothrow_move_constructible<T>::value is false. A throwing move during this loop would strand the container. So it will not move.'
           : id === 'move'
@@ -97,7 +98,7 @@ open(path, ec);  // no throw
                             ? 'Ignore it and the program continues in a lie. That is the error-code footgun — silent, cheap, and wrong.'
                             : 'Check. Translate at a boundary if the rest of the program uses exceptions.'
 
-  const tone = termTrap ? 'trap' : ignored ? 'warn' : copied || queried || checked ? 'ok' : 'idle'
+  const tone = trap ? 'trap' : warn ? 'warn' : ok ? 'ok' : 'idle'
   const playLabel =
     id === 'move'
       ? 'Play move_if_noexcept'
@@ -152,91 +153,68 @@ open(path, ec);  // no throw
       tone={tone}
     >
       {id === 'move' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">old buffer</span>
-            <div className="fx-buf-row">
-              {OLD.map((ch) => (
-                <span key={ch} className={`fx-letter${stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>
-                  {stepped ? ch : '·'}
-                </span>
-              ))}
-            </div>
-            <span className="fx-note">{copied ? 'still valid' : stepped ? 'full · grow' : 'idle'}</span>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${copied ? ' fx-rank--done' : ''}`}>
+            <code>old</code>
+            <span className="fx-note">full buffer</span>
+            <span className="fx-note">{copied ? 'ok' : stepped ? 'full' : '—'}</span>
           </div>
-          <div className={`fx-link${copied ? ' fx-link--dead' : throwing ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${copied ? ' fx-pane--focus' : ''}${throwing && !copied ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">new buffer</span>
-            <div className="fx-buf-row">
-              {OLD.map((ch) => (
-                <span key={ch} className={`fx-letter${copied ? ' fx-letter--on' : ' fx-letter--empty'}`}>
-                  {copied ? ch : '·'}
-                </span>
-              ))}
-            </div>
-            <span className="fx-note">{copied ? 'copied · not stolen' : throwing ? 'will not move' : 'waiting'}</span>
+          <div className={`fx-rank${throwing ? ' fx-rank--on' : ''}${throwing && !copied ? ' fx-rank--trap' : ''}`}>
+            <code>new</code>
+            <span className="fx-note">move_if_noexcept</span>
+            <span className="fx-note">{copied ? 'copy' : throwing ? 'no' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'term' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${termTrap ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">f() noexcept</span>
-            <div className={`fx-slot${termTrap ? ' fx-slot--trap' : stepped ? ' fx-slot--weld' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">contract</span>
-              <span className="fx-value">{stepped ? 'f' : '—'}</span>
-              <span className="fx-note">{termTrap ? 'must not throw' : 'no exception out'}</span>
-            </div>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${termTrap ? ' fx-rank--trap' : ''}`}>
+            <code>f</code>
+            <span className="fx-note">
+              <code>noexcept</code>
+            </span>
+            <span className="fx-note">{termTrap ? 'ill' : stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-link${termTrap ? ' fx-link--dead' : stepped ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${termTrap ? ' fx-pane--focus' : ''}${termTrap ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">g()</span>
-            <div className={`fx-slot${termTrap ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">call</span>
-              <span className="fx-value">{termTrap ? 'throw' : '—'}</span>
-              <span className="fx-note">{recap ? 'std::terminate' : termTrap ? 'no catch' : 'may throw'}</span>
-            </div>
+          <div className={`fx-rank${termTrap ? ' fx-rank--trap' : ''}`}>
+            <code>g</code>
+            <span className="fx-note">may throw</span>
+            <span className="fx-note">{recap ? 'end' : termTrap ? 'throw' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'query' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${queried ? ' fx-rank--done' : ''}`}>
-            <span className="fx-note">f()</span>
-            <code>noexcept</code>
-            <span className="fx-note">{stepped ? 'spec' : '—'}</span>
+            <code>f</code>
+            <span className="fx-note">spec</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${queried ? ' fx-rank--on' : ''}`}>
-            <span className="fx-note">query</span>
-            <code>noexcept(f())</code>
+            <code>q</code>
+            <span className="fx-note">
+              <code>noexcept()</code>
+            </span>
             <span className="fx-note">{queried ? 'true' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'ec' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">open</span>
-            <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">path</span>
-              <span className="fx-value">{stepped ? 'file' : '—'}</span>
-              <span className="fx-note">no throw</span>
-            </div>
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${checked ? ' fx-rank--done' : ''}`}>
+            <code>open</code>
+            <span className="fx-note">no throw</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-link${checked ? ' fx-link--weld' : ignored ? ' fx-link--dead' : stepped ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}${ignored ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">ec</span>
-            <div className={`fx-slot${checked ? ' fx-slot--ok' : ignored ? ' fx-slot--trap' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">error_code</span>
-              <span className="fx-value">{checked ? 'if' : stepped ? 'err' : '—'}</span>
-              <span className="fx-note">{checked ? 'handled' : ignored ? 'ignored' : stepped ? 'written' : 'waiting'}</span>
-            </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${ignored ? ' fx-rank--trap' : ''}`}>
+            <code>ec</code>
+            <span className="fx-note">error_code</span>
+            <span className="fx-note">{checked ? 'ok' : ignored ? 'no' : stepped ? 'err' : '—'}</span>
           </div>
         </div>
       )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
-          termTrap ? 'fx-verdict--trap' : ignored ? 'fx-verdict--warn' : copied || queried || checked ? 'fx-verdict--ok' : ''
+          trap ? 'fx-verdict--trap' : warn ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
         {verdict}

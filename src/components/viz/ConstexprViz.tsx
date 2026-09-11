@@ -11,8 +11,6 @@ const MODES: { id: Mode; title: string }[] = [
   { id: 'heap', title: 'new int' },
 ]
 
-const DOUBLES = [1, 2, 4, 8] as const
-
 export function ConstexprViz() {
   const [id, setId] = useState<Mode>('fold')
   const { i, playing, play, reset } = useBeats(4)
@@ -25,16 +23,16 @@ export function ConstexprViz() {
   const stepped = i >= 1
   const decided = i >= 2
   const recap = i >= 3
-
-  const looping = (id === 'fold' || id === 'runtime') && stepped && !recap
-  const r = !looping && !((id === 'fold' || id === 'runtime') && recap) ? null : i === 1 ? 2 : i === 2 ? 4 : 8
-  const filled = i === 0 ? 0 : i === 1 ? 2 : i === 2 ? 3 : 4
   const baked = id === 'fold' && recap
   const ran = id === 'runtime' && recap
   const nConst = id === 'cvar' && stepped
   const assignTrap = id === 'cvar' && decided
   const heapTry = id === 'heap' && stepped
   const heapTrap = id === 'heap' && decided
+  const trap = assignTrap || heapTrap
+  const ok = baked || (id === 'cvar' && recap)
+
+  const r = i === 1 ? '2' : i === 2 ? '4' : recap ? '8' : '—'
 
   const code =
     id === 'fold'
@@ -80,7 +78,7 @@ n = 4;  // error — n is const`
             ? 'Play n = 4. A constexpr variable must be initialized by a constant expression. It is implicitly const. That is not the same as a constexpr function.'
             : 'Play new int. C++14 constexpr cannot allocate, throw, or leave a local uninitialized. Marking a function constexpr does not lift those rules.'
       : id === 'fold' && i === 1
-        ? 'Compile-time loop: r is 2. Locals may mutate inside constexpr in C++14. No I/O, no heap, no try. Cells light in place.'
+        ? 'Compile-time loop: r is 2. Locals may mutate inside constexpr in C++14. No I/O, no heap, no try. Stations light in place.'
         : id === 'fold' && i === 2
           ? 'r is 4, then 8. The compiler is evaluating the loop. The CPU never sees these iterations when the result is required to be a constant.'
           : id === 'fold'
@@ -92,9 +90,9 @@ n = 4;  // error — n is const`
                 : id === 'runtime'
                   ? 'k holds 8 after the call. You cannot write int a[k] unless k itself is a constant. A constexpr function with a runtime argument is a normal function.'
                   : id === 'cvar' && i === 1
-                    ? 'n is 3. A constexpr variable is implicitly const. The cyan slot is the object; it will not accept a later store.'
+                    ? 'n is 3. A constexpr variable is implicitly const. The object will not accept a later store.'
                     : id === 'cvar' && i === 2
-                      ? 'n = 4 is ill-formed. The magenta slot is a plain int k — same initializer, but k may be assigned.'
+                      ? 'n = 4 is ill-formed. k is a plain int — same initializer, but k may be assigned.'
                       : id === 'cvar'
                         ? 'Want a mutable object? Write int. Want a compile-time constant? Write constexpr. const int n = 3 can still be an integral constant if the initializer is one.'
                         : i === 1
@@ -103,39 +101,32 @@ n = 4;  // error — n is const`
                             ? 'Substitution into a constant-expression context fails. This is not SFINAE — it is simply not a constant expression.'
                             : 'Keep constexpr functions to loops, locals, and arithmetic. Heap, I/O, and try wait for later standards in limited forms.'
 
-  const tone = assignTrap || heapTrap ? 'trap' : ran ? 'warn' : baked || (id === 'cvar' && recap) ? 'ok' : 'idle'
+  const tone = trap ? 'trap' : ran ? 'warn' : ok ? 'ok' : 'idle'
   const playLabel =
     id === 'fold' ? 'Play pow2(3)' : id === 'runtime' ? 'Play pow2(x)' : id === 'cvar' ? 'Play n = 4' : 'Play new int'
-
-  const leftLink =
-    baked || nConst
-      ? 'fx-link--weld'
-      : looping || ran || heapTry
-        ? heapTrap
-          ? 'fx-link--dead'
-          : 'fx-link--on'
-        : ''
 
   const verdict =
     baked
       ? 'baked · array bound OK'
       : ran
         ? 'runtime 8 · not a constant'
-        : looping
+        : id === 'fold' && stepped
           ? `loop · r = ${r}`
-          : assignTrap && recap
-            ? 'constexpr n is const'
-            : assignTrap
-              ? 'n = 4 · ill-formed'
-              : nConst
-                ? 'n = 3 · implicitly const'
-                : heapTrap && recap
-                  ? 'C++14 · no constexpr new'
-                  : heapTrap
-                    ? 'new int · not a constant'
-                    : heapTry
-                      ? 'compiler · evaluating f()'
-                      : ''
+          : id === 'runtime' && stepped && !recap
+            ? `loop · r = ${r}`
+            : assignTrap && recap
+              ? 'constexpr n is const'
+              : assignTrap
+                ? 'n = 4 · ill-formed'
+                : nConst
+                  ? 'n = 3 · implicitly const'
+                  : heapTrap && recap
+                    ? 'C++14 · no constexpr new'
+                    : heapTrap
+                      ? 'new int · not a constant'
+                      : heapTry
+                        ? 'compiler · evaluating f()'
+                        : ''
 
   return (
     <SceneShell
@@ -156,87 +147,65 @@ n = 4;  // error — n is const`
       code={code}
       tone={tone}
     >
-      {(id === 'fold' || id === 'runtime') && (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">{id === 'fold' ? 'compiler' : 'CPU'}</span>
-            <div className={`fx-slot${stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">{id === 'fold' ? 'pow2(3)' : 'pow2(x)'}</span>
-              <span className="fx-value">{r === null ? 'idle' : `r = ${r}`}</span>
-              <span className="fx-note">{id === 'fold' ? 'constant expression' : 'x is not const'}</span>
-              <div className="fx-buf-row">
-                {DOUBLES.map((n, idx) => (
-                  <span
-                    key={n}
-                    className={`fx-letter${idx < filled ? (id === 'fold' ? ' fx-letter--on' : ' fx-letter--move') : ' fx-letter--empty'}`}
-                  >
-                    {n}
-                  </span>
-                ))}
-              </div>
-            </div>
+      {id === 'fold' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${baked ? ' fx-rank--done' : ''}`}>
+            <code>r</code>
+            <span className="fx-note">compile-time loop</span>
+            <span className="fx-note">{stepped ? r : '—'}</span>
           </div>
-          <div className={`fx-link${leftLink ? ` ${leftLink}` : ''}`} />
-          <div className={`fx-pane${baked || ran ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">{id === 'fold' ? 'constexpr slot' : 'stack'}</span>
-            <div className={`fx-slot${baked ? ' fx-slot--ok' : ran ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">{id === 'fold' ? 'table_size' : 'k'}</span>
-              <span className="fx-value">{baked || ran ? '8' : '—'}</span>
-              <span className="fx-note">
-                {baked ? 'array bound OK' : ran ? 'not a constant' : id === 'fold' ? 'needs a constant' : 'waiting'}
-              </span>
-              {baked && <span className="fx-badge fx-badge--open">int a[8]</span>}
-              {ran && <span className="fx-badge fx-badge--lock">not a bound</span>}
-            </div>
+          <div className={`fx-rank${baked ? ' fx-rank--on' : ''}`}>
+            <code>n</code>
+            <span className="fx-note">table_size</span>
+            <span className="fx-note">{baked ? '8' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'runtime' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${ran ? ' fx-rank--done' : ''}`}>
+            <code>r</code>
+            <span className="fx-note">CPU loop</span>
+            <span className="fx-note">{stepped ? r : '—'}</span>
+          </div>
+          <div className={`fx-rank${ran ? ' fx-rank--on' : ''}`}>
+            <code>k</code>
+            <span className="fx-note">not a bound</span>
+            <span className="fx-note">{ran ? '8' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'cvar' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${nConst ? ' fx-pane--focus' : ''}${assignTrap ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">constexpr</span>
-            <div className={`fx-slot${assignTrap ? ' fx-slot--trap' : nConst ? ' fx-slot--weld' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">int n</span>
-              <span className="fx-value">{nConst ? '3' : '—'}</span>
-              <span className="fx-note">{assignTrap ? 'n = 4 rejected' : nConst ? 'implicitly const' : 'must be constant-init'}</span>
-              {nConst && <span className="fx-badge fx-badge--lock">const</span>}
-            </div>
+        <div className="fx-ladder">
+          <div className={`fx-rank${nConst ? ' fx-rank--on' : ''}${assignTrap ? ' fx-rank--trap' : ''}`}>
+            <code>n</code>
+            <span className="fx-note">constexpr</span>
+            <span className="fx-note">{assignTrap ? 'ill' : nConst ? '3' : '—'}</span>
           </div>
-          <div className={`fx-link${assignTrap ? ' fx-link--dead' : nConst ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${decided ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">plain int</span>
-            <div className={`fx-slot${recap ? ' fx-slot--ok' : decided ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">int k</span>
-              <span className="fx-value">{recap ? '4' : decided ? '3' : '—'}</span>
-              <span className="fx-note">{recap ? 'k = 4 ok' : decided ? 'mutable' : 'not constexpr'}</span>
-            </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+            <code>k</code>
+            <span className="fx-note">plain int</span>
+            <span className="fx-note">{recap ? '4' : decided ? '3' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'heap' && (
-        <div className="fx-sh">
-          <div className={`fx-pane${heapTry ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">compiler</span>
-            <div className={`fx-slot${heapTry ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">constexpr f</span>
-              <span className="fx-value">{heapTrap ? 'not a constant' : heapTry ? 'evaluating' : 'idle'}</span>
-              <span className="fx-note">needs a constant expression</span>
-            </div>
+        <div className="fx-ladder">
+          <div className={`fx-rank${heapTry ? ' fx-rank--on' : ''}${heapTrap ? ' fx-rank--done' : ''}`}>
+            <code>f</code>
+            <span className="fx-note">constexpr</span>
+            <span className="fx-note">{heapTrap ? 'ill' : heapTry ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-link${heapTrap ? ' fx-link--dead' : heapTry ? ' fx-link--on' : ''}`} />
-          <div className={`fx-pane${heapTry ? ' fx-pane--focus' : ''}${heapTrap ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">heap</span>
-            <div className={`fx-slot${heapTrap ? ' fx-slot--trap' : heapTry ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">new int</span>
-              <span className="fx-value">{heapTrap ? 'illegal' : heapTry ? 'requested' : '—'}</span>
-              <span className="fx-note">{heapTrap ? 'C++14: no constexpr new' : 'not in C++14 constexpr'}</span>
-            </div>
+          <div className={`fx-rank${heapTrap ? ' fx-rank--trap' : heapTry ? ' fx-rank--on' : ''}`}>
+            <code>new</code>
+            <span className="fx-note">C++14 heap</span>
+            <span className="fx-note">{heapTrap ? 'ill' : '—'}</span>
           </div>
         </div>
       )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
-          assignTrap || heapTrap ? 'fx-verdict--trap' : ran ? 'fx-verdict--warn' : baked || (id === 'cvar' && recap) ? 'fx-verdict--ok' : ''
+          trap ? 'fx-verdict--trap' : ran ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
         {verdict}
