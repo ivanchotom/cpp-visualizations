@@ -3,15 +3,6 @@ import { SceneShell } from './scene/SceneShell.tsx'
 import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'firewall' | 'dtor' | 'moves' | 'abi'
-type SlotKind = 'gen' | 'user' | 'absent' | 'deleted' | 'idle'
-
-const SLOTS = [
-  { key: 'dtor', label: '~T()' },
-  { key: 'copy', label: 'T(const T&)' },
-  { key: 'cassign', label: 'T& operator=' },
-  { key: 'move', label: 'T(T&&)' },
-  { key: 'massign', label: 'T& operator= &&' },
-] as const
 
 const MODES: { id: Mode; title: string }[] = [
   { id: 'firewall', title: 'firewall' },
@@ -19,27 +10,6 @@ const MODES: { id: Mode; title: string }[] = [
   { id: 'moves', title: 'moves' },
   { id: 'abi', title: 'ABI' },
 ]
-
-function slotState(mode: Mode, i: number, key: (typeof SLOTS)[number]['key']): SlotKind {
-  if (mode === 'firewall' || mode === 'abi') return 'idle'
-  if (i === 0) return 'idle'
-  if (mode === 'dtor') {
-    if (key === 'dtor') return i >= 1 ? 'user' : 'idle'
-    return 'idle'
-  }
-  if (key === 'dtor') return 'user'
-  if (key === 'copy' || key === 'cassign') return i >= 3 ? 'deleted' : 'idle'
-  if (key === 'move' || key === 'massign') return i >= 3 ? 'user' : i >= 2 ? 'absent' : 'idle'
-  return 'idle'
-}
-
-function slotLabel(st: SlotKind): string {
-  if (st === 'idle') return '—'
-  if (st === 'gen') return 'generated'
-  if (st === 'user') return 'user'
-  if (st === 'deleted') return '= delete'
-  return 'absent'
-}
 
 export function PimplViz() {
   const [id, setId] = useState<Mode>('firewall')
@@ -60,9 +30,7 @@ export function PimplViz() {
   const movesOk = id === 'moves' && recap
   const abiOk = id === 'abi' && decided
   const trap = dtorTrap || movesGone
-  const showSlots = id === 'dtor' || id === 'moves'
-  const implLetters =
-    id === 'abi' && recap ? ['n', 's'] : id === 'abi' && stepped ? ['n'] : id === 'firewall' && stepped ? ['n'] : id === 'dtor' && dtorFix ? ['n'] : []
+  const ok = fireOk || dtorFix || movesOk || abiOk
 
   const code =
     id === 'firewall'
@@ -120,9 +88,9 @@ public:
       ? id === 'firewall'
         ? 'Play firewall. The public class holds unique_ptr<Impl>. Impl is defined only in the .cpp. Clients recompile when the public header changes, not when private members change.'
         : id === 'dtor'
-          ? 'Play dtor. unique_ptr<Impl> in the header is fine only if ~Widget is defined in the .cpp after Impl is complete. Otherwise unique_ptr’s dtor cannot sizeof(Impl).'
+          ? 'Play ~Widget in hpp. unique_ptr<Impl> in the header is fine only if ~Widget is defined in the .cpp after Impl is complete. Otherwise unique_ptr’s dtor cannot sizeof(Impl).'
           : id === 'moves'
-            ? 'Play moves. A user-declared destructor suppresses implicit moves in C++14. Declare the destructor and the moves in the header; default them in the .cpp.'
+            ? 'Play user dtor. A user-declared destructor suppresses implicit moves in C++14. Declare the destructor and the moves in the header; default them in the .cpp.'
             : 'Play ABI. The public object’s size stays one pointer. You can add Impl fields without changing sizeof(Widget). That is the stable ABI.'
       : id === 'firewall' && i === 1
         ? 'Impl lives in the .cpp. The header only forward-declares it. make_unique is C++14 — that is the allocation you pay, plus a pointer hop on every call.'
@@ -148,9 +116,15 @@ public:
                             ? 'sizeof(Widget) stays one pointer. Add strings, containers, more fields — the client’s layout is unchanged. That is why PIMPL is an ABI firewall too.'
                             : 'You still pay an allocation and a hop. Do not PIMPL a type you pass by value in a hot loop.'
 
-  const tone = trap ? 'warn' : fireOk || dtorFix || movesOk || abiOk ? 'ok' : 'idle'
+  const tone = trap ? 'warn' : ok ? 'ok' : 'idle'
   const playLabel =
-    id === 'firewall' ? 'Play firewall' : id === 'dtor' ? 'Play dtor' : id === 'moves' ? 'Play moves' : 'Play ABI'
+    id === 'firewall'
+      ? 'Play firewall'
+      : id === 'dtor'
+        ? 'Play ~Widget in hpp'
+        : id === 'moves'
+          ? 'Play user dtor'
+          : 'Play ABI'
 
   const verdict =
     id === 'firewall' && i === 1
@@ -177,8 +151,6 @@ public:
                           ? 'stable ABI · pay an allocation'
                           : ''
 
-  const linkKind = dtorTrap || movesGone ? 'dead' : fireOk || dtorFix || movesOk || abiOk ? 'weld' : stepped ? 'on' : ''
-
   return (
     <SceneShell
       modes={MODES}
@@ -198,69 +170,69 @@ public:
       code={code}
       tone={tone}
     >
-      {showSlots ? (
-        <div className="fx-five">
-          {SLOTS.map((s) => {
-            const st = slotState(id, i, s.key)
-            return (
-              <div key={s.key} className={`fx-sm fx-sm--${st}`}>
-                <span className="fx-kicker">{s.label}</span>
-                <span className="fx-note">{slotLabel(st)}</span>
-              </div>
-            )
-          })}
-        </div>
-      ) : null}
-      <div className="fx-sh">
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${dtorTrap ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">Widget</span>
-          <div className="fx-buf-row">
-            <span className={`fx-letter${stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>p</span>
+      {id === 'firewall' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${fireOk ? ' fx-rank--done' : ''}`}>
+            <code>W</code>
+            <span className="fx-note">
+              <code>unique_ptr</code>
+            </span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <span className="fx-note">
-            {dtorTrap
-              ? '~Widget() = default in hpp'
-              : dtorFix
-                ? '~Widget(); in hpp'
-                : abiOk
-                  ? 'sizeof unchanged'
-                  : 'one unique_ptr'}
-          </span>
-        </div>
-        <div className={`fx-link${linkKind ? ` fx-link--${linkKind}` : ''}`} />
-        <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${dtorTrap || movesGone ? ' fx-pane--trap' : ''}`}>
-          <span className="fx-kicker">Impl</span>
-          <div className="fx-buf-row">
-            {implLetters.length ? (
-              implLetters.map((ch) => (
-                <span key={ch} className="fx-letter fx-letter--on">
-                  {ch}
-                </span>
-              ))
-            ) : (
-              <span className={`fx-letter${dtorTrap ? ' fx-letter--dead' : ' fx-letter--empty'}`}>
-                {dtorTrap ? '?' : '·'}
-              </span>
-            )}
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+            <code>Impl</code>
+            <span className="fx-note">only in .cpp</span>
+            <span className="fx-note">{fireOk ? 'ok' : stepped ? 'n' : '—'}</span>
           </div>
-          <span className="fx-note">
-            {dtorTrap
-              ? 'incomplete'
-              : dtorFix
-                ? 'complete in .cpp'
-                : movesGone
-                  ? 'moves suppressed'
-                  : movesOk
-                    ? 'steal the unique_ptr'
-                    : id === 'abi' && recap
-                      ? 'n + string'
-                      : 'private'}
-          </span>
         </div>
-      </div>
+      )}
+      {id === 'dtor' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${dtorTrap ? ' fx-rank--trap' : ''}${dtorFix ? ' fx-rank--done' : ''}`}>
+            <code>{'~W'}</code>
+            <span className="fx-note">{dtorFix ? 'declared in hpp' : 'default in hpp'}</span>
+            <span className="fx-note">{dtorFix ? 'ok' : dtorTrap ? 'ill' : stepped ? 'need' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${dtorTrap ? ' fx-rank--trap' : ''}`}>
+            <code>Impl</code>
+            <span className="fx-note">{dtorFix ? 'complete in .cpp' : 'incomplete'}</span>
+            <span className="fx-note">{dtorFix ? 'ok' : dtorTrap ? 'ill' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'moves' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${movesOk ? ' fx-rank--done' : ''}`}>
+            <code>{'~W'}</code>
+            <span className="fx-note">user-declared</span>
+            <span className="fx-note">{stepped ? 'user' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${movesGone ? ' fx-rank--trap' : ''}`}>
+            <code>{'T&&'}</code>
+            <span className="fx-note">{movesOk ? 'declared, default .cpp' : 'implicit move'}</span>
+            <span className="fx-note">{movesOk ? 'ok' : movesGone ? 'gone' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'abi' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${abiOk ? ' fx-rank--done' : ''}`}>
+            <code>W</code>
+            <span className="fx-note">
+              <code>sizeof</code>
+            </span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+            <code>Impl</code>
+            <span className="fx-note">private fields</span>
+            <span className="fx-note">{recap ? '2' : decided ? '1' : '—'}</span>
+          </div>
+        </div>
+      )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
-          trap ? 'fx-verdict--warn' : fireOk || dtorFix || movesOk || abiOk ? 'fx-verdict--ok' : ''
+          trap ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
         {verdict}
