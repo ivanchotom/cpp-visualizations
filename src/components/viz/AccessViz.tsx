@@ -1,158 +1,30 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { hop, waitNextBeat, type Point } from './motion.ts'
+import { useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'priv' | 'friend' | 'prot' | 'st'
 
-const MODES: { id: Mode; title: string; sig: string }[] = [
-  { id: 'priv', title: 'private', sig: 'Token{id}' },
-  { id: 'friend', title: 'friend', sig: 'makeToken' },
-  { id: 'prot', title: 'protected', sig: 'derived.n_' },
-  { id: 'st', title: 'struct', sig: 'class vs struct' },
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'priv', title: 'private' },
+  { id: 'friend', title: 'friend' },
+  { id: 'prot', title: 'protected' },
+  { id: 'st', title: 'struct' },
 ]
-
-const STEP_MS = 1300
-const HOP_MS = 700
 
 export function AccessViz() {
   const [id, setId] = useState<Mode>('priv')
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [from, setFrom] = useState<Point>({ x: 80, y: 90 })
-  const [to, setTo] = useState<Point>({ x: 360, y: 90 })
+  const { i, playing, play, reset } = useBeats(4)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const srcRef = useRef<HTMLDivElement>(null)
-  const midRef = useRef<HTMLDivElement>(null)
-  const rightRef = useRef<HTMLDivElement>(null)
+  function select(next: string) {
+    reset()
+    setId(next as Mode)
+  }
 
-  const stepCount = 4
-  const bounce = (id === 'priv' && i >= 2) || (id === 'st' && i >= 2)
-  const trapped = (id === 'priv' && i >= 2) || (id === 'prot' && i >= 2) || (id === 'st' && i >= 2)
+  const bounce = id === 'priv' && i === 2
+  const trapped = (id === 'priv' && i === 2) || (id === 'prot' && i >= 2)
   const won = id === 'friend' && i >= 2
-
-  const useRight = i >= 2
-
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    const srcEl = srcRef.current
-    const dstEl = useRight ? rightRef.current : midRef.current
-    if (!stage || !srcEl || !dstEl) return
-    const origin = stage.getBoundingClientRect()
-    const a = srcEl.getBoundingClientRect()
-    const b = dstEl.getBoundingClientRect()
-    const src = { x: a.left - origin.left + a.width / 2, y: a.top - origin.top + a.height / 2 }
-    const dst = { x: b.left - origin.left + b.width / 2, y: b.top - origin.top + b.height / 2 }
-    if (bounce) {
-      setFrom(dst)
-      setTo(src)
-    } else {
-      setFrom(src)
-      setTo(dst)
-    }
-  }, [id, i, bounce, useRight])
-
-  useEffect(() => {
-    if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
-    }
-    raf = requestAnimationFrame(hopLoop)
-    const stopBeat = waitNextBeat(STEP_MS, () => {
-      if (i >= stepCount - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stopBeat()
-    }
-  }, [playing, i, stepCount])
-
-  function select(next: Mode) {
-    setPlaying(false)
-    setId(next)
-    setI(0)
-    setHopT(1)
-  }
-
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
-  }
-
-  const pos = hopT < 1 && i >= 1 ? hop(from, to, hopT) : null
-  const flyerText =
-    id === 'priv'
-      ? i === 1
-        ? 'main'
-        : 'Token{'
-      : id === 'friend'
-        ? i === 1
-          ? 'friend'
-          : 'Token{'
-        : id === 'prot'
-          ? i === 1
-            ? 'Derived'
-            : 'n_ ='
-          : i === 1
-            ? 'struct'
-            : 'class'
-
-  const leftName =
-    id === 'priv' ? 'caller' : id === 'friend' ? 'makeToken' : id === 'prot' ? 'Derived' : 'default'
-  const leftVal =
-    id === 'priv' ? 'not a member' : id === 'friend' ? 'one function' : id === 'prot' ? 'is-a Base' : 'access'
-  const midName =
-    id === 'priv' ? 'Token' : id === 'friend' ? 'ctor' : id === 'prot' ? 'protected n_' : 'class C'
-  const midVal =
-    id === 'priv' && i >= 1
-      ? 'private ctor'
-      : id === 'friend' && i >= 1
-        ? 'hole punched'
-        : id === 'prot' && i >= 1
-          ? 'visible here'
-          : id === 'st' && i >= 1
-            ? 'private default'
-            : '—'
-  const midNote =
-    id === 'priv' ? 'compile-time' : id === 'friend' ? 'not inherited' : id === 'prot' ? 'tight coupling' : 'struct is public'
-  const rightName =
-    id === 'priv' ? 'Token{1}' : id === 'friend' ? 'Token{id}' : id === 'prot' ? 'invariant' : 'DTO fields'
-  const rightVal =
-    id === 'priv' && i >= 2
-      ? 'ill-formed'
-      : id === 'friend' && i >= 2
-        ? 'ok'
-        : id === 'prot' && i >= 2
-          ? 'broken'
-          : id === 'st' && i >= 2
-            ? 'hidden'
-            : '—'
-  const rightNote =
-    id === 'priv' && bounce
-      ? 'use id() / factory'
-      : id === 'priv'
-        ? 'names, not a sandbox'
-        : won
-          ? 'friend is a scalpel'
-          : id === 'friend'
-            ? 'not a whole class'
-            : id === 'prot' && trapped
-              ? 'private data instead'
-              : id === 'prot'
-                ? 'protected functions'
-                : bounce
-                  ? 'only the default differs'
-                  : 'public struct is a fine DTO'
+  const structOk = id === 'st' && i >= 3
+  const privOk = id === 'priv' && i >= 3
 
   const code =
     id === 'priv'
@@ -203,94 +75,156 @@ class Token { int id_; };  // private`
             ? 'Play protected. Derived can write n_. That compiles and couples every derived class to the layout. Prefer private data and protected functions.'
             : 'Play struct. The only language difference vs class is default access (and default inheritance: public vs private). A public struct is a fine DTO.'
       : id === 'priv' && i === 1
-        ? 'main hops toward Token. The constructor is a private name. Access control does not hide the layout from the ABI — only the names from other TUs’ source.'
+        ? 'The constructor is a private name. Access control does not hide the layout from the ABI — only the names from other TUs’ source.'
         : id === 'priv' && i === 2
-          ? 'Token{1} bounces. ill-formed. Invariants belong in the private section, not in a comment. Use the factory or a public named constructor.'
+          ? 'Token{1} is ill-formed. Invariants belong in the private section, not in a comment. Use the factory or a public named constructor.'
           : id === 'priv'
-            ? 'private does not mean secret. Anyone with the header can read the members’ types. It only means other code cannot name them.'
+            ? 'private does not mean secret. Anyone with the header can read the members’ types. It only means other code cannot name them. t.id() is the public name.'
             : id === 'friend' && i === 1
-              ? 'friend hops onto the ctor. makeToken is now allowed to name Token’s private constructor. No one else is.'
+              ? 'makeToken may name Token’s private constructor. No one else is. The weld is a hole in the name check, not a flying token.'
               : id === 'friend' && i === 2
-                ? 'Token{id} hops through. The factory returns a Token. Friendship is not inherited by Derived, and Factory’s friends do not become Token’s friends.'
+                ? 'The factory returns a Token. Friendship is not inherited by Derived, and Factory’s friends do not become Token’s friends.'
                 : id === 'friend'
                   ? 'friend-ing a whole class when a single function would do makes a wide hole. Keep the friend list short and next to the invariant it upholds.'
                   : id === 'prot' && i === 1
-                    ? 'Derived hops in. protected n_ is visible. The language allows the write. The design now has N places that can break the invariant.'
+                    ? 'protected n_ is visible in Derived. The language allows the write. The design now has N places that can break the invariant.'
                     : id === 'prot' && i === 2
-                      ? 'n_ = 1 hops. Compiles. The coupling is the bug. Protected functions that maintain the invariant, private data underneath.'
+                      ? 'n_ = 1 compiles. The coupling is the bug. Protected functions that maintain the invariant, private data underneath.'
                       : id === 'prot'
                         ? 'protected is for “derived classes may call this.” It is not a second public. Data almost never belongs there.'
                         : i === 1
-                          ? 'struct Dto hops as public fields. Fine for a bag of values with no invariant. class Token defaults private.'
+                          ? 'struct Dto has public fields. Fine for a bag of values with no invariant. class Token defaults private.'
                           : i === 2
                             ? 'class C { int id_; } hides the name. Same layout as a struct with that member. Default inheritance is private for class, public for struct.'
                             : 'Pick struct when the type is a public aggregate. Pick class when you have an invariant. The keyword is a signal, not a performance hint.'
 
-  const m = MODES.find((x) => x.id === id) ?? MODES[0]
-  const stageKind = trapped ? 'ac-stage--reject' : won ? 'ac-stage--win' : ''
+  const tone = trapped || bounce ? 'trap' : won || structOk || privOk ? 'ok' : 'idle'
+
+  const playLabel =
+    id === 'priv' ? 'Play Token{1}' : id === 'friend' ? 'Play makeToken' : id === 'prot' ? 'Play n_ =' : 'Play struct vs class'
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        {MODES.map((x) => (
-          <button
-            key={x.id}
-            className={`chip${id === x.id ? ' chip--active' : ''}`}
-            onClick={() => select(x.id)}
-            disabled={playing}
-          >
-            {x.title}
-          </button>
-        ))}
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play access
-        </button>
-        <button className="chip chip--ghost" onClick={() => select(id)}>
-          reset
-        </button>
-      </div>
-
-      <div ref={stageRef} className={`viz-stage ac-stage viz-stage--live ${stageKind}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{stepCount} · <code>{m.sig}</code>
-        </p>
-        <div className="ac-row">
-          <div ref={srcRef} className={`own-card${i >= 1 ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">in</span>
-            <span className="own-name">{leftName}</span>
-            <span className="mem-val">{leftVal}</span>
-            <span className="mem-note">who</span>
+    <SceneShell
+      modes={MODES}
+      mode={id}
+      onSelect={select}
+      playing={playing}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setId(id)
+      }}
+      playLabel={playLabel}
+      step={i}
+      stepCount={4}
+      sig={MODES.find((m) => m.id === id)?.title}
+      caption={caption}
+      code={code}
+      tone={tone}
+    >
+      {id === 'priv' && (
+        <div className="fx-sh">
+          <div className={`fx-slot${i >= 1 ? ' fx-slot--focus' : ''}${bounce ? ' fx-slot--trap' : ''}`}>
+            <span className="fx-kicker">caller</span>
+            <span className="fx-value">
+              <code>main</code>
+            </span>
+            <span className="fx-note">{privOk ? 't.id()' : 'not a member'}</span>
           </div>
-          <div ref={midRef} className={`own-card${i >= 1 && !useRight ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">class</span>
-            <span className="own-name">{midName}</span>
-            <span className="mem-val">{midVal}</span>
-            <span className="mem-note">{midNote}</span>
-          </div>
-          <div
-            ref={rightRef}
-            className={`own-card${won ? ' own-card--unique' : ''}${trapped ? ' nd-card--ub' : ''}`}
-          >
-            <span className="lf-tag">out</span>
-            <span className="own-name">{rightName}</span>
-            <span className="mem-val">{rightVal}</span>
-            <span className="mem-note">{rightNote}</span>
+          <div className={`fx-link${bounce ? ' fx-link--dead' : privOk ? ' fx-link--weld' : i >= 1 ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${i >= 1 ? ' fx-pane--focus' : ''}${bounce ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">Token</span>
+            <div className={`fx-slot${bounce ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">private</span>
+              <span className="fx-note">explicit Token(int)</span>
+              <span className="fx-badge fx-badge--lock">private</span>
+            </div>
+            <div className={`fx-slot${privOk ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">public</span>
+              <span className="fx-note">int id() const</span>
+              {privOk && <span className="fx-badge fx-badge--open">API</span>}
+            </div>
           </div>
         </div>
-        {pos && (
-          <span
-            className={`ptr-pulse ac-flyer${trapped || bounce ? ' ac-flyer--trap' : ''}`}
-            style={{ left: pos.x, top: pos.y }}
-          >
-            {flyerText}
-          </span>
-        )}
+      )}
+      {id === 'friend' && (
+        <div className="fx-sh">
+          <div className={`fx-slot${i >= 1 ? ' fx-slot--weld' : ''}`}>
+            <span className="fx-kicker">makeToken</span>
+            <span className="fx-value">
+              <code>friend</code>
+            </span>
+            <span className="fx-note">one function · not a class</span>
+          </div>
+          <div className={`fx-link${won ? ' fx-link--weld' : i >= 1 ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${i >= 1 ? ' fx-pane--focus' : ''}`}>
+            <span className="fx-kicker">Token</span>
+            <div className={`fx-slot${won ? ' fx-slot--ok' : i >= 1 ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">private ctor</span>
+              <span className="fx-note">{won ? 'Token{id} allowed here' : 'named only by friends'}</span>
+              {won && <span className="fx-badge fx-badge--open">ok</span>}
+            </div>
+          </div>
+        </div>
+      )}
+      {id === 'prot' && (
+        <div className="fx-sh">
+          <div className={`fx-slot${i >= 1 ? ' fx-slot--focus' : ''}`}>
+            <span className="fx-kicker">Derived</span>
+            <span className="fx-note">is-a Base</span>
+          </div>
+          <div className={`fx-link${trapped ? ' fx-link--dead' : i >= 1 ? ' fx-link--on' : ''}`} />
+          <div className={`fx-pane${i >= 1 ? ' fx-pane--focus' : ''}${trapped ? ' fx-pane--trap' : ''}`}>
+            <span className="fx-kicker">Base</span>
+            <div className={`fx-slot${trapped ? ' fx-slot--trap' : i >= 1 ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+              <span className="fx-kicker">protected</span>
+              <span className="fx-value">
+                <code>n_</code>
+              </span>
+              <span className="fx-note">{trapped ? 'n_ = 1 compiles · coupling' : 'visible to derived'}</span>
+            </div>
+          </div>
+        </div>
+      )}
+      {id === 'st' && (
+        <div className="fx-compare" style={{ gridTemplateColumns: '1fr auto 1fr' }}>
+          <div className={`fx-slot${i >= 1 ? ' fx-slot--ok' : ''}`}>
+            <span className="fx-kicker">struct Dto</span>
+            <span className="fx-value">
+              <code>int id</code>
+            </span>
+            <span className="fx-note">default public · fine DTO</span>
+          </div>
+          <span className="fx-op">vs</span>
+          <div className={`fx-slot${i >= 2 ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
+            <span className="fx-kicker">class Token</span>
+            <span className="fx-value">
+              <code>int id_</code>
+            </span>
+            <span className="fx-note">{i >= 2 ? 'default private · invariant' : 'same layout, hidden name'}</span>
+            {i >= 2 && <span className="fx-badge fx-badge--lock">private</span>}
+          </div>
+        </div>
+      )}
+      <div
+        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
+          trapped || bounce ? 'fx-verdict--trap' : won || structOk ? 'fx-verdict--ok' : ''
+        }`}
+      >
+        {id === 'priv' && bounce
+          ? 'Token{1} · ill-formed'
+          : privOk
+            ? 't.id() · the public name'
+            : won
+              ? 'friend hole · not inherited'
+              : trapped && id === 'prot'
+                ? 'n_ = 1 · prefer private data'
+                : structOk
+                  ? 'keyword signals invariant vs DTO'
+                  : id === 'st' && i >= 2
+                    ? 'only the default differs'
+                    : ''}
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{code}</code>
-      </pre>
-      <p className="layout-hint">{caption}</p>
-    </div>
+    </SceneShell>
   )
 }

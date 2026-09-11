@@ -1,160 +1,36 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { hop, waitNextBeat, type Point } from './motion.ts'
+import { useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'plus' | 'implicit' | 'postfix' | 'andop'
 
-const MODES: { id: Mode; title: string; sig: string }[] = [
-  { id: 'plus', title: '2 + v', sig: '2 + v' },
-  { id: 'implicit', title: 'implicit', sig: 'v + 1' },
-  { id: 'postfix', title: 'postfix', sig: 'i++' },
-  { id: 'andop', title: 'operator&&', sig: 'a && b' },
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'plus', title: '2 + v' },
+  { id: 'implicit', title: 'implicit' },
+  { id: 'postfix', title: 'postfix' },
+  { id: 'andop', title: 'operator&&' },
 ]
-
-const STEP_MS = 1300
-const HOP_MS = 700
 
 export function OpOverloadViz() {
   const [id, setId] = useState<Mode>('plus')
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [hopT, setHopT] = useState(1)
-  const [from, setFrom] = useState<Point>({ x: 80, y: 90 })
-  const [to, setTo] = useState<Point>({ x: 360, y: 90 })
+  const { i, playing, play, reset } = useBeats(4)
 
-  const stageRef = useRef<HTMLDivElement>(null)
-  const srcRef = useRef<HTMLDivElement>(null)
-  const midRef = useRef<HTMLDivElement>(null)
-  const rightRef = useRef<HTMLDivElement>(null)
+  function select(next: string) {
+    reset()
+    setId(next as Mode)
+  }
 
-  const stepCount = 4
   const bounce = id === 'plus' && i === 2
   const trapped = (id === 'implicit' && i >= 2) || (id === 'andop' && i >= 2)
   const won = (id === 'plus' && i >= 3) || (id === 'postfix' && i >= 3)
-
-  const useRight =
-    (id === 'plus' && i >= 3) ||
-    (id === 'implicit' && i >= 2) ||
-    (id === 'postfix' && i !== 1) ||
-    (id === 'andop' && i >= 2)
-
-  useLayoutEffect(() => {
-    const stage = stageRef.current
-    const srcEl = srcRef.current
-    const dstEl = useRight ? rightRef.current : midRef.current
-    if (!stage || !srcEl || !dstEl) return
-    const origin = stage.getBoundingClientRect()
-    const a = srcEl.getBoundingClientRect()
-    const b = dstEl.getBoundingClientRect()
-    const src = { x: a.left - origin.left + a.width / 2, y: a.top - origin.top + a.height / 2 }
-    const dst = { x: b.left - origin.left + b.width / 2, y: b.top - origin.top + b.height / 2 }
-    if (bounce) {
-      setFrom(dst)
-      setTo(src)
-    } else {
-      setFrom(src)
-      setTo(dst)
-    }
-  }, [id, i, bounce, useRight])
-
-  useEffect(() => {
-    if (!playing) return
-    const hopBorn = performance.now()
-    let raf = 0
-    const hopLoop = (now: number) => {
-      setHopT(Math.min(1, (now - hopBorn) / HOP_MS))
-      if (now - hopBorn < HOP_MS) raf = requestAnimationFrame(hopLoop)
-    }
-    raf = requestAnimationFrame(hopLoop)
-    const stopBeat = waitNextBeat(STEP_MS, () => {
-      if (i >= stepCount - 1) {
-        setPlaying(false)
-        setHopT(1)
-        return
-      }
-      setI(i + 1)
-      setHopT(0)
-    })
-    return () => {
-      cancelAnimationFrame(raf)
-      stopBeat()
-    }
-  }, [playing, i, stepCount])
-
-  function select(next: Mode) {
-    setPlaying(false)
-    setId(next)
-    setI(0)
-    setHopT(1)
-  }
-
-  function play() {
-    setI(0)
-    setHopT(0)
-    setPlaying(true)
-  }
-
-  const pos = hopT < 1 && i >= 1 ? hop(from, to, hopT) : null
-  const flyerText =
-    id === 'plus'
-      ? i === 1
-        ? '2'
-        : i === 2
-          ? 'miss'
-          : 'Vec(2)'
-      : id === 'implicit'
-        ? i === 1
-          ? 'bool'
-          : 'int 1'
-        : id === 'postfix'
-          ? i === 1
-            ? 'copy 3'
-            : '++'
-          : i === 1
-            ? 'a'
-            : 'b anyway'
-
-  const leftName = id === 'plus' ? 'int' : id === 'implicit' ? 'Flag v' : id === 'postfix' ? 'i' : 'a'
-  const leftVal = id === 'plus' ? '2' : id === 'implicit' ? 'true' : id === 'postfix' ? (i >= 2 ? '4' : '3') : 'false'
-  const midName =
-    id === 'plus' ? 'Vec::operator+' : id === 'implicit' ? 'operator bool' : id === 'postfix' ? 'old' : 'operator&&'
-  const midNote =
-    id === 'plus' && i >= 1 && i < 3
-      ? 'int is not this'
-      : id === 'plus'
-        ? 'member, left must be Vec'
-        : id === 'implicit'
-          ? 'converts'
-          : id === 'postfix'
-            ? i >= 1
-              ? '3  (the result)'
-              : 'copy first'
-            : i >= 2
-              ? 'both args already eval'
-              : 'no short-circuit'
-  const rightName =
-    id === 'plus' ? 'operator+(Vec, Vec)' : id === 'implicit' ? 'v + 1' : id === 'postfix' ? '++*this' : 'b'
-  const rightVal =
-    id === 'plus' && won
-      ? 'Vec'
-      : id === 'implicit' && trapped
-        ? '2'
-        : id === 'postfix' && i >= 2
-          ? '4'
-          : id === 'andop' && trapped
-            ? 'ran'
-            : '—'
-  const rightNote =
-    id === 'plus' && won
-      ? '2 converts, then +'
-      : id === 'plus'
-        ? 'free: either side converts'
-        : id === 'implicit' && trapped
-          ? 'bool → int  (oops)'
-          : id === 'implicit'
-            ? 'accidental arithmetic'
-            : id === 'postfix'
-              ? 'then return old'
-              : 'would skip if built-in'
+  const memberMiss = id === 'plus' && i >= 1 && i < 3
+  const freeOn = id === 'plus' && i >= 3
+  const boolOn = id === 'implicit' && i >= 1
+  const arithTrap = id === 'implicit' && i >= 2
+  const oldOn = id === 'postfix' && i >= 1
+  const incOn = id === 'postfix' && i >= 2
+  const bRan = id === 'andop' && i >= 2
+  const iVal = id === 'postfix' && i >= 2 ? '4' : '3'
 
   const code =
     id === 'plus'
@@ -214,9 +90,9 @@ if (a && b) { }`
                 : id === 'implicit'
                   ? 'Mark it explicit operator bool() (C++11). if (v) still works; v + 1 does not. That is the whole point of explicit.'
                   : id === 'postfix' && i === 1
-                    ? 'Copy the current value. The result of i++ is that snapshot, not the incremented object.'
+                    ? 'Copy the current value. The result of i++ is that snapshot, not the incremented object. The copy sits in its own slot.'
                     : id === 'postfix' && i === 2
-                      ? '++*this. Implement postfix in terms of prefix so there is one increment to maintain.'
+                      ? '++*this. Implement postfix in terms of prefix so there is one increment to maintain. i is 4; old is still 3.'
                       : id === 'postfix'
                         ? 'Return old by value. Returning a reference to the local copy is a dangling-ref bug.'
                         : i === 1
@@ -225,70 +101,129 @@ if (a && b) { }`
                             ? 'b runs anyway. Side effects, throws, work — all happen. That is why overloading && is a footgun.'
                             : 'Write a named all() / both(). Keep && for bool. Same story for operator, (comma) and overloaded ||.'
 
-  const m = MODES.find((x) => x.id === id) ?? MODES[0]
-  const stageKind = trapped ? 'oo-stage--reject' : won ? 'oo-stage--win' : ''
+  const tone = trapped || bounce ? 'trap' : won ? 'ok' : 'idle'
+
+  const playLabel =
+    id === 'plus' ? 'Play 2 + v' : id === 'implicit' ? 'Play v + 1' : id === 'postfix' ? 'Play i++' : 'Play a && b'
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        {MODES.map((x) => (
-          <button
-            key={x.id}
-            className={`chip${id === x.id ? ' chip--active' : ''}`}
-            onClick={() => select(x.id)}
-            disabled={playing}
-          >
-            {x.title}
-          </button>
-        ))}
-        <button className="chip chip--play" onClick={play} disabled={playing}>
-          Play operator
-        </button>
-        <button className="chip chip--ghost" onClick={() => select(id)}>
-          reset
-        </button>
-      </div>
-
-      <div ref={stageRef} className={`viz-stage oo-stage viz-stage--live ${stageKind}`}>
-        <p className="ptr-hint-top">
-          Step {i + 1}/{stepCount} · <code>{m.sig}</code>
-        </p>
-        <div className="oo-row">
-          <div ref={srcRef} className={`own-card${i >= 1 ? ' own-card--unique' : ''}`}>
-            <span className="lf-tag">lhs</span>
-            <span className="own-name">{leftName}</span>
-            <span className="mem-val">{leftVal}</span>
-            <span className="mem-note">call site</span>
+    <SceneShell
+      modes={MODES}
+      mode={id}
+      onSelect={select}
+      playing={playing}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setId(id)
+      }}
+      playLabel={playLabel}
+      step={i}
+      stepCount={4}
+      sig={MODES.find((m) => m.id === id)?.title}
+      caption={caption}
+      code={code}
+      tone={tone}
+    >
+      {id === 'plus' && (
+        <div className="fx-compare">
+          <div className={`fx-slot${i >= 1 ? ' fx-slot--focus' : ''}`}>
+            <span className="fx-kicker">lhs</span>
+            <span className="fx-value">
+              <code>2</code>
+            </span>
+            <span className="fx-note">int at the call site</span>
           </div>
-          <div
-            ref={midRef}
-            className={`own-card${id === 'postfix' && i >= 1 ? ' own-card--unique' : ''}${id === 'plus' && i >= 1 && i < 3 ? ' own-ctrl--ghost' : ''}`}
-          >
-            <span className="lf-tag">{id === 'plus' ? 'member' : id === 'postfix' ? 'result' : 'op'}</span>
-            <span className="own-name">{midName}</span>
-            <span className="mem-note">{midNote}</span>
+          <span className={`fx-op${memberMiss ? ' fx-op--on' : ''}`}>+</span>
+          <div className={`fx-slot${memberMiss ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
+            <span className="fx-kicker">member</span>
+            <span className="fx-note">Vec::operator+</span>
+            <span className="fx-note">{memberMiss ? 'left is not Vec' : 'needs *this on the left'}</span>
           </div>
-          <div
-            ref={rightRef}
-            className={`own-card${won ? ' own-card--unique' : ''}${trapped ? ' nd-card--ub' : ''}`}
-          >
-            <span className="lf-tag">{id === 'plus' ? 'free' : id === 'implicit' ? 'arith' : id === 'postfix' ? 'object' : 'rhs'}</span>
-            <span className="own-name">{rightName}</span>
-            <span className="mem-val">{rightVal}</span>
-            <span className="mem-note">{rightNote}</span>
+          <span className={`fx-op${freeOn ? ' fx-op--on' : ''}`}>{freeOn ? '→' : ' '}</span>
+          <div className={`fx-slot${freeOn ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+            <span className="fx-kicker">free</span>
+            <span className="fx-note">operator+(Vec, Vec)</span>
+            <span className="fx-note">{freeOn ? 'Vec(2) then +=' : 'either side may convert'}</span>
           </div>
         </div>
-        {pos && (
-          <span className={`ptr-pulse oo-flyer${bounce || trapped ? ' oo-flyer--trap' : ''}`} style={{ left: pos.x, top: pos.y }}>
-            {flyerText}
-          </span>
-        )}
+      )}
+      {id === 'implicit' && (
+        <div className="fx-compare">
+          <div className={`fx-slot${boolOn ? ' fx-slot--weld' : ''}`}>
+            <span className="fx-kicker">Flag v</span>
+            <span className="fx-value">true</span>
+            <span className="fx-note">if (v) is the intended use</span>
+          </div>
+          <span className={`fx-op${boolOn ? ' fx-op--on' : ''}`}>→</span>
+          <div className={`fx-slot${boolOn ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+            <span className="fx-kicker">operator bool</span>
+            <span className="fx-note">contextual conversion</span>
+          </div>
+          <span className={`fx-op${arithTrap ? ' fx-op--on' : ''}`}>+</span>
+          <div className={`fx-slot${arithTrap ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
+            <span className="fx-kicker">v + 1</span>
+            <span className="fx-value">{arithTrap ? '2' : '—'}</span>
+            <span className="fx-note">{arithTrap ? 'bool → int  (oops)' : 'accidental arithmetic'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'postfix' && (
+        <div className="fx-compare">
+          <div className={`fx-slot${incOn ? ' fx-slot--focus' : ''}`}>
+            <span className="fx-kicker">i</span>
+            <span className="fx-value">{iVal}</span>
+            <span className="fx-note">{incOn ? '++*this' : 'current'}</span>
+          </div>
+          <span className={`fx-op${oldOn ? ' fx-op--on' : ''}`}>i++</span>
+          <div className={`fx-slot${oldOn ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+            <span className="fx-kicker">old</span>
+            <span className="fx-value">{oldOn ? '3' : '—'}</span>
+            <span className="fx-note">the result · by value</span>
+          </div>
+          <span className="fx-op"> </span>
+          <div className={`fx-slot${won ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
+            <span className="fx-kicker">return</span>
+            <span className="fx-note">{won ? 'return old · not a ref to local' : 'postfix returns the snapshot'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'andop' && (
+        <div className="fx-compare">
+          <div className={`fx-slot${i >= 1 ? ' fx-slot--focus' : ''}`}>
+            <span className="fx-kicker">a</span>
+            <span className="fx-value">false</span>
+            <span className="fx-note">built-in && would stop</span>
+          </div>
+          <span className={`fx-op${i >= 1 ? ' fx-op--on' : ''}`}>&&</span>
+          <div className={`fx-slot${i >= 1 ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
+            <span className="fx-kicker">operator&&</span>
+            <span className="fx-note">ordinary function call</span>
+          </div>
+          <span className={`fx-op${bRan ? ' fx-op--on' : ''}`}>b</span>
+          <div className={`fx-slot${bRan ? ' fx-slot--trap' : ' fx-slot--dim'}`}>
+            <span className="fx-kicker">b</span>
+            <span className="fx-note">{bRan ? 'evaluated anyway' : 'would skip if built-in'}</span>
+          </div>
+        </div>
+      )}
+      <div
+        className={`fx-verdict${i >= 2 ? ' fx-verdict--show' : ''} ${
+          trapped || bounce ? 'fx-verdict--trap' : won ? 'fx-verdict--ok' : ''
+        }`}
+      >
+        {id === 'plus' && bounce
+          ? 'member + cannot convert lhs'
+          : freeOn
+            ? 'free + · Vec(2) then +='
+            : arithTrap
+              ? 'v + 1 → 2 · use explicit bool'
+              : won && id === 'postfix'
+                ? 'old is 3 · i is 4'
+                : bRan
+                  ? 'no short-circuit · b ran'
+                  : ''}
       </div>
-
-      <pre className="code-block sh-code">
-        <code>{code}</code>
-      </pre>
-      <p className="layout-hint">{caption}</p>
-    </div>
+    </SceneShell>
   )
 }
