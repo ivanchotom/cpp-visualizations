@@ -3,15 +3,6 @@ import { SceneShell } from './scene/SceneShell.tsx'
 import { useBeats } from './scene/useBeats.ts'
 
 type Mode = 'zero' | 'quiet' | 'raw' | 'virt'
-type SlotKind = 'gen' | 'user' | 'absent' | 'deleted' | 'idle'
-
-const SLOTS = [
-  { key: 'dtor', label: '~T()' },
-  { key: 'copy', label: 'T(const T&)' },
-  { key: 'cassign', label: 'T& operator=' },
-  { key: 'move', label: 'T(T&&)' },
-  { key: 'massign', label: 'T& operator= &&' },
-] as const
 
 const MODES: { id: Mode; title: string }[] = [
   { id: 'zero', title: 'Zero' },
@@ -19,34 +10,6 @@ const MODES: { id: Mode; title: string }[] = [
   { id: 'raw', title: 'raw ptr' },
   { id: 'virt', title: 'virtual dtor' },
 ]
-
-function slotState(mode: Mode, i: number, key: (typeof SLOTS)[number]['key']): SlotKind {
-  if (i === 0) return 'idle'
-  if (mode === 'zero') {
-    if (key === 'copy' || key === 'cassign') return i >= 2 ? 'deleted' : 'gen'
-    return 'gen'
-  }
-  if (mode === 'quiet') {
-    if (key === 'dtor') return 'user'
-    if (key === 'move' || key === 'massign') return i >= 2 ? 'absent' : 'gen'
-    return 'gen'
-  }
-  if (mode === 'raw') {
-    if (key === 'dtor') return i >= 3 ? 'user' : 'gen'
-    return 'gen'
-  }
-  if (key === 'dtor') return 'user'
-  if (i < 3) return i >= 2 ? 'absent' : 'idle'
-  return 'user'
-}
-
-function slotLabel(st: SlotKind): string {
-  if (st === 'idle') return '—'
-  if (st === 'gen') return 'generated'
-  if (st === 'user') return 'user'
-  if (st === 'deleted') return '= delete'
-  return 'absent'
-}
 
 export function RuleOfZeroViz() {
   const [id, setId] = useState<Mode>('zero')
@@ -67,7 +30,7 @@ export function RuleOfZeroViz() {
   const virtTrap = id === 'virt' && decided && !recap
   const virtOk = id === 'virt' && recap
   const trap = copied || leak || doubleFree || virtTrap
-  const nameChars = id === 'zero' ? ['I', 'v', 'a', 'n'] : ['A', 'd', 'a']
+  const ok = stolen || virtOk
 
   const code =
     id === 'zero'
@@ -125,7 +88,7 @@ Bag a, b = a;
             ? 'Play raw ptr. An owning int* is not a member that manages itself. Zero thinking here is a leak, or a double free the moment you copy.'
             : 'Play virtual dtor. A polymorphic base often needs virtual ~Base(). That is a Rule of Five moment: =default the rest so you do not silently kill moves.'
       : id === 'zero' && i === 1
-        ? 'name_ is a std::string. Copying Person would copy the string. unique_ptr is not in the picture yet. No specials in Person.'
+        ? 'name_ is a std::string. Copying Person would copy the string. unique_ptr is not in the picture yet. No specials in Person. Stations light in place.'
         : id === 'zero' && i === 2
           ? 'unique_ptr makes copy ctor and copy assign deleted. Move of Person still generates and steals the pointer. Still no specials in Person.'
           : id === 'zero'
@@ -145,10 +108,10 @@ Bag a, b = a;
                         : i === 1
                           ? 'virtual ~Base() so delete (Base*)p runs the right destructor. That is not Zero; it is a known exception.'
                           : i === 2
-                            ? 'If you only write the virtual dtor and forget the rest, C++14 suppresses moves. The grid goes absent, not generated.'
+                            ? 'If you only write the virtual dtor and forget the rest, C++14 suppresses moves. Moves go absent, not generated.'
                             : '=default copy and move. Prefer composition (Zero) over a polymorphic hierarchy when you can. When you cannot, spell the five.'
 
-  const tone = trap ? (doubleFree ? 'trap' : 'warn') : stolen || virtOk ? 'ok' : 'idle'
+  const tone = trap ? (doubleFree ? 'trap' : 'warn') : ok ? 'ok' : 'idle'
   const playLabel =
     id === 'zero'
       ? 'Play Zero'
@@ -185,8 +148,6 @@ Bag a, b = a;
                             ? '=default the rest'
                             : ''
 
-  const linkKind = stolen ? 'weld' : copied || leak ? 'on' : doubleFree || virtTrap ? 'dead' : virtOk ? 'weld' : stepped ? 'on' : ''
-
   return (
     <SceneShell
       modes={MODES}
@@ -206,91 +167,65 @@ Bag a, b = a;
       code={code}
       tone={tone}
     >
-      <div className="fx-five">
-        {SLOTS.map((s) => {
-          const st = slotState(id, i, s.key)
-          return (
-            <div key={s.key} className={`fx-sm fx-sm--${st}`}>
-              <span className="fx-kicker">{s.label}</span>
-              <span className="fx-note">{slotLabel(st)}</span>
-            </div>
-          )
-        })}
-      </div>
-      {id === 'virt' ? (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${virtTrap ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">Base</span>
-            <div className={`fx-slot${virtOk ? ' fx-slot--ok' : stepped ? ' fx-slot--focus' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">virtual dtor</span>
-              <span className="fx-value">{stepped ? '~B' : '—'}</span>
-              <span className="fx-note">{virtOk ? 'and the other four' : virtTrap ? 'moves absent' : 'polymorphic'}</span>
-            </div>
+      {id === 'zero' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${stolen ? ' fx-rank--done' : ''}`}>
+            <code>a</code>
+            <span className="fx-note">members manage</span>
+            <span className="fx-note">{stolen ? 'gone' : stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-link${linkKind ? ` fx-link--${linkKind}` : ''}`} />
-          <div className={`fx-pane${virtOk ? ' fx-pane--focus' : ''}`}>
-            <span className="fx-kicker">Derived</span>
-            <div className={`fx-slot${virtOk ? ' fx-slot--ok' : ' fx-slot--dim'}`}>
-              <span className="fx-kicker">delete p</span>
-              <span className="fx-value">{virtOk ? 'ok' : '—'}</span>
-              <span className="fx-note">{virtOk ? 'right dtor runs' : 'needs virtual ~Base'}</span>
-            </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+            <code>b</code>
+            <span className="fx-note">{stolen ? 'steal' : 'copy = delete'}</span>
+            <span className="fx-note">{stolen ? 'ok' : decided ? 'del' : '—'}</span>
           </div>
         </div>
-      ) : (
-        <div className="fx-sh">
-          <div className={`fx-pane${stepped ? ' fx-pane--focus' : ''}${stolen ? ' fx-pane--gone' : ''}`}>
-            <span className="fx-kicker">a</span>
-            <div className="fx-buf-row">
-              {id === 'raw' ? (
-                <span className={`fx-letter${doubleFree ? ' fx-letter--dead' : stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>
-                  {stepped ? '7' : '·'}
-                </span>
-              ) : (
-                nameChars.map((ch, n) => (
-                  <span key={n} className={`fx-letter${stolen ? ' fx-letter--empty' : stepped ? ' fx-letter--on' : ' fx-letter--empty'}`}>
-                    {stolen ? '·' : stepped ? ch : '·'}
-                  </span>
-                ))
-              )}
-            </div>
-            <span className="fx-note">{stolen ? 'moved-from' : leak || doubleFree ? 'owns p' : 'source'}</span>
+      )}
+      {id === 'quiet' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${copied ? ' fx-rank--done' : ''}`}>
+            <code>{'~T'}</code>
+            <span className="fx-note">user-declared</span>
+            <span className="fx-note">{stepped ? 'user' : '—'}</span>
           </div>
-          <div className={`fx-link${linkKind ? ` fx-link--${linkKind}` : ''}`} />
-          <div className={`fx-pane${stolen || copied || leak || doubleFree ? ' fx-pane--focus' : ''}${doubleFree ? ' fx-pane--trap' : ''}`}>
-            <span className="fx-kicker">b</span>
-            <div className="fx-buf-row">
-              {id === 'raw' ? (
-                <span
-                  className={`fx-letter${
-                    doubleFree ? ' fx-letter--dead' : leak ? ' fx-letter--on' : ' fx-letter--empty'
-                  }`}
-                >
-                  {leak || doubleFree ? '7' : '·'}
-                </span>
-              ) : stolen || copied ? (
-                nameChars.map((ch, n) => (
-                  <span key={n} className={`fx-letter${stolen ? ' fx-letter--move' : ' fx-letter--on'}`}>
-                    {ch}
-                  </span>
-                ))
-              ) : (
-                nameChars.map((_, n) => (
-                  <span key={n} className="fx-letter fx-letter--empty">
-                    ·
-                  </span>
-                ))
-              )}
-            </div>
-            <span className="fx-note">
-              {stolen ? 'stole' : copied ? 'copy of a' : leak ? 'same p' : doubleFree ? 'double free' : 'not yet'}
-            </span>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${copied ? ' fx-rank--trap' : ''}`}>
+            <code>{'T&&'}</code>
+            <span className="fx-note">implicit move</span>
+            <span className="fx-note">{copied ? 'copy' : decided ? 'gone' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'raw' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${leak || doubleFree ? ' fx-rank--trap' : ''}`}>
+            <code>a</code>
+            <span className="fx-note">owning raw</span>
+            <span className="fx-note">{doubleFree ? 'dbl' : leak ? 'leak' : stepped ? '7' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${doubleFree ? ' fx-rank--trap' : ''}`}>
+            <code>b</code>
+            <span className="fx-note">copy the ptr</span>
+            <span className="fx-note">{doubleFree ? 'dbl' : leak ? '7' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'virt' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${virtOk ? ' fx-rank--done' : ''}`}>
+            <code>{'~B'}</code>
+            <span className="fx-note">virtual dtor</span>
+            <span className="fx-note">{stepped ? 'user' : '—'}</span>
+          </div>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${virtTrap ? ' fx-rank--trap' : ''}`}>
+            <code>{'T&&'}</code>
+            <span className="fx-note">{virtOk ? '=default' : 'implicit move'}</span>
+            <span className="fx-note">{virtOk ? 'ok' : virtTrap ? 'gone' : '—'}</span>
           </div>
         </div>
       )}
       <div
         className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
-          doubleFree ? 'fx-verdict--trap' : trap ? 'fx-verdict--warn' : stolen || virtOk ? 'fx-verdict--ok' : ''
+          doubleFree ? 'fx-verdict--trap' : trap ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''
         }`}
       >
         {verdict}
