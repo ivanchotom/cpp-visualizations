@@ -214,7 +214,7 @@ void f(T& c) {
             <span className="fx-note">
               <code>T::iterator</code>
             </span>
-            <span className="fx-note">{tnTrap ? 'ill' : tnNeed ? '?' : '—'}</span>
+            <span className="fx-note">{tnTrap || tnOk ? 'ill' : tnNeed ? '?' : '—'}</span>
           </div>
           <div className={`fx-rank${tnOk ? ' fx-rank--on' : ''}`}>
             <code>kw</code>
