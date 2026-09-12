@@ -162,7 +162,7 @@ const auto& y = v[i];  // borrow`
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>h</code>
-            <span className="fx-note">FILE*</span>
+            <span className="fx-note">FILE</span>
             <span className="fx-note">{recap ? 'ok' : decided ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -171,7 +171,7 @@ const auto& y = v[i];  // borrow`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${decided ? ' fx-rank--trap' : ''}`}>
             <code>p</code>
-            <span className="fx-note">unique</span>
+            <span className="fx-note">uptr</span>
             <span className="fx-note">{decided ? 'gone' : stepped ? 'own' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
@@ -199,12 +199,12 @@ const auto& y = v[i];  // borrow`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${decided ? ' fx-rank--done' : ''}`}>
             <code>s</code>
-            <span className="fx-note">return</span>
+            <span className="fx-note">ret</span>
             <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${moveInhibit ? ' fx-rank--trap' : ''}`}>
             <code>mv</code>
-            <span className="fx-note">move(s)</span>
+            <span className="fx-note">mv</span>
             <span className="fx-note">{moveInhibit ? 'no' : '—'}</span>
           </div>
         </div>
