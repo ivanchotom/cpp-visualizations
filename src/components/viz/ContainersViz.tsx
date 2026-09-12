@@ -143,7 +143,7 @@ m.emplace('d', 1);  // may still fit`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${vectorRealloc ? ' fx-rank--trap' : recap ? ' fx-rank--done' : ''}`}>
             <code>cap</code>
-            <span className="fx-note">room</span>
+            <span className="fx-note">fit</span>
             <span className="fx-note">{vectorRealloc ? 'no' : stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${vectorRealloc ? ' fx-rank--trap' : ''}`}>
@@ -157,7 +157,7 @@ m.emplace('d', 1);  // may still fit`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>bk</code>
-            <span className="fx-note">back</span>
+            <span className="fx-note">end</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
@@ -190,7 +190,7 @@ m.emplace('d', 1);  // may still fit`
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>rf</code>
-            <span className="fx-note">refs</span>
+            <span className="fx-note">el</span>
             <span className="fx-note">{umapRehash ? 'ok' : '—'}</span>
           </div>
         </div>

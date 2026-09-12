@@ -155,7 +155,7 @@ auto last = v.end();  // one-past-last
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${vectorDangle ? ' fx-rank--trap' : ''}`}>
             <code>v</code>
-            <span className="fx-note">grow</span>
+            <span className="fx-note">gr</span>
             <span className="fx-note">{vectorDangle ? 'new' : '—'}</span>
           </div>
         </div>
@@ -178,7 +178,7 @@ auto last = v.end();  // one-past-last
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${mapDangle ? ' fx-rank--trap' : mapFix ? ' fx-rank--done' : ''}`}>
             <code>it</code>
-            <span className="fx-note">node</span>
+            <span className="fx-note">nd</span>
             <span className="fx-note">{mapFix ? 'c' : mapDangle ? 'ub' : stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${mapDangle ? ' fx-rank--trap' : mapFix ? ' fx-rank--done' : ''}`}>
@@ -192,13 +192,13 @@ auto last = v.end();  // one-past-last
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>beg</code>
-            <span className="fx-note">*beg</span>
+            <span className="fx-note">*b</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${derefEnd ? ' fx-rank--trap' : ''}`}>
             <code>end</code>
-            <span className="fx-note">*end</span>
-            <span className="fx-note">{derefEnd ? 'ub' : decided ? 'past' : '—'}</span>
+            <span className="fx-note">*e</span>
+            <span className="fx-note">{derefEnd ? 'ub' : decided ? '+1' : '—'}</span>
           </div>
         </div>
       )}
