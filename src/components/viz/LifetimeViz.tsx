@@ -145,7 +145,7 @@ export function LifetimeViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>B</code>
-            <span className="fx-note">sub</span>
+            <span className="fx-note">sb</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : ''}`}>
@@ -164,7 +164,7 @@ export function LifetimeViz() {
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : ''}`}>
             <code>B</code>
-            <span className="fx-note">sub</span>
+            <span className="fx-note">sb</span>
             <span className="fx-note">{recap ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -173,12 +173,12 @@ export function LifetimeViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${aJunk ? ' fx-rank--trap' : ''}`}>
             <code>a</code>
-            <span className="fx-note">1st</span>
+            <span className="fx-note">1</span>
             <span className="fx-note">{aJunk ? 'ub' : '—'}</span>
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : ''}`}>
             <code>b</code>
-            <span className="fx-note">ini</span>
+            <span className="fx-note">in</span>
             <span className="fx-note">{recap ? 'ok' : '—'}</span>
           </div>
         </div>
