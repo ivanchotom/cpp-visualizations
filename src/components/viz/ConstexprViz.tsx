@@ -179,7 +179,7 @@ n = 4;  // error — n is const`
         <div className="fx-ladder">
           <div className={`fx-rank${nConst ? ' fx-rank--on' : ''}${assignTrap ? ' fx-rank--trap' : ''}`}>
             <code>n</code>
-            <span className="fx-note">cxpr</span>
+            <span className="fx-note">cx</span>
             <span className="fx-note">{assignTrap ? 'ill' : nConst ? '3' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
@@ -193,12 +193,12 @@ n = 4;  // error — n is const`
         <div className="fx-ladder">
           <div className={`fx-rank${heapTry ? ' fx-rank--on' : ''}${heapTrap ? ' fx-rank--done' : ''}`}>
             <code>f</code>
-            <span className="fx-note">cxpr</span>
+            <span className="fx-note">cx</span>
             <span className="fx-note">{heapTrap ? 'ill' : heapTry ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${heapTrap ? ' fx-rank--trap' : heapTry ? ' fx-rank--on' : ''}`}>
             <code>new</code>
-            <span className="fx-note">heap</span>
+            <span className="fx-note">hp</span>
             <span className="fx-note">{heapTrap ? 'ill' : '—'}</span>
           </div>
         </div>
