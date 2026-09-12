@@ -159,7 +159,7 @@ struct D : Base { void speak(); };`
             <span className="fx-note">{bounced ? 'ill' : stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : bounced ? ' fx-rank--on' : ''}`}>
-            <code>den</code>
+            <code>dn</code>
             <span className="fx-note">API</span>
             <span className="fx-note">{recap ? 'ok' : '—'}</span>
           </div>

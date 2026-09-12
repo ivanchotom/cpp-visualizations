@@ -183,7 +183,7 @@ using B = decltype((x));  // int&`
             <span className="fx-note">{stepped ? 'int' : '—'}</span>
           </div>
           <div className={`fx-rank${exprRef ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>(x)</code>
+            <code>ex</code>
             <span className="fx-note">()</span>
             <span className="fx-note">{exprRef ? 'T&' : '—'}</span>
           </div>
