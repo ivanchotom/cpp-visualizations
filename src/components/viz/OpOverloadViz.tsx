@@ -186,12 +186,12 @@ if (a && b) { }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>ol</code>
-            <span className="fx-note">cpy</span>
+            <span className="fx-note">cp</span>
             <span className="fx-note">{stepped ? '3' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>i</code>
-            <span className="fx-note">++*</span>
+            <span className="fx-note">++</span>
             <span className="fx-note">{decided ? '4' : '—'}</span>
           </div>
         </div>
@@ -200,13 +200,13 @@ if (a && b) { }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>a</code>
-            <span className="fx-note">off</span>
+            <span className="fx-note">of</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${bRan ? ' fx-rank--trap' : ''}`}>
             <code>b</code>
             <span className="fx-note">sc</span>
-            <span className="fx-note">{bRan ? 'ran' : '—'}</span>
+            <span className="fx-note">{bRan ? 'rn' : '—'}</span>
           </div>
         </div>
       )}
