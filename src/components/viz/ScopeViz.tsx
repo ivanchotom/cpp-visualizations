@@ -135,12 +135,12 @@ export function ScopeViz() {
       {id === 'stat' && (
         <div className="fx-ladder">
           <div className={`fx-rank${initOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>ini</code>
+            <code>in</code>
             <span className="fx-note">1x</span>
             <span className="fx-note">{initOn ? '0' : '—'}</span>
           </div>
           <div className={`fx-rank${nOne ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>++n</code>
+            <code>++</code>
             <span className="fx-note">n</span>
             <span className="fx-note">{nTwo ? '2' : nOne ? '1' : '—'}</span>
           </div>
