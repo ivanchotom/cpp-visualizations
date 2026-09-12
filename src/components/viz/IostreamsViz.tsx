@@ -144,12 +144,12 @@ if (!in) throw std::runtime_error("open");`
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${eofTrap ? ' fx-rank--trap' : ''}`}>
             <code>ef</code>
             <span className="fx-note">ck</span>
-            <span className="fx-note">{eofTrap ? 'fail' : stepped ? 'no' : '—'}</span>
+            <span className="fx-note">{eofTrap ? 'ill' : stepped ? 'no' : '—'}</span>
           </div>
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${eofTrap ? ' fx-rank--trap' : ''}`}>
             <code>x</code>
             <span className="fx-note">use</span>
-            <span className="fx-note">{eofTrap ? 'old' : decided ? 'b' : stepped ? 'a' : '—'}</span>
+            <span className="fx-note">{eofTrap ? 'st' : decided ? 'b' : stepped ? 'a' : '—'}</span>
           </div>
         </div>
       )}

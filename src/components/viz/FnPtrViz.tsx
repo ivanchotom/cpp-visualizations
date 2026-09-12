@@ -185,7 +185,7 @@ f();   // throws std::bad_function_call`
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${emptyThrow ? ' fx-rank--trap' : ''}`}>
             <code>f</code>
             <span className="fx-note">nil</span>
-            <span className="fx-note">{emptyThrow ? 'fail' : stepped ? 'no' : '—'}</span>
+            <span className="fx-note">{emptyThrow ? 'ill' : stepped ? 'no' : '—'}</span>
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : emptyThrow ? ' fx-rank--on' : ''}`}>
             <code>s</code>
