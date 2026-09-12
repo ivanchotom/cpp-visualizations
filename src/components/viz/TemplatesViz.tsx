@@ -30,7 +30,7 @@ export function TemplatesViz() {
   const recipeOn = id === 'cls' && stepped
   const boxOk = id === 'cls' && decided
   const tnNeed = id === 'tn' && stepped
-  const tnTrap = id === 'tn' && decided && !recap
+  const tnTrap = id === 'tn' && decided
   const tnOk = id === 'tn' && recap
   const trap = tnTrap
   const ok = (id === 'fn' && recap) || (id === 'unused' && recap) || (boxOk && recap) || tnOk
@@ -155,72 +155,56 @@ void f(T& c) {
     >
       {id === 'fn' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stampInt ? ' fx-rank--on' : ''}${stampDouble ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stampInt ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>int</code>
-            <span className="fx-note">
-              <code>{'twice<int>'}</code>
-            </span>
+            <span className="fx-note">fn</span>
             <span className="fx-note">{stampInt ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${stampDouble ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stampDouble ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>dbl</code>
-            <span className="fx-note">
-              <code>{'twice<double>'}</code>
-            </span>
+            <span className="fx-note">fn</span>
             <span className="fx-note">{stampDouble ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'unused' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stampInt ? ' fx-rank--on' : ''}${noString ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stampInt ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>int</code>
-            <span className="fx-note">
-              <code>{'twice<int>'}</code>
-            </span>
+            <span className="fx-note">fn</span>
             <span className="fx-note">{stampInt ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${noString ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${noString ? ' fx-rank--on' : ''}${noString ? ' fx-rank--trap' : ''}`}>
             <code>str</code>
-            <span className="fx-note">
-              <code>{'twice<string>'}</code>
-            </span>
-            <span className="fx-note">—</span>
+            <span className="fx-note">gen</span>
+            <span className="fx-note">{noString ? 'no' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'cls' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${recipeOn ? ' fx-rank--on' : ''}${boxOk ? ' fx-rank--done' : ''}`}>
-            <code>recipe</code>
-            <span className="fx-note">
-              <code>{'Box<T>'}</code>
-            </span>
-            <span className="fx-note">—</span>
+          <div className={`fx-rank${recipeOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>T</code>
+            <span className="fx-note">rec</span>
+            <span className="fx-note">{recipeOn ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${boxOk ? ' fx-rank--on' : ''}`}>
-            <code>type</code>
-            <span className="fx-note">
-              <code>{'Box<int>'}</code>
-            </span>
+          <div className={`fx-rank${boxOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>int</code>
+            <span className="fx-note">typ</span>
             <span className="fx-note">{boxOk ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'tn' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${tnNeed ? ' fx-rank--on' : ''}${tnTrap ? ' fx-rank--trap' : tnOk ? ' fx-rank--done' : ''}`}>
-            <code>nested</code>
-            <span className="fx-note">
-              <code>T::iterator</code>
-            </span>
-            <span className="fx-note">{tnTrap || tnOk ? 'ill' : tnNeed ? '?' : '—'}</span>
+          <div className={`fx-rank${tnNeed ? ' fx-rank--on' : ''}${tnTrap ? ' fx-rank--trap' : ''}`}>
+            <code>it</code>
+            <span className="fx-note">nest</span>
+            <span className="fx-note">{tnTrap ? 'ill' : tnNeed ? '?' : '—'}</span>
           </div>
-          <div className={`fx-rank${tnOk ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${tnOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>kw</code>
-            <span className="fx-note">
-              <code>typename</code>
-            </span>
+            <span className="fx-note">tn</span>
             <span className="fx-note">{tnOk ? 'ok' : '—'}</span>
           </div>
         </div>

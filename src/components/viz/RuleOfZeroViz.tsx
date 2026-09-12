@@ -25,9 +25,9 @@ export function RuleOfZeroViz() {
   const recap = i >= 3
   const stolen = id === 'zero' && recap
   const copied = id === 'quiet' && recap
-  const leak = id === 'raw' && decided && !recap
+  const leak = id === 'raw' && decided
   const doubleFree = id === 'raw' && recap
-  const virtTrap = id === 'virt' && decided && !recap
+  const virtTrap = id === 'virt' && decided
   const virtOk = id === 'virt' && recap
   const trap = copied || leak || doubleFree || virtTrap
   const ok = stolen || virtOk
@@ -169,57 +169,57 @@ Bag a, b = a;
     >
       {id === 'zero' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${stolen ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>a</code>
-            <span className="fx-note">members manage</span>
+            <span className="fx-note">mbr</span>
             <span className="fx-note">{stolen ? 'gone' : stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>b</code>
-            <span className="fx-note">{stolen ? 'steal' : 'copy = delete'}</span>
+            <span className="fx-note">mv</span>
             <span className="fx-note">{stolen ? 'ok' : decided ? 'del' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'quiet' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${copied ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
             <code>{'~T'}</code>
-            <span className="fx-note">user-declared</span>
-            <span className="fx-note">{stepped ? 'user' : '—'}</span>
+            <span className="fx-note">user</span>
+            <span className="fx-note">{stepped ? 'yes' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${copied ? ' fx-rank--trap' : ''}`}>
             <code>{'T&&'}</code>
-            <span className="fx-note">implicit move</span>
+            <span className="fx-note">mv</span>
             <span className="fx-note">{copied ? 'copy' : decided ? 'gone' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'raw' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${leak || doubleFree ? ' fx-rank--trap' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${leak ? ' fx-rank--trap' : ''}`}>
             <code>a</code>
-            <span className="fx-note">owning raw</span>
+            <span className="fx-note">raw</span>
             <span className="fx-note">{doubleFree ? 'dbl' : leak ? 'leak' : stepped ? '7' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${doubleFree ? ' fx-rank--trap' : ''}`}>
             <code>b</code>
-            <span className="fx-note">copy the ptr</span>
+            <span className="fx-note">cpy</span>
             <span className="fx-note">{doubleFree ? 'dbl' : leak ? '7' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'virt' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${virtOk ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
             <code>{'~B'}</code>
-            <span className="fx-note">virtual dtor</span>
-            <span className="fx-note">{stepped ? 'user' : '—'}</span>
+            <span className="fx-note">virt</span>
+            <span className="fx-note">{stepped ? 'yes' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${virtTrap ? ' fx-rank--trap' : ''}`}>
             <code>{'T&&'}</code>
-            <span className="fx-note">{virtOk ? '=default' : 'implicit move'}</span>
-            <span className="fx-note">{virtOk ? 'ok' : virtTrap ? 'gone' : '—'}</span>
+            <span className="fx-note">mv</span>
+            <span className="fx-note">{virtTrap ? 'gone' : '—'}</span>
           </div>
         </div>
       )}
