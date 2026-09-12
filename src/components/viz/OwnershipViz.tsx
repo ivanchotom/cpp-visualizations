@@ -143,12 +143,12 @@ p.reset();  // T destroyed, weak still here`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>p</code>
-            <span className="fx-note">uptr</span>
+            <span className="fx-note">up</span>
             <span className="fx-note">{recap ? 'gone' : stepped ? 'own' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>T</code>
-            <span className="fx-note">heap</span>
+            <span className="fx-note">hp</span>
             <span className="fx-note">{recap ? 'ok' : decided ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -157,12 +157,12 @@ p.reset();  // T destroyed, weak still here`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${decided ? ' fx-rank--trap' : ''}`}>
             <code>p</code>
-            <span className="fx-note">uptr</span>
+            <span className="fx-note">up</span>
             <span className="fx-note">{decided ? 'gone' : stepped ? 'own' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>q</code>
-            <span className="fx-note">uptr</span>
+            <span className="fx-note">up</span>
             <span className="fx-note">{decided ? 'own' : '—'}</span>
           </div>
         </div>
@@ -176,7 +176,7 @@ p.reset();  // T destroyed, weak still here`
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>T</code>
-            <span className="fx-note">heap</span>
+            <span className="fx-note">hp</span>
             <span className="fx-note">{recap ? 'gone' : decided ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -185,12 +185,12 @@ p.reset();  // T destroyed, weak still here`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${decided ? ' fx-rank--trap' : ''}`}>
             <code>T</code>
-            <span className="fx-note">heap</span>
+            <span className="fx-note">hp</span>
             <span className="fx-note">{decided ? 'gone' : stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${lockFail ? ' fx-rank--trap' : ''}`}>
             <code>lk</code>
-            <span className="fx-note">lock</span>
+            <span className="fx-note">try</span>
             <span className="fx-note">{lockFail ? 'no' : '—'}</span>
           </div>
         </div>
