@@ -151,12 +151,12 @@ int r = a / b;     // 0`
       {id === 'parse' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${parseTrap ? ' fx-rank--trap' : ''}`}>
-            <code>{'()'}</code>
+            <code>wp</code>
             <span className="fx-note">dc</span>
             <span className="fx-note">{stepped ? 'fn' : '—'}</span>
           </div>
           <div className={`fx-rank${parseFix ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>{'{}'}</code>
+            <code>wb</code>
             <span className="fx-note">brc</span>
             <span className="fx-note">{parseFix ? 'ok' : '—'}</span>
           </div>
@@ -179,12 +179,12 @@ int r = a / b;     // 0`
       {id === 'ns' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${nsTrap ? ' fx-rank--trap' : ''}`}>
-            <code>hpp</code>
+            <code>hp</code>
             <span className="fx-note">ns</span>
             <span className="fx-note">{nsTrap ? 'leak' : stepped ? 'all' : '—'}</span>
           </div>
           <div className={`fx-rank${nsFix ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>cpp</code>
+            <code>cu</code>
             <span className="fx-note">use</span>
             <span className="fx-note">{nsFix ? 'ok' : '—'}</span>
           </div>
@@ -193,7 +193,7 @@ int r = a / b;     // 0`
       {id === 'div' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${divTrap ? ' fx-rank--trap' : ''}`}>
-            <code>1/2</code>
+            <code>id</code>
             <span className="fx-note">int</span>
             <span className="fx-note">{stepped ? '0' : '—'}</span>
           </div>
