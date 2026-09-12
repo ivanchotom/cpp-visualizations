@@ -24,7 +24,7 @@ export function ScopeViz() {
   const decided = i >= 2
   const recap = i >= 3
 
-  const nOn = id === 'block' && stepped && !recap
+  const nOn = id === 'block' && stepped
   const nGone = id === 'block' && recap
   const initOn = id === 'stat' && stepped
   const nOne = id === 'stat' && decided
@@ -123,7 +123,7 @@ export function ScopeViz() {
           <div className={`fx-rank${nOn ? ' fx-rank--on' : ''}${nGone ? ' fx-rank--done' : ''}`}>
             <code>n</code>
             <span className="fx-note">auto</span>
-            <span className="fx-note">{nOn ? '1' : nGone ? 'gone' : '—'}</span>
+            <span className="fx-note">{nGone ? 'gone' : nOn ? '1' : '—'}</span>
           </div>
           <div className={`fx-rank${nGone ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>out</code>
