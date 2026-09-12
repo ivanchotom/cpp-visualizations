@@ -142,7 +142,7 @@ if (!in) throw std::runtime_error("open");`
       {id === 'eof' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${eofTrap ? ' fx-rank--trap' : ''}`}>
-            <code>eof</code>
+            <code>ef</code>
             <span className="fx-note">ck</span>
             <span className="fx-note">{eofTrap ? 'fail' : stepped ? 'no' : '—'}</span>
           </div>
@@ -170,7 +170,7 @@ if (!in) throw std::runtime_error("open");`
       {id === 'tie' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>out</code>
+            <code>ot</code>
             <span className="fx-note">ff</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>

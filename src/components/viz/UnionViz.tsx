@@ -182,12 +182,12 @@ int t = u.a.tag;  // allowed prefix
       {id === 'cis' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>tag</code>
+            <code>tg</code>
             <span className="fx-note">pre</span>
             <span className="fx-note">{decided ? 'ok' : stepped ? 'eq' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>rst</code>
+            <code>rs</code>
             <span className="fx-note">ex</span>
             <span className="fx-note">{recap ? 'no' : '—'}</span>
           </div>
