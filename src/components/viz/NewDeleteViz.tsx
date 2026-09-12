@@ -124,13 +124,13 @@ export function NewDeleteViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${cleaned ? ' fx-rank--done' : ''}`}>
             <code>nw</code>
-            <span className="fx-note">mem</span>
+            <span className="fx-note">me</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${cleaned ? ' fx-rank--on' : ''}${cleaned ? ' fx-rank--done' : ''}`}>
             <code>dl</code>
-            <span className="fx-note">rel</span>
-            <span className="fx-note">{cleaned ? 'gone' : '—'}</span>
+            <span className="fx-note">rl</span>
+            <span className="fx-note">{cleaned ? 'gn' : '—'}</span>
           </div>
         </div>
       )}
@@ -143,7 +143,7 @@ export function NewDeleteViz() {
           </div>
           <div className={`fx-rank${cleaned ? ' fx-rank--on' : ''}${cleaned ? ' fx-rank--done' : ''}`}>
             <code>d</code>
-            <span className="fx-note">rev</span>
+            <span className="fx-note">rv</span>
             <span className="fx-note">{cleaned ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -166,7 +166,7 @@ export function NewDeleteViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${cleaned ? ' fx-rank--done' : ''}`}>
             <code>bf</code>
-            <span className="fx-note">buf</span>
+            <span className="fx-note">st</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${cleaned ? ' fx-rank--on' : ''}${cleaned ? ' fx-rank--done' : ''}`}>

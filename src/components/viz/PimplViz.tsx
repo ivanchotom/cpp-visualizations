@@ -174,12 +174,12 @@ public:
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>W</code>
-            <span className="fx-note">ptr</span>
+            <span className="fx-note">pt</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>im</code>
-            <span className="fx-note">cpp</span>
+            <span className="fx-note">cp</span>
             <span className="fx-note">{fireOk ? 'ok' : stepped ? 'n' : '—'}</span>
           </div>
         </div>
@@ -193,7 +193,7 @@ public:
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${dtorTrap ? ' fx-rank--trap' : ''}`}>
             <code>im</code>
-            <span className="fx-note">inc</span>
+            <span className="fx-note">ic</span>
             <span className="fx-note">{dtorTrap ? 'ill' : '—'}</span>
           </div>
         </div>
@@ -202,13 +202,13 @@ public:
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>~</code>
-            <span className="fx-note">usr</span>
+            <span className="fx-note">us</span>
             <span className="fx-note">{stepped ? 'yes' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${movesGone ? ' fx-rank--trap' : ''}`}>
             <code>mv</code>
-            <span className="fx-note">gen</span>
-            <span className="fx-note">{movesGone ? 'gone' : '—'}</span>
+            <span className="fx-note">ge</span>
+            <span className="fx-note">{movesGone ? 'gn' : '—'}</span>
           </div>
         </div>
       )}
@@ -221,7 +221,7 @@ public:
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>im</code>
-            <span className="fx-note">fld</span>
+            <span className="fx-note">fd</span>
             <span className="fx-note">{recap ? '2' : decided ? '1' : '—'}</span>
           </div>
         </div>
