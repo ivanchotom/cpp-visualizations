@@ -156,12 +156,12 @@ void f(T& c) {
       {id === 'fn' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stampInt ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>int</code>
+            <code>in</code>
             <span className="fx-note">fn</span>
             <span className="fx-note">{stampInt ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${stampDouble ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>dbl</code>
+            <code>db</code>
             <span className="fx-note">fn</span>
             <span className="fx-note">{stampDouble ? 'ok' : '—'}</span>
           </div>
@@ -170,12 +170,12 @@ void f(T& c) {
       {id === 'unused' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stampInt ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>int</code>
+            <code>in</code>
             <span className="fx-note">fn</span>
             <span className="fx-note">{stampInt ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${noString ? ' fx-rank--on' : ''}${noString ? ' fx-rank--trap' : ''}`}>
-            <code>str</code>
+            <code>sr</code>
             <span className="fx-note">gen</span>
             <span className="fx-note">{noString ? 'no' : '—'}</span>
           </div>
@@ -189,7 +189,7 @@ void f(T& c) {
             <span className="fx-note">{recipeOn ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${boxOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>int</code>
+            <code>in</code>
             <span className="fx-note">typ</span>
             <span className="fx-note">{boxOk ? 'ok' : '—'}</span>
           </div>

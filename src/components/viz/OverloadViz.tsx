@@ -142,12 +142,12 @@ d.f(1);`
       {id === 'rank' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>int</code>
+            <code>in</code>
             <span className="fx-note">pr</span>
             <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>dbl</code>
+            <code>db</code>
             <span className="fx-note">std</span>
             <span className="fx-note">{decided ? 'no' : '—'}</span>
           </div>
@@ -156,12 +156,12 @@ d.f(1);`
       {id === 'del' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>int</code>
+            <code>in</code>
             <span className="fx-note">std</span>
             <span className="fx-note">{delTrap ? 'no' : '—'}</span>
           </div>
           <div className={`fx-rank${delTrap ? ' fx-rank--trap' : ''}`}>
-            <code>dbl</code>
+            <code>db</code>
             <span className="fx-note">del</span>
             <span className="fx-note">{delTrap ? 'ill' : '—'}</span>
           </div>
@@ -170,7 +170,7 @@ d.f(1);`
       {id === 'boolp' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>int</code>
+            <code>in</code>
             <span className="fx-note">via</span>
             <span className="fx-note">{stepped ? 'no' : '—'}</span>
           </div>
