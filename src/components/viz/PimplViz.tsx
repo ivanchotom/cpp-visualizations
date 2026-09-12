@@ -187,7 +187,7 @@ public:
       {id === 'dtor' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${dtorTrap ? ' fx-rank--trap' : ''}`}>
-            <code>{'~W'}</code>
+            <code>~</code>
             <span className="fx-note">dt</span>
             <span className="fx-note">{dtorTrap ? 'ill' : stepped ? 'sz' : '—'}</span>
           </div>
@@ -201,13 +201,13 @@ public:
       {id === 'moves' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>{'~W'}</code>
+            <code>~</code>
             <span className="fx-note">usr</span>
             <span className="fx-note">{stepped ? 'yes' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${movesGone ? ' fx-rank--trap' : ''}`}>
-            <code>{'&&'}</code>
-            <span className="fx-note">mv</span>
+            <code>mv</code>
+            <span className="fx-note">gen</span>
             <span className="fx-note">{movesGone ? 'gone' : '—'}</span>
           </div>
         </div>
