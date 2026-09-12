@@ -154,8 +154,8 @@ struct D : Base { void speak(); };`
       {id === 'access' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${bounced ? ' fx-rank--trap' : ''}`}>
-            <code>den_</code>
-            <span className="fx-note">priv</span>
+            <code>d_</code>
+            <span className="fx-note">pr</span>
             <span className="fx-note">{bounced ? 'ill' : stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : bounced ? ' fx-rank--on' : ''}`}>
@@ -169,7 +169,7 @@ struct D : Base { void speak(); };`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${threw ? ' fx-rank--trap' : ''}`}>
             <code>d</code>
-            <span className="fx-note">den_</span>
+            <span className="fx-note">d_</span>
             <span className="fx-note">{threw ? 'gone' : stepped ? '0' : '—'}</span>
           </div>
           <div className={`fx-rank${threw ? ' fx-rank--trap' : ''}`}>
@@ -182,7 +182,7 @@ struct D : Base { void speak(); };`
       {id === 'thisc' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>this</code>
+            <code>th</code>
             <span className="fx-note">cst</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
@@ -197,7 +197,7 @@ struct D : Base { void speak(); };`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>B</code>
-            <span className="fx-note">ctor</span>
+            <span className="fx-note">ct</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${wrongSpeak ? ' fx-rank--trap' : ''}`}>
