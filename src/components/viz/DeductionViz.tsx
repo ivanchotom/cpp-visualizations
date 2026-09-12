@@ -203,7 +203,7 @@ f(42);  // operator()<int>`
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>op</code>
-            <span className="fx-note">stamp</span>
+            <span className="fx-note">gen</span>
             <span className="fx-note">{decided ? 'int' : '—'}</span>
           </div>
         </div>

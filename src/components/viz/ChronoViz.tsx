@@ -151,7 +151,7 @@ auto b = std::chrono::system_clock::now();
       )}
       {id === 'jump' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>t0</code>
             <span className="fx-note">wall</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
@@ -172,14 +172,14 @@ auto b = std::chrono::system_clock::now();
           </div>
           <div className={`fx-rank${castOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>s</code>
-            <span className="fx-note">trunc</span>
+            <span className="fx-note">cut</span>
             <span className="fx-note">{castOk ? '1' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'mix' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>A</code>
             <span className="fx-note">stdy</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
