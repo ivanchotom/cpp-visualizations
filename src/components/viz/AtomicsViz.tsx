@@ -159,12 +159,12 @@ bool ok = x.compare_exchange_weak(
       {id === 'pub' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>data</code>
+            <code>pl</code>
             <span className="fx-note">wr</span>
             <span className="fx-note">{stepped ? '7' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>flag</code>
+            <code>fg</code>
             <span className="fx-note">rel</span>
             <span className="fx-note">{pubOk ? 'ok' : '—'}</span>
           </div>
@@ -173,13 +173,13 @@ bool ok = x.compare_exchange_weak(
       {id === 'relaxed' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${relaxedTrap ? ' fx-rank--trap' : ''}`}>
-            <code>data</code>
+            <code>pl</code>
             <span className="fx-note">na</span>
             <span className="fx-note">{relaxedTrap ? 'ub' : stepped ? '7' : '—'}</span>
           </div>
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${relaxedTrap ? ' fx-rank--trap' : ''}`}>
-            <code>flag</code>
-            <span className="fx-note">relx</span>
+            <code>fg</code>
+            <span className="fx-note">rx</span>
             <span className="fx-note">{decided ? '1' : '—'}</span>
           </div>
         </div>
@@ -194,7 +194,7 @@ bool ok = x.compare_exchange_weak(
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${casFail ? ' fx-rank--trap' : ''}${casWin ? ' fx-rank--done' : ''}`}>
             <code>x</code>
             <span className="fx-note">cas</span>
-            <span className="fx-note">{casWin ? '1' : casFail ? 'fail' : stepped ? '0' : '—'}</span>
+            <span className="fx-note">{casWin ? '1' : casFail ? 'no' : stepped ? '0' : '—'}</span>
           </div>
         </div>
       )}

@@ -156,13 +156,13 @@ t2.join();`
         <div className="fx-ladder">
           <div className={`fx-rank${t1Held || serialized ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>t1</code>
-            <span className="fx-note">lock</span>
-            <span className="fx-note">{serialized ? '1' : t1Held ? 'lock' : '—'}</span>
+            <span className="fx-note">lk</span>
+            <span className="fx-note">{serialized ? '1' : t1Held ? 'lk' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>t2</code>
-            <span className="fx-note">wait</span>
-            <span className="fx-note">{serialized ? '2' : decided ? 'wait' : '—'}</span>
+            <span className="fx-note">wt</span>
+            <span className="fx-note">{serialized ? '2' : decided ? 'wt' : '—'}</span>
           </div>
         </div>
       )}
@@ -170,11 +170,11 @@ t2.join();`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${joinTrap ? ' fx-rank--trap' : ''}`}>
             <code>t</code>
-            <span className="fx-note">join</span>
+            <span className="fx-note">jn</span>
             <span className="fx-note">{stepped ? 'yes' : '—'}</span>
           </div>
           <div className={`fx-rank${joinTrap ? ' fx-rank--on' : ''}${joinTrap ? ' fx-rank--trap' : ''}`}>
-            <code>dtor</code>
+            <code>dt</code>
             <span className="fx-note">end</span>
             <span className="fx-note">{joinTrap ? 'fail' : '—'}</span>
           </div>
