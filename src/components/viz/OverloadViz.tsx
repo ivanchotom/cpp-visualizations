@@ -143,10 +143,10 @@ d.f(1);`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>int</code>
-            <span className="fx-note">promo</span>
+            <span className="fx-note">pr</span>
             <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>dbl</code>
             <span className="fx-note">std</span>
             <span className="fx-note">{decided ? 'no' : '—'}</span>
@@ -155,7 +155,7 @@ d.f(1);`
       )}
       {id === 'del' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>int</code>
             <span className="fx-note">std</span>
             <span className="fx-note">{delTrap ? 'no' : '—'}</span>
@@ -169,7 +169,7 @@ d.f(1);`
       )}
       {id === 'boolp' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>int</code>
             <span className="fx-note">via</span>
             <span className="fx-note">{stepped ? 'no' : '—'}</span>
@@ -188,7 +188,7 @@ d.f(1);`
             <span className="fx-note">hid</span>
             <span className="fx-note">{hideTrap ? 'no' : '—'}</span>
           </div>
-          <div className={`fx-rank${hideTrap ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${hideTrap ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>D</code>
             <span className="fx-note">dbl</span>
             <span className="fx-note">{hideTrap ? 'ok' : '—'}</span>
