@@ -140,7 +140,7 @@ export function PassByViz() {
       {id === 'value' && (
         <div className="fx-ladder">
           <div className={`fx-rank${copyOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>obj</code>
+            <code>ob</code>
             <span className="fx-note">arg</span>
             <span className="fx-note">{bound ? '7' : '—'}</span>
           </div>
@@ -154,7 +154,7 @@ export function PassByViz() {
       {id === 'cref' && (
         <div className="fx-ladder">
           <div className={`fx-rank${aliasOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>obj</code>
+            <code>ob</code>
             <span className="fx-note">arg</span>
             <span className="fx-note">{bound ? '7' : '—'}</span>
           </div>
@@ -168,7 +168,7 @@ export function PassByViz() {
       {id === 'ref' && (
         <div className="fx-ladder">
           <div className={`fx-rank${aliasOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>obj</code>
+            <code>ob</code>
             <span className="fx-note">arg</span>
             <span className="fx-note">{writeThru ? '8' : bound ? '7' : '—'}</span>
           </div>
@@ -182,7 +182,7 @@ export function PassByViz() {
       {id === 'ptr' && (
         <div className="fx-ladder">
           <div className={`fx-rank${ptrOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>obj</code>
+            <code>ob</code>
             <span className="fx-note">tgt</span>
             <span className="fx-note">{writeThru ? '8' : bound ? '7' : '—'}</span>
           </div>
@@ -201,8 +201,8 @@ export function PassByViz() {
             <span className="fx-note">{fwdOn ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${forwarded ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>fwd</code>
-            <span className="fx-note">fwd</span>
+            <code>fw</code>
+            <span className="fx-note">cat</span>
             <span className="fx-note">{forwarded ? 'ok' : '—'}</span>
           </div>
         </div>
