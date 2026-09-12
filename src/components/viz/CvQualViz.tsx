@@ -155,7 +155,7 @@ export function CvQualViz() {
             <span className="fx-note">{getOn ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${hitsOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>hits</code>
+            <code>ht</code>
             <span className="fx-note">mut</span>
             <span className="fx-note">{hitsOn ? '1' : '—'}</span>
           </div>
@@ -164,7 +164,7 @@ export function CvQualViz() {
       {id === 'cast' && (
         <div className="fx-ladder">
           <div className={`fx-rank${castOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>cast</code>
+            <code>cc</code>
             <span className="fx-note">cst</span>
             <span className="fx-note">{castOk ? 'ok' : '—'}</span>
           </div>

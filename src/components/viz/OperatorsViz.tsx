@@ -168,8 +168,8 @@ if ((flags & MASK) == 0) { }  // what you meant`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>lt</code>
-            <span className="fx-note">&lt;</span>
-            <span className="fx-note">{stepped ? 'bool' : '—'}</span>
+            <span className="fx-note">{'<'}</span>
+            <span className="fx-note">{stepped ? 'bl' : '—'}</span>
           </div>
           <div className={`fx-rank${eqWarn ? ' fx-rank--trap' : ''}`}>
             <code>eq</code>
