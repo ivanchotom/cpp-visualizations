@@ -171,7 +171,7 @@ std::tie(std::ignore, name) = p;`
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>id</code>
             <span className="fx-note">ign</span>
-            <span className="fx-note">{stepped ? 'skip' : '—'}</span>
+            <span className="fx-note">{stepped ? 'sk' : '—'}</span>
           </div>
           <div className={`fx-rank${tieOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>nm</code>
@@ -184,7 +184,7 @@ std::tie(std::ignore, name) = p;`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${dangled ? ' fx-rank--trap' : ''}`}>
             <code>tmp</code>
-            <span className="fx-note">auto</span>
+            <span className="fx-note">au</span>
             <span className="fx-note">{dangled ? 'gone' : stepped ? '42' : '—'}</span>
           </div>
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${dangled ? ' fx-rank--trap' : ''}`}>

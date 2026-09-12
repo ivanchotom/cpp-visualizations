@@ -198,7 +198,7 @@ f(42);  // operator()<int>`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">auto</span>
+            <span className="fx-note">au</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
