@@ -150,12 +150,12 @@ for (auto x : v) { use(x); }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">cpy</span>
+            <span className="fx-note">cp</span>
             <span className="fx-note">{stepped ? xCopy : '—'}</span>
           </div>
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>v</code>
-            <span className="fx-note">arr</span>
+            <span className="fx-note">ar</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -164,7 +164,7 @@ for (auto x : v) { use(x); }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${wrote ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">ref</span>
+            <span className="fx-note">rf</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${wrote ? ' fx-rank--on fx-rank--done' : decided ? ' fx-rank--on' : ''}`}>
@@ -183,7 +183,7 @@ for (auto x : v) { use(x); }`
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>B</code>
-            <span className="fx-note">hdl</span>
+            <span className="fx-note">hd</span>
             <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -197,7 +197,7 @@ for (auto x : v) { use(x); }`
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>bc</code>
-            <span className="fx-note">use</span>
+            <span className="fx-note">us</span>
             <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
         </div>

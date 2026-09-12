@@ -165,7 +165,7 @@ bool ok = x.compare_exchange_weak(
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>fg</code>
-            <span className="fx-note">rel</span>
+            <span className="fx-note">rl</span>
             <span className="fx-note">{pubOk ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -188,12 +188,12 @@ bool ok = x.compare_exchange_weak(
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>e</code>
-            <span className="fx-note">exp</span>
+            <span className="fx-note">ex</span>
             <span className="fx-note">{stepped ? '0' : '—'}</span>
           </div>
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${casFail ? ' fx-rank--trap' : ''}${casWin ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">cas</span>
+            <span className="fx-note">cs</span>
             <span className="fx-note">{casWin ? '1' : casFail ? 'no' : stepped ? '0' : '—'}</span>
           </div>
         </div>
