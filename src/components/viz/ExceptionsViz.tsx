@@ -164,14 +164,14 @@ int main() { parse(); }`
       )}
       {id === 'uncaught' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>un</code>
             <span className="fx-note">un</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${uncaughtTrap ? ' fx-rank--trap' : ''}`}>
             <code>tm</code>
-            <span className="fx-note">term</span>
+            <span className="fx-note">die</span>
             <span className="fx-note">{uncaughtTrap ? 'ill' : '—'}</span>
           </div>
         </div>
@@ -185,7 +185,7 @@ int main() { parse(); }`
           </div>
           <div className={`fx-rank${noexceptTrap ? ' fx-rank--trap' : ''}`}>
             <code>tm</code>
-            <span className="fx-note">term</span>
+            <span className="fx-note">die</span>
             <span className="fx-note">{noexceptTrap ? 'ill' : '—'}</span>
           </div>
         </div>
@@ -199,7 +199,7 @@ int main() { parse(); }`
           </div>
           <div className={`fx-rank${dtorTrap ? ' fx-rank--trap' : ''}`}>
             <code>tm</code>
-            <span className="fx-note">term</span>
+            <span className="fx-note">die</span>
             <span className="fx-note">{dtorTrap ? 'ill' : '—'}</span>
           </div>
         </div>

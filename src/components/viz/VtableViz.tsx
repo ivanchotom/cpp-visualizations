@@ -129,7 +129,7 @@ delete p;  // ~Dog then ~Animal`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>vp</code>
-            <span className="fx-note">vptr</span>
+            <span className="fx-note">vt</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
@@ -143,7 +143,7 @@ delete p;  // ~Dog then ~Animal`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${sliceTrap ? ' fx-rank--trap' : ''}`}>
             <code>vp</code>
-            <span className="fx-note">vptr</span>
+            <span className="fx-note">vt</span>
             <span className="fx-note">{sliceTrap ? 'no' : '—'}</span>
           </div>
           <div className={`fx-rank${sliceTrap ? ' fx-rank--trap' : ''}`}>
@@ -157,7 +157,7 @@ delete p;  // ~Dog then ~Animal`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${ctorTrap ? ' fx-rank--trap' : ''}`}>
             <code>vp</code>
-            <span className="fx-note">type</span>
+            <span className="fx-note">ty</span>
             <span className="fx-note">{ctorTrap ? 'no' : '—'}</span>
           </div>
           <div className={`fx-rank${ctorTrap ? ' fx-rank--trap' : ''}`}>
@@ -169,9 +169,9 @@ delete p;  // ~Dog then ~Animal`
       )}
       {id === 'del' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>~A</code>
-            <span className="fx-note">dtor</span>
+            <span className="fx-note">dt</span>
             <span className="fx-note">{delTrap ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${delTrap ? ' fx-rank--trap' : ''}`}>
