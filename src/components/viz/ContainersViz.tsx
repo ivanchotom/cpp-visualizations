@@ -143,12 +143,12 @@ m.emplace('d', 1);  // may still fit`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${vectorRealloc ? ' fx-rank--trap' : recap ? ' fx-rank--done' : ''}`}>
             <code>cap</code>
-            <span className="fx-note">spare</span>
+            <span className="fx-note">room</span>
             <span className="fx-note">{vectorRealloc ? 'no' : stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${vectorRealloc ? ' fx-rank--trap' : ''}`}>
             <code>it</code>
-            <span className="fx-note">iters</span>
+            <span className="fx-note">all</span>
             <span className="fx-note">{vectorRealloc ? 'ub' : '—'}</span>
           </div>
         </div>
@@ -162,7 +162,7 @@ m.emplace('d', 1);  // may still fit`
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>fr</code>
-            <span className="fx-note">front</span>
+            <span className="fx-note">fr</span>
             <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -171,12 +171,12 @@ m.emplace('d', 1);  // may still fit`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>a</code>
-            <span className="fx-note">nodes</span>
+            <span className="fx-note">nd</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>tl</code>
-            <span className="fx-note">insert</span>
+            <span className="fx-note">ins</span>
             <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -185,7 +185,7 @@ m.emplace('d', 1);  // may still fit`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${umapRehash ? ' fx-rank--trap' : ''}`}>
             <code>it</code>
-            <span className="fx-note">iters</span>
+            <span className="fx-note">all</span>
             <span className="fx-note">{umapRehash ? 'ub' : stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
