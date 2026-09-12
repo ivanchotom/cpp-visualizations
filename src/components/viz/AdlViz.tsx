@@ -157,7 +157,7 @@ int m = (std::min)(a, b);`
       {id === 'swap' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>std</code>
+            <code>st</code>
             <span className="fx-note">use</span>
             <span className="fx-note">{stepped ? 'set' : '—'}</span>
           </div>

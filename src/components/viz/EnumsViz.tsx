@@ -133,7 +133,7 @@ int x = FLAG_ON;        // implicit`
       {id === 'scoped' && (
         <div className="fx-ladder">
           <div className={`fx-rank${redOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>red</code>
+            <code>rd</code>
             <span className="fx-note">enm</span>
             <span className="fx-note">{redOk ? 'ok' : '—'}</span>
           </div>
@@ -175,7 +175,7 @@ int x = FLAG_ON;        // implicit`
       {id === 'mask' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>red</code>
+            <code>rd</code>
             <span className="fx-note">enm</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
