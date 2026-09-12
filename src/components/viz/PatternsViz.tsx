@@ -157,12 +157,12 @@ const auto& y = v[i];  // borrow`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>f</code>
-            <span className="fx-note">File</span>
+            <span className="fx-note">T</span>
             <span className="fx-note">{recap ? 'gone' : stepped ? 'own' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>h</code>
-            <span className="fx-note">FILE</span>
+            <span className="fx-note">fp</span>
             <span className="fx-note">{recap ? 'ok' : decided ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -171,12 +171,12 @@ const auto& y = v[i];  // borrow`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${decided ? ' fx-rank--trap' : ''}`}>
             <code>p</code>
-            <span className="fx-note">uptr</span>
+            <span className="fx-note">up</span>
             <span className="fx-note">{decided ? 'gone' : stepped ? 'own' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>q</code>
-            <span className="fx-note">take</span>
+            <span className="fx-note">got</span>
             <span className="fx-note">{decided ? 'own' : '—'}</span>
           </div>
         </div>
@@ -185,8 +185,8 @@ const auto& y = v[i];  // borrow`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${copyTrap ? ' fx-rank--trap' : ''}`}>
             <code>x</code>
-            <span className="fx-note">copy</span>
-            <span className="fx-note">{copyTrap ? 'copy' : '—'}</span>
+            <span className="fx-note">cpy</span>
+            <span className="fx-note">{copyTrap ? 'cpy' : '—'}</span>
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : ''}`}>
             <code>y</code>

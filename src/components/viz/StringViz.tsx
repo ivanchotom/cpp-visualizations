@@ -163,7 +163,7 @@ s.reserve(64);
           </div>
           <div className={`fx-rank${ssoHeap ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>b</code>
-            <span className="fx-note">heap</span>
+            <span className="fx-note">hp</span>
             <span className="fx-note">{ssoHeap ? 'ok' : '—'}</span>
           </div>
         </div>
