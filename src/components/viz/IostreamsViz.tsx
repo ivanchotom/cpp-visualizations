@@ -143,7 +143,7 @@ if (!in) throw std::runtime_error("open");`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${eofTrap ? ' fx-rank--trap' : ''}`}>
             <code>eof</code>
-            <span className="fx-note">test</span>
+            <span className="fx-note">ck</span>
             <span className="fx-note">{eofTrap ? 'fail' : stepped ? 'no' : '—'}</span>
           </div>
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${eofTrap ? ' fx-rank--trap' : ''}`}>
@@ -185,7 +185,7 @@ if (!in) throw std::runtime_error("open");`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>in</code>
-            <span className="fx-note">file</span>
+            <span className="fx-note">fs</span>
             <span className="fx-note">{fileClosed ? 'gone' : stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>

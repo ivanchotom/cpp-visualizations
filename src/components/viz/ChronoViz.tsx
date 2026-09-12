@@ -153,7 +153,7 @@ auto b = std::chrono::system_clock::now();
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>t0</code>
-            <span className="fx-note">wall</span>
+            <span className="fx-note">sys</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${jumped ? ' fx-rank--on' : ''}${jumped ? ' fx-rank--trap' : ''}`}>
@@ -181,7 +181,7 @@ auto b = std::chrono::system_clock::now();
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>A</code>
-            <span className="fx-note">stdy</span>
+            <span className="fx-note">st</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${mixTrap ? ' fx-rank--on' : ''}${mixTrap ? ' fx-rank--trap' : ''}`}>
