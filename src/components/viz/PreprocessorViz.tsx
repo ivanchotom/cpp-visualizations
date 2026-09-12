@@ -148,7 +148,7 @@ export function PreprocessorViz() {
       {id === 'include' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>#inc</code>
+            <code>#i</code>
             <span className="fx-note">hpp</span>
             <span className="fx-note">{seen ? 'gone' : stepped ? 'in' : '—'}</span>
           </div>
@@ -176,7 +176,7 @@ export function PreprocessorViz() {
       {id === 'parens' && (
         <div className="fx-ladder">
           <div className={`fx-rank${looks ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>look</code>
+            <code>lk</code>
             <span className="fx-note">aim</span>
             <span className="fx-note">{looks ? '12' : '—'}</span>
           </div>
