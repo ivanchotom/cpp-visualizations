@@ -141,7 +141,7 @@ x;          // lvalue`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>id</code>
-            <span className="fx-note">addr</span>
+            <span className="fx-note">ad</span>
             <span className="fx-note">{stepped ? 'yes' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
@@ -155,7 +155,7 @@ x;          // lvalue`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>id</code>
-            <span className="fx-note">addr</span>
+            <span className="fx-note">ad</span>
             <span className="fx-note">{stepped ? 'no' : '—'}</span>
           </div>
           <div className={`fx-rank${prTrap ? ' fx-rank--trap' : ''}`}>
@@ -169,7 +169,7 @@ x;          // lvalue`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>id</code>
-            <span className="fx-note">addr</span>
+            <span className="fx-note">ad</span>
             <span className="fx-note">{stepped ? 'yes' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
@@ -188,7 +188,7 @@ x;          // lvalue`
           </div>
           <div className={`fx-rank${namedTrap ? ' fx-rank--trap' : ''}`}>
             <code>tk</code>
-            <span className="fx-note">take</span>
+            <span className="fx-note">()</span>
             <span className="fx-note">{namedTrap ? 'ill' : '—'}</span>
           </div>
         </div>
