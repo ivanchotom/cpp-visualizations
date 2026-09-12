@@ -192,7 +192,7 @@ struct Box<T*> { using type = T; };`
           </div>
           <div className={`fx-rank${fullWin ? ' fx-rank--on fx-rank--done' : ''}`}>
             <code>bool</code>
-            <span className="fx-note">spec</span>
+            <span className="fx-note">sp</span>
             <span className="fx-note">{fullWin ? 'ok' : '—'}</span>
           </div>
         </div>

@@ -157,12 +157,12 @@ open(path, ec);  // no throw
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>old</code>
             <span className="fx-note">buf</span>
-            <span className="fx-note">{copied ? 'ok' : stepped ? 'full' : '—'}</span>
+            <span className="fx-note">{copied ? 'ok' : stepped ? 'ful' : '—'}</span>
           </div>
           <div className={`fx-rank${throwing ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>new</code>
             <span className="fx-note">mv</span>
-            <span className="fx-note">{copied ? 'copy' : throwing ? 'no' : '—'}</span>
+            <span className="fx-note">{copied ? 'cpy' : throwing ? 'no' : '—'}</span>
           </div>
         </div>
       )}
@@ -184,7 +184,7 @@ open(path, ec);  // no throw
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>f</code>
-            <span className="fx-note">spec</span>
+            <span className="fx-note">sp</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${queried ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
@@ -198,7 +198,7 @@ open(path, ec);  // no throw
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>open</code>
-            <span className="fx-note">call</span>
+            <span className="fx-note">()</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${ignored ? ' fx-rank--trap' : ''}${checked ? ' fx-rank--done' : ''}`}>
