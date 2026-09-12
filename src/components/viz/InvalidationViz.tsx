@@ -191,12 +191,12 @@ auto last = v.end();  // one-past-last
       {id === 'end' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>beg</code>
+            <code>bg</code>
             <span className="fx-note">*b</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${derefEnd ? ' fx-rank--trap' : ''}`}>
-            <code>end</code>
+            <code>en</code>
             <span className="fx-note">*e</span>
             <span className="fx-note">{derefEnd ? 'ub' : decided ? '+1' : '—'}</span>
           </div>

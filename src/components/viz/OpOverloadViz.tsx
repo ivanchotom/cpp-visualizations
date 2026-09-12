@@ -157,7 +157,7 @@ if (a && b) { }`
       {id === 'plus' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${memberMiss ? ' fx-rank--trap' : ''}`}>
-            <code>mem</code>
+            <code>me</code>
             <span className="fx-note">+</span>
             <span className="fx-note">{memberMiss ? 'ill' : '—'}</span>
           </div>
@@ -185,7 +185,7 @@ if (a && b) { }`
       {id === 'postfix' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>old</code>
+            <code>ol</code>
             <span className="fx-note">cpy</span>
             <span className="fx-note">{stepped ? '3' : '—'}</span>
           </div>
