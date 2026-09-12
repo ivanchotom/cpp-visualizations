@@ -188,7 +188,7 @@ struct D : Base { void speak(); };`
           </div>
           <div className={`fx-rank${writeBlocked ? ' fx-rank--trap' : ''}`}>
             <code>n</code>
-            <span className="fx-note">write</span>
+            <span className="fx-note">wr</span>
             <span className="fx-note">{writeBlocked ? 'ill' : '—'}</span>
           </div>
         </div>
@@ -202,7 +202,7 @@ struct D : Base { void speak(); };`
           </div>
           <div className={`fx-rank${wrongSpeak ? ' fx-rank--trap' : ''}`}>
             <code>D</code>
-            <span className="fx-note">speak</span>
+            <span className="fx-note">spk</span>
             <span className="fx-note">{wrongSpeak ? 'no' : '—'}</span>
           </div>
         </div>

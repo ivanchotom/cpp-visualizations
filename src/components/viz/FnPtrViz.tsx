@@ -156,7 +156,7 @@ f();   // throws std::bad_function_call`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>fp</code>
-            <span className="fx-note">store</span>
+            <span className="fx-note">addr</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
@@ -198,7 +198,7 @@ f();   // throws std::bad_function_call`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${dangled ? ' fx-rank--trap' : ''}`}>
             <code>n</code>
-            <span className="fx-note">frame</span>
+            <span className="fx-note">frm</span>
             <span className="fx-note">{dangled ? 'gone' : stepped ? '7' : '—'}</span>
           </div>
           <div className={`fx-rank${dangled ? ' fx-rank--trap' : stepped ? ' fx-rank--on' : ''}`}>
