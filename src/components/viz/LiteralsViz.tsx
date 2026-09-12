@@ -165,7 +165,7 @@ export function LiteralsViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${listOn ? ' fx-rank--trap' : ''}`}>
             <code>{'x{}'}</code>
-            <span className="fx-note">list</span>
+            <span className="fx-note">{'{}'}</span>
             <span className="fx-note">{listOn ? 'il' : '—'}</span>
           </div>
           <div className={`fx-rank${intAlt ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>

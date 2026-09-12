@@ -152,7 +152,7 @@ int r = a / b;     // 0`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${parseTrap ? ' fx-rank--trap' : ''}`}>
             <code>{'w()'}</code>
-            <span className="fx-note">decl</span>
+            <span className="fx-note">dc</span>
             <span className="fx-note">{stepped ? 'fn' : '—'}</span>
           </div>
           <div className={`fx-rank${parseFix ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
