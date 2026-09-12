@@ -129,7 +129,7 @@ export function NewDeleteViz() {
           </div>
           <div className={`fx-rank${cleaned ? ' fx-rank--on' : ''}${cleaned ? ' fx-rank--done' : ''}`}>
             <code>del</code>
-            <span className="fx-note">free</span>
+            <span className="fx-note">rel</span>
             <span className="fx-note">{cleaned ? 'gone' : '—'}</span>
           </div>
         </div>
@@ -157,7 +157,7 @@ export function NewDeleteViz() {
           </div>
           <div className={`fx-rank${mismatched ? ' fx-rank--trap' : decided ? ' fx-rank--on' : ''}`}>
             <code>del</code>
-            <span className="fx-note">scal</span>
+            <span className="fx-note">sc</span>
             <span className="fx-note">{mismatched ? 'ub' : '—'}</span>
           </div>
         </div>
@@ -171,7 +171,7 @@ export function NewDeleteViz() {
           </div>
           <div className={`fx-rank${cleaned ? ' fx-rank--on' : ''}${cleaned ? ' fx-rank--done' : ''}`}>
             <code>~T</code>
-            <span className="fx-note">dtor</span>
+            <span className="fx-note">dt</span>
             <span className="fx-note">{cleaned ? 'ok' : '—'}</span>
           </div>
         </div>
