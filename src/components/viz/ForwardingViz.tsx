@@ -157,8 +157,8 @@ sink(std::move(t));`
           </div>
           <div className={`fx-rank${collapsed ? ' fx-rank--on' : ''}${forwarded ? ' fx-rank--done' : ''}`}>
             <code>fwd</code>
-            <span className="fx-note">coll</span>
-            <span className="fx-note">{forwarded ? 'bind' : collapsed ? 'T&' : '—'}</span>
+            <span className="fx-note">col</span>
+            <span className="fx-note">{forwarded ? 'ok' : collapsed ? 'T&' : '—'}</span>
           </div>
         </div>
       )}
@@ -170,7 +170,7 @@ sink(std::move(t));`
             <span className="fx-note">{deduced ? 'int' : '—'}</span>
           </div>
           <div className={`fx-rank${collapsed ? ' fx-rank--on' : ''}${forwarded ? ' fx-rank--done' : ''}`}>
-            <code>sink</code>
+            <code>snk</code>
             <span className="fx-note">fwd</span>
             <span className="fx-note">{forwarded ? 'ok' : collapsed ? '&&' : '—'}</span>
           </div>
@@ -198,7 +198,7 @@ sink(std::move(t));`
             <span className="fx-note">{trap ? 'gone' : deduced ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${collapsed ? ' fx-rank--on' : ''}${trap ? ' fx-rank--trap' : ''}`}>
-            <code>sink</code>
+            <code>snk</code>
             <span className="fx-note">mv</span>
             <span className="fx-note">{trap ? 'own' : collapsed ? '&&' : '—'}</span>
           </div>

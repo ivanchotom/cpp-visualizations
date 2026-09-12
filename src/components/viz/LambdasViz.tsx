@@ -134,7 +134,7 @@ export function LambdasViz() {
           </div>
           <div className={`fx-rank${captured ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>[=]</code>
-            <span className="fx-note">copy</span>
+            <span className="fx-note">cpy</span>
             <span className="fx-note">{ran ? '8' : captured ? '7' : '—'}</span>
           </div>
         </div>
@@ -148,7 +148,7 @@ export function LambdasViz() {
           </div>
           <div className={`fx-rank${captured ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>[&]</code>
-            <span className="fx-note">weld</span>
+            <span className="fx-note">ref</span>
             <span className="fx-note">{ran ? '8' : captured ? '7' : '—'}</span>
           </div>
         </div>
@@ -157,7 +157,7 @@ export function LambdasViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${captured ? ' fx-rank--on' : ''}${frameGone ? ' fx-rank--trap' : ''}`}>
             <code>n</code>
-            <span className="fx-note">auto</span>
+            <span className="fx-note">stk</span>
             <span className="fx-note">{frameGone ? 'gone' : captured ? '7' : '—'}</span>
           </div>
           <div className={`fx-rank${captured ? ' fx-rank--on' : ''}${dangled ? ' fx-rank--trap' : ''}`}>
@@ -176,7 +176,7 @@ export function LambdasViz() {
           </div>
           <div className={`fx-rank${stole ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>f</code>
-            <span className="fx-note">init</span>
+            <span className="fx-note">ini</span>
             <span className="fx-note">{ran ? '7' : stole ? 'ok' : '—'}</span>
           </div>
         </div>
