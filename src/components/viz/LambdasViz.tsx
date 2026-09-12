@@ -127,60 +127,56 @@ export function LambdasViz() {
     >
       {id === 'copy' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${captured ? ' fx-rank--on' : ''}${ran ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${captured ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>n</code>
-            <span className="fx-note">outer</span>
+            <span className="fx-note">out</span>
             <span className="fx-note">{captured ? '7' : '—'}</span>
           </div>
-          <div className={`fx-rank${captured ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${captured ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>[=]</code>
-            <span className="fx-note">mutable copy</span>
+            <span className="fx-note">copy</span>
             <span className="fx-note">{ran ? '8' : captured ? '7' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'ref' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${captured ? ' fx-rank--on' : ''}${ran ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${captured ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>n</code>
-            <span className="fx-note">local</span>
+            <span className="fx-note">loc</span>
             <span className="fx-note">{ran ? '8' : captured ? '7' : '—'}</span>
           </div>
-          <div className={`fx-rank${captured ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${captured ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>[&]</code>
-            <span className="fx-note">alias</span>
+            <span className="fx-note">weld</span>
             <span className="fx-note">{ran ? '8' : captured ? '7' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'dangle' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${captured ? ' fx-rank--on' : ''}${frameGone ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${captured ? ' fx-rank--on' : ''}${frameGone ? ' fx-rank--trap' : ''}`}>
             <code>n</code>
-            <span className="fx-note">
-              <code>make()</code>
-            </span>
+            <span className="fx-note">auto</span>
             <span className="fx-note">{frameGone ? 'gone' : captured ? '7' : '—'}</span>
           </div>
           <div className={`fx-rank${captured ? ' fx-rank--on' : ''}${dangled ? ' fx-rank--trap' : ''}`}>
             <code>[&]</code>
-            <span className="fx-note">capture</span>
+            <span className="fx-note">cap</span>
             <span className="fx-note">{dangled ? 'ub' : captured ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'init' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stole ? ' fx-rank--on' : ''}${ran ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stole ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>p</code>
-            <span className="fx-note">
-              <code>unique_ptr</code>
-            </span>
+            <span className="fx-note">own</span>
             <span className="fx-note">{stole ? 'gone' : '—'}</span>
           </div>
-          <div className={`fx-rank${stole ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stole ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>f</code>
-            <span className="fx-note">init-capture</span>
+            <span className="fx-note">init</span>
             <span className="fx-note">{ran ? '7' : stole ? 'ok' : '—'}</span>
           </div>
         </div>

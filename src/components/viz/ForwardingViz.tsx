@@ -29,7 +29,6 @@ export function ForwardingViz() {
   const trap = id === 'move' && forwarded
 
   const t = id === 'lval' || id === 'move' ? 'int&' : 'int'
-  const collapsedTy = id === 'lval' || id === 'move' ? 'int&' : 'int&&'
 
   const code =
     i === 0
@@ -151,19 +150,15 @@ sink(std::move(t));`
     >
       {id === 'lval' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${deduced ? ' fx-rank--on' : ''}${collapsed ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${deduced ? ' fx-rank--on' : ''}${forwarded ? ' fx-rank--done' : ''}`}>
             <code>T</code>
-            <span className="fx-note">
-              <code>wrap(x)</code>
-            </span>
-            <span className="fx-note">{deduced ? 'int&' : '—'}</span>
+            <span className="fx-note">lv</span>
+            <span className="fx-note">{deduced ? 'T&' : '—'}</span>
           </div>
-          <div className={`fx-rank${collapsed ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${collapsed ? ' fx-rank--on' : ''}${forwarded ? ' fx-rank--done' : ''}`}>
             <code>fwd</code>
-            <span className="fx-note">
-              <code>{collapsed ? collapsedTy : 'T&&'}</code>
-            </span>
-            <span className="fx-note">{forwarded ? 'bind' : collapsed ? 'ok' : '—'}</span>
+            <span className="fx-note">coll</span>
+            <span className="fx-note">{forwarded ? 'bind' : collapsed ? 'T&' : '—'}</span>
           </div>
         </div>
       )}
@@ -171,48 +166,40 @@ sink(std::move(t));`
         <div className="fx-ladder">
           <div className={`fx-rank${deduced ? ' fx-rank--on' : ''}${forwarded ? ' fx-rank--done' : ''}`}>
             <code>T</code>
-            <span className="fx-note">
-              <code>wrap(42)</code>
-            </span>
+            <span className="fx-note">42</span>
             <span className="fx-note">{deduced ? 'int' : '—'}</span>
           </div>
-          <div className={`fx-rank${collapsed ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${collapsed ? ' fx-rank--on' : ''}${forwarded ? ' fx-rank--done' : ''}`}>
             <code>sink</code>
-            <span className="fx-note">forward</span>
+            <span className="fx-note">fwd</span>
             <span className="fx-note">{forwarded ? 'ok' : collapsed ? '&&' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'xvalue' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${deduced ? ' fx-rank--on' : ''}${collapsed ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${deduced ? ' fx-rank--on' : ''}${forwarded ? ' fx-rank--done' : ''}`}>
             <code>T</code>
-            <span className="fx-note">
-              <code>wrap(move)</code>
-            </span>
+            <span className="fx-note">mv</span>
             <span className="fx-note">{deduced ? 'int' : '—'}</span>
           </div>
-          <div className={`fx-rank${collapsed ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${collapsed ? ' fx-rank--on' : ''}${forwarded ? ' fx-rank--done' : ''}`}>
             <code>fwd</code>
-            <span className="fx-note">
-              <code>{collapsed ? collapsedTy : 'T&&'}</code>
-            </span>
-            <span className="fx-note">{forwarded ? 'own' : collapsed ? 'ok' : '—'}</span>
+            <span className="fx-note">xv</span>
+            <span className="fx-note">{forwarded ? 'own' : collapsed ? '&&' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'move' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${deduced ? ' fx-rank--on' : ''}${trap ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${deduced ? ' fx-rank--on' : ''}${trap ? ' fx-rank--trap' : ''}`}>
             <code>x</code>
-            <span className="fx-note">lvalue</span>
+            <span className="fx-note">lv</span>
             <span className="fx-note">{trap ? 'gone' : deduced ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${collapsed ? ' fx-rank--on' : ''}${trap ? ' fx-rank--trap' : ''}`}>
             <code>sink</code>
-            <span className="fx-note">
-              <code>move(t)</code>
-            </span>
+            <span className="fx-note">mv</span>
             <span className="fx-note">{trap ? 'own' : collapsed ? '&&' : '—'}</span>
           </div>
         </div>
