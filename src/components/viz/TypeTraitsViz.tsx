@@ -151,12 +151,12 @@ using B = decltype((x));  // int&`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>in</code>
-            <span className="fx-note">int&</span>
-            <span className="fx-note">{stepped ? 'ref' : '—'}</span>
+            <span className="fx-note">ref</span>
+            <span className="fx-note">{stepped ? 'int&' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>U</code>
-            <span className="fx-note">decay_t</span>
+            <span className="fx-note">dec</span>
             <span className="fx-note">{decided ? 'int' : '—'}</span>
           </div>
         </div>
@@ -165,12 +165,12 @@ using B = decltype((x));  // int&`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>int</code>
-            <span className="fx-note">is_integral</span>
+            <span className="fx-note">intg</span>
             <span className="fx-note">{stepped ? 'yes' : '—'}</span>
           </div>
           <div className={`fx-rank${ptrNo ? ' fx-rank--trap' : ''}`}>
             <code>ptr</code>
-            <span className="fx-note">is_integral</span>
+            <span className="fx-note">intg</span>
             <span className="fx-note">{ptrNo ? 'no' : '—'}</span>
           </div>
         </div>
@@ -179,12 +179,12 @@ using B = decltype((x));  // int&`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">decltype</span>
+            <span className="fx-note">decl</span>
             <span className="fx-note">{stepped ? 'int' : '—'}</span>
           </div>
           <div className={`fx-rank${exprRef ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>(x)</code>
-            <span className="fx-note">extra ()</span>
+            <span className="fx-note">()</span>
             <span className="fx-note">{exprRef ? 'int&' : '—'}</span>
           </div>
         </div>
@@ -193,7 +193,7 @@ using B = decltype((x));  // int&`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>pred</code>
-            <span className="fx-note">LP64</span>
+            <span className="fx-note">lp64</span>
             <span className="fx-note">{stepped ? 'yes' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>

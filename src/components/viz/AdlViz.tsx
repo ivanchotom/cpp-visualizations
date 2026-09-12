@@ -158,12 +158,12 @@ int m = (std::min)(a, b);`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>std</code>
-            <span className="fx-note">using swap</span>
+            <span className="fx-note">use</span>
             <span className="fx-note">{stepped ? 'set' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>N</code>
-            <span className="fx-note">ADL</span>
+            <span className="fx-note">adl</span>
             <span className="fx-note">{decided ? 'win' : '—'}</span>
           </div>
         </div>
@@ -172,12 +172,12 @@ int m = (std::min)(a, b);`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>cout</code>
-            <span className="fx-note">ostream</span>
+            <span className="fx-note">strm</span>
             <span className="fx-note">{stepped ? 'std' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>op</code>
-            <span className="fx-note">unqual &lt;&lt;</span>
+            <span className="fx-note">{'<<'}</span>
             <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -186,12 +186,12 @@ int m = (std::min)(a, b);`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
             <code>name</code>
-            <span className="fx-note">ordinary</span>
+            <span className="fx-note">ord</span>
             <span className="fx-note">{stepped ? 'no' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>==</code>
-            <span className="fx-note">friend</span>
+            <span className="fx-note">fr</span>
             <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -200,12 +200,12 @@ int m = (std::min)(a, b);`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${killed ? ' fx-rank--done' : ''}`}>
             <code>id</code>
-            <span className="fx-note">(std::min)</span>
+            <span className="fx-note">min</span>
             <span className="fx-note">{stepped ? 'no' : '—'}</span>
           </div>
           <div className={`fx-rank${killed ? ' fx-rank--trap' : ''}`}>
             <code>N</code>
-            <span className="fx-note">N::min</span>
+            <span className="fx-note">min</span>
             <span className="fx-note">{killed ? 'off' : '—'}</span>
           </div>
         </div>
