@@ -152,7 +152,7 @@ class Token { int id_; };  // private`
       {id === 'priv' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${bounce || privOk ? ' fx-rank--trap' : ''}`}>
-            <code>{'T{}'}</code>
+            <code>T</code>
             <span className="fx-note">ct</span>
             <span className="fx-note">{bounce || privOk ? 'ill' : stepped ? 'no' : '—'}</span>
           </div>
@@ -185,7 +185,7 @@ class Token { int id_; };  // private`
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${protTrap ? ' fx-rank--trap' : ''}`}>
-            <code>Der</code>
+            <code>D</code>
             <span className="fx-note">set</span>
             <span className="fx-note">{protTrap ? 'ok' : '—'}</span>
           </div>
@@ -194,12 +194,12 @@ class Token { int id_; };  // private`
       {id === 'st' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>Dto</code>
+            <code>dt</code>
             <span className="fx-note">st</span>
             <span className="fx-note">{stepped ? 'pub' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>Tok</code>
+            <code>tk</code>
             <span className="fx-note">cls</span>
             <span className="fx-note">{decided ? 'hid' : '—'}</span>
           </div>

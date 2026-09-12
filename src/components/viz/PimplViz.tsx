@@ -178,7 +178,7 @@ public:
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>Imp</code>
+            <code>im</code>
             <span className="fx-note">cpp</span>
             <span className="fx-note">{fireOk ? 'ok' : stepped ? 'n' : '—'}</span>
           </div>
@@ -192,7 +192,7 @@ public:
             <span className="fx-note">{dtorTrap ? 'ill' : stepped ? 'sz' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${dtorTrap ? ' fx-rank--trap' : ''}`}>
-            <code>Imp</code>
+            <code>im</code>
             <span className="fx-note">inc</span>
             <span className="fx-note">{dtorTrap ? 'ill' : '—'}</span>
           </div>
@@ -220,7 +220,7 @@ public:
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>Imp</code>
+            <code>im</code>
             <span className="fx-note">fld</span>
             <span className="fx-note">{recap ? '2' : decided ? '1' : '—'}</span>
           </div>
