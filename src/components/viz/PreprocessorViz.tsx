@@ -153,7 +153,7 @@ export function PreprocessorViz() {
             <span className="fx-note">{seen ? 'gone' : stepped ? 'in' : '—'}</span>
           </div>
           <div className={`fx-rank${seen ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>add</code>
+            <code>ad</code>
             <span className="fx-note">dc</span>
             <span className="fx-note">{seen ? 'ok' : '—'}</span>
           </div>
@@ -181,7 +181,7 @@ export function PreprocessorViz() {
             <span className="fx-note">{looks ? '12' : '—'}</span>
           </div>
           <div className={`fx-rank${real ? ' fx-rank--on' : ''}${recap ? ' fx-rank--trap' : ''}`}>
-            <code>exp</code>
+            <code>ex</code>
             <span className="fx-note">got</span>
             <span className="fx-note">{recap || real ? '9' : '—'}</span>
           </div>
@@ -190,12 +190,12 @@ export function PreprocessorViz() {
       {id === 'guard' && (
         <div className="fx-ladder">
           <div className={`fx-rank${first ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>1st</code>
+            <code>i1</code>
             <span className="fx-note">in</span>
             <span className="fx-note">{first ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${skip ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>2nd</code>
+            <code>i2</code>
             <span className="fx-note">sk</span>
             <span className="fx-note">{skip ? 'sk' : '—'}</span>
           </div>

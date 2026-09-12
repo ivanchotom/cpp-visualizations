@@ -182,7 +182,7 @@ void print(const T& first, Rest... rest) {
       {id === 'sizeof' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>len</code>
+            <code>ln</code>
             <span className="fx-note">n</span>
             <span className="fx-note">{stepped ? '2' : '—'}</span>
           </div>
@@ -201,7 +201,7 @@ void print(const T& first, Rest... rest) {
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>get</code>
+            <code>gt</code>
             <span className="fx-note">exp</span>
             <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
@@ -210,7 +210,7 @@ void print(const T& first, Rest... rest) {
       {id === 'nobase' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${peelTrap ? ' fx-rank--trap' : ''}`}>
-            <code>...</code>
+            <code>pk</code>
             <span className="fx-note">pop</span>
             <span className="fx-note">{stepped ? restN : '—'}</span>
           </div>
