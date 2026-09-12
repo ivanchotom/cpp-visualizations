@@ -134,7 +134,7 @@ delete p;  // ~Dog then ~Animal`
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>fn</code>
-            <span className="fx-note">speak</span>
+            <span className="fx-note">spk</span>
             <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -148,7 +148,7 @@ delete p;  // ~Dog then ~Animal`
           </div>
           <div className={`fx-rank${sliceTrap ? ' fx-rank--trap' : ''}`}>
             <code>fn</code>
-            <span className="fx-note">speak</span>
+            <span className="fx-note">spk</span>
             <span className="fx-note">{sliceTrap ? 'no' : '—'}</span>
           </div>
         </div>
@@ -162,7 +162,7 @@ delete p;  // ~Dog then ~Animal`
           </div>
           <div className={`fx-rank${ctorTrap ? ' fx-rank--trap' : ''}`}>
             <code>fn</code>
-            <span className="fx-note">speak</span>
+            <span className="fx-note">spk</span>
             <span className="fx-note">{ctorTrap ? 'no' : '—'}</span>
           </div>
         </div>
