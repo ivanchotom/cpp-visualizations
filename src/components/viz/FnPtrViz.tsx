@@ -175,7 +175,7 @@ f();   // throws std::bad_function_call`
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : bounce ? ' fx-rank--on' : ''}`}>
             <code>w</code>
-            <span className="fx-note">w.*pm</span>
+            <span className="fx-note">.*</span>
             <span className="fx-note">{recap ? '7' : '—'}</span>
           </div>
         </div>
@@ -184,12 +184,12 @@ f();   // throws std::bad_function_call`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${emptyThrow ? ' fx-rank--trap' : ''}`}>
             <code>f</code>
-            <span className="fx-note">empty</span>
-            <span className="fx-note">{emptyThrow ? 'throw' : stepped ? 'no' : '—'}</span>
+            <span className="fx-note">nil</span>
+            <span className="fx-note">{emptyThrow ? 'fail' : stepped ? 'no' : '—'}</span>
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : emptyThrow ? ' fx-rank--on' : ''}`}>
             <code>s</code>
-            <span className="fx-note">f = add</span>
+            <span className="fx-note">asgn</span>
             <span className="fx-note">{recap ? '3' : '—'}</span>
           </div>
         </div>

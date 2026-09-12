@@ -149,7 +149,7 @@ std::lower_bound(v.begin(), v.end(), 7);`
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : decided ? ' fx-rank--trap' : ''}`}>
             <code>end</code>
-            <span className="fx-note">new_end</span>
+            <span className="fx-note">cut</span>
             <span className="fx-note">{recap ? 'ok' : decided ? 'junk' : '—'}</span>
           </div>
         </div>
@@ -186,12 +186,12 @@ std::lower_bound(v.begin(), v.end(), 7);`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
             <code>v</code>
-            <span className="fx-note">order</span>
+            <span className="fx-note">ord</span>
             <span className="fx-note">{stepped ? 'no' : '—'}</span>
           </div>
           <div className={`fx-rank${unsortedTrap ? ' fx-rank--trap' : ''}`}>
             <code>lb</code>
-            <span className="fx-note">bound</span>
+            <span className="fx-note">lb</span>
             <span className="fx-note">{unsortedTrap ? 'ub' : '—'}</span>
           </div>
         </div>
