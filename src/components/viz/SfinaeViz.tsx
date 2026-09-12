@@ -158,7 +158,7 @@ struct Box<T*> { using type = T; };`
       {id === 'int' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${intWin ? ' fx-rank--done' : ''}`}>
-            <code>int</code>
+            <code>in</code>
             <span className="fx-note">eif</span>
             <span className="fx-note">{intWin ? 'ok' : '—'}</span>
           </div>
@@ -172,7 +172,7 @@ struct Box<T*> { using type = T; };`
       {id === 'str' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${hard ? ' fx-rank--trap' : ''}`}>
-            <code>int</code>
+            <code>in</code>
             <span className="fx-note">eif</span>
             <span className="fx-note">{hard ? 'no' : '—'}</span>
           </div>

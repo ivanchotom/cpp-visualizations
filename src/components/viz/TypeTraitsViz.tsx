@@ -164,12 +164,12 @@ using B = decltype((x));  // int&`
       {id === 'query' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>int</code>
+            <code>in</code>
             <span className="fx-note">ig</span>
             <span className="fx-note">{stepped ? 'yes' : '—'}</span>
           </div>
           <div className={`fx-rank${ptrNo ? ' fx-rank--trap' : ''}`}>
-            <code>ptr</code>
+            <code>pt</code>
             <span className="fx-note">ig</span>
             <span className="fx-note">{ptrNo ? 'no' : '—'}</span>
           </div>
