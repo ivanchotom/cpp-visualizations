@@ -158,7 +158,7 @@ Handle& operator=(const Handle&) = delete;`
       {id === 'dtor' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${copied ? ' fx-rank--trap' : ''}`}>
-            <code>~T</code>
+            <code>~</code>
             <span className="fx-note">usr</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
@@ -172,7 +172,7 @@ Handle& operator=(const Handle&) = delete;`
       {id === 'five' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>~T</code>
+            <code>~</code>
             <span className="fx-note">dt</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>

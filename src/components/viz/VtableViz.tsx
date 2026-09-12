@@ -170,12 +170,12 @@ delete p;  // ~Dog then ~Animal`
       {id === 'del' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>~A</code>
+            <code>A</code>
             <span className="fx-note">dt</span>
             <span className="fx-note">{delTrap ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${delTrap ? ' fx-rank--trap' : ''}`}>
-            <code>~D</code>
+            <code>D</code>
             <span className="fx-note">Dog</span>
             <span className="fx-note">{delTrap ? 'ill' : '—'}</span>
           </div>
