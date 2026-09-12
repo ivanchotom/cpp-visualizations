@@ -126,7 +126,7 @@ export function ScopeViz() {
             <span className="fx-note">{nGone ? 'gone' : nOn ? '1' : '—'}</span>
           </div>
           <div className={`fx-rank${nGone ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>out</code>
+            <code>ot</code>
             <span className="fx-note">see</span>
             <span className="fx-note">{nGone ? 'ok' : '—'}</span>
           </div>
@@ -149,7 +149,7 @@ export function ScopeViz() {
       {id === 'dangle' && (
         <div className="fx-ladder">
           <div className={`fx-rank${localOn ? ' fx-rank--on' : ''}${localGone ? ' fx-rank--trap' : ''}`}>
-            <code>loc</code>
+            <code>lc</code>
             <span className="fx-note">stk</span>
             <span className="fx-note">{localGone ? 'gone' : localOn ? '7' : '—'}</span>
           </div>
@@ -163,12 +163,12 @@ export function ScopeViz() {
       {id === 'using' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>std</code>
+            <code>st</code>
             <span className="fx-note">io</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${leaked ? ' fx-rank--trap' : ''}`}>
-            <code>hdr</code>
+            <code>hd</code>
             <span className="fx-note">use</span>
             <span className="fx-note">{leaked ? 'leak' : '—'}</span>
           </div>
