@@ -140,12 +140,12 @@ if ((flags & MASK) == 0) { }  // what you meant`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>bc</code>
-            <span className="fx-note">b * c</span>
+            <span className="fx-note">*</span>
             <span className="fx-note">{stepped ? '1st' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>a</code>
-            <span className="fx-note">then +</span>
+            <span className="fx-note">+</span>
             <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -154,12 +154,12 @@ if ((flags & MASK) == 0) { }  // what you meant`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>b</code>
-            <span className="fx-note">right =</span>
+            <span className="fx-note">r=</span>
             <span className="fx-note">{stepped ? '1' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>a</code>
-            <span className="fx-note">left =</span>
+            <span className="fx-note">l=</span>
             <span className="fx-note">{decided ? '1' : '—'}</span>
           </div>
         </div>
@@ -168,12 +168,12 @@ if ((flags & MASK) == 0) { }  // what you meant`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>lt</code>
-            <span className="fx-note">a &lt; b</span>
+            <span className="fx-note">&lt;</span>
             <span className="fx-note">{stepped ? 'bool' : '—'}</span>
           </div>
           <div className={`fx-rank${eqWarn ? ' fx-rank--trap' : ''}`}>
             <code>eq</code>
-            <span className="fx-note">== c</span>
+            <span className="fx-note">==</span>
             <span className="fx-note">{eqWarn ? 'c' : '—'}</span>
           </div>
         </div>
@@ -182,12 +182,12 @@ if ((flags & MASK) == 0) { }  // what you meant`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${bitTrap ? ' fx-rank--trap' : ''}`}>
             <code>eq</code>
-            <span className="fx-note">MASK == 0</span>
+            <span className="fx-note">==0</span>
             <span className="fx-note">{stepped ? '0' : '—'}</span>
           </div>
           <div className={`fx-rank${bitTrap ? ' fx-rank--trap' : ''}`}>
             <code>fl</code>
-            <span className="fx-note">flags &amp;</span>
+            <span className="fx-note">&amp;</span>
             <span className="fx-note">{bitTrap ? 'bad' : '—'}</span>
           </div>
         </div>

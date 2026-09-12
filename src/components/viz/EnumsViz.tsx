@@ -132,62 +132,56 @@ int x = FLAG_ON;        // implicit`
     >
       {id === 'scoped' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${redOk ? ' fx-rank--on' : ''}${nIll ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${redOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>red</code>
-            <span className="fx-note">
-              <code>Color::red</code>
-            </span>
+            <span className="fx-note">enm</span>
             <span className="fx-note">{redOk ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${nIll ? ' fx-rank--trap' : ''}`}>
-            <code>n = c</code>
-            <span className="fx-note">implicit to int</span>
+            <code>n</code>
+            <span className="fx-note">int</span>
             <span className="fx-note">{nIll ? 'ill' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'legacy' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${leaked ? ' fx-rank--on' : ''}${converted ? ' fx-rank--done' : ''}`}>
-            <code>FLAG_ON</code>
-            <span className="fx-note">leaked name</span>
+          <div className={`fx-rank${leaked ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>FLAG</code>
+            <span className="fx-note">leak</span>
             <span className="fx-note">{leaked ? 'yes' : '—'}</span>
           </div>
           <div className={`fx-rank${converted ? ' fx-rank--trap' : ''}`}>
-            <code>int x</code>
-            <span className="fx-note">implicit convert</span>
+            <code>x</code>
+            <span className="fx-note">int</span>
             <span className="fx-note">{converted ? '1' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'width' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${sized ? ' fx-rank--done' : ''}`}>
-            <code>type</code>
-            <span className="fx-note">
-              <code>uint8_t</code>
-            </span>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>ty</code>
+            <span className="fx-note">u8</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${sized ? ' fx-rank--on' : ''}`}>
-            <code>size</code>
-            <span className="fx-note">
-              <code>sizeof</code>
-            </span>
+          <div className={`fx-rank${sized ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>sz</code>
+            <span className="fx-note">sz</span>
             <span className="fx-note">{sized ? '1' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'mask' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${maskIll ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>red</code>
-            <span className="fx-note">Color value</span>
+            <span className="fx-note">enm</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${maskIll ? ' fx-rank--trap' : ''}`}>
             <code>|</code>
-            <span className="fx-note">operator|</span>
+            <span className="fx-note">or</span>
             <span className="fx-note">{maskIll ? 'ill' : '—'}</span>
           </div>
         </div>
