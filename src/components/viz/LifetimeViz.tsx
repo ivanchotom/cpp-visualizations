@@ -192,7 +192,7 @@ export function LifetimeViz() {
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : ''}`}>
             <code>un</code>
-            <span className="fx-note">unwind</span>
+            <span className="fx-note">un</span>
             <span className="fx-note">{recap ? 'ok' : '—'}</span>
           </div>
         </div>

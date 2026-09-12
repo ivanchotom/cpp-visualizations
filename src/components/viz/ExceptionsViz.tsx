@@ -152,12 +152,12 @@ int main() { parse(); }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>un</code>
-            <span className="fx-note">unwind</span>
+            <span className="fx-note">un</span>
             <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : ''}`}>
             <code>ct</code>
-            <span className="fx-note">catch</span>
+            <span className="fx-note">hdl</span>
             <span className="fx-note">{recap ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -166,7 +166,7 @@ int main() { parse(); }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
             <code>un</code>
-            <span className="fx-note">unwind</span>
+            <span className="fx-note">un</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${uncaughtTrap ? ' fx-rank--trap' : ''}`}>
@@ -180,7 +180,7 @@ int main() { parse(); }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${noexceptTrap ? ' fx-rank--trap' : ''}`}>
             <code>un</code>
-            <span className="fx-note">unwind</span>
+            <span className="fx-note">un</span>
             <span className="fx-note">{noexceptTrap ? 'no' : '—'}</span>
           </div>
           <div className={`fx-rank${noexceptTrap ? ' fx-rank--trap' : ''}`}>
@@ -194,7 +194,7 @@ int main() { parse(); }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${dtorTrap ? ' fx-rank--trap' : ''}`}>
             <code>dt</code>
-            <span className="fx-note">~File</span>
+            <span className="fx-note">~F</span>
             <span className="fx-note">{dtorTrap ? 'ill' : '—'}</span>
           </div>
           <div className={`fx-rank${dtorTrap ? ' fx-rank--trap' : ''}`}>
