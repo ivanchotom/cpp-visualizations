@@ -122,7 +122,7 @@ export function ScopeViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${nOn ? ' fx-rank--on' : ''}${nGone ? ' fx-rank--done' : ''}`}>
             <code>n</code>
-            <span className="fx-note">auto</span>
+            <span className="fx-note">stk</span>
             <span className="fx-note">{nGone ? 'gone' : nOn ? '1' : '—'}</span>
           </div>
           <div className={`fx-rank${nGone ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
@@ -135,8 +135,8 @@ export function ScopeViz() {
       {id === 'stat' && (
         <div className="fx-ladder">
           <div className={`fx-rank${initOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>init</code>
-            <span className="fx-note">once</span>
+            <code>ini</code>
+            <span className="fx-note">1x</span>
             <span className="fx-note">{initOn ? '0' : '—'}</span>
           </div>
           <div className={`fx-rank${nOne ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
@@ -150,7 +150,7 @@ export function ScopeViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${localOn ? ' fx-rank--on' : ''}${localGone ? ' fx-rank--trap' : ''}`}>
             <code>loc</code>
-            <span className="fx-note">auto</span>
+            <span className="fx-note">stk</span>
             <span className="fx-note">{localGone ? 'gone' : localOn ? '7' : '—'}</span>
           </div>
           <div className={`fx-rank${localOn ? ' fx-rank--on' : ''}${localGone ? ' fx-rank--trap' : ''}`}>
@@ -164,7 +164,7 @@ export function ScopeViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>std</code>
-            <span className="fx-note">cout</span>
+            <span className="fx-note">io</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${leaked ? ' fx-rank--trap' : ''}`}>

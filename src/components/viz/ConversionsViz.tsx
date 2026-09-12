@@ -144,7 +144,7 @@ int n{d};           // error (narrowing)`
           </div>
           <div className={`fx-rank${silent ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>n</code>
-            <span className="fx-note">asgn</span>
+            <span className="fx-note">asg</span>
             <span className="fx-note">{silent ? '3' : '—'}</span>
           </div>
         </div>
@@ -158,7 +158,7 @@ int n{d};           // error (narrowing)`
           </div>
           <div className={`fx-rank${rejected ? ' fx-rank--trap' : ''}`}>
             <code>n</code>
-            <span className="fx-note">list</span>
+            <span className="fx-note">{}</span>
             <span className="fx-note">{rejected ? 'ill' : '—'}</span>
           </div>
         </div>
@@ -172,7 +172,7 @@ int n{d};           // error (narrowing)`
           </div>
           <div className={`fx-rank${namedOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>n</code>
-            <span className="fx-note">cast</span>
+            <span className="fx-note">sc</span>
             <span className="fx-note">{namedOk ? '3' : '—'}</span>
           </div>
         </div>
