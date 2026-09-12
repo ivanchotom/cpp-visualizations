@@ -144,7 +144,7 @@ p.reset();  // T destroyed, weak still here`
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>p</code>
             <span className="fx-note">up</span>
-            <span className="fx-note">{recap ? 'gone' : stepped ? 'own' : '—'}</span>
+            <span className="fx-note">{recap ? 'gn' : stepped ? 'ow' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>T</code>
@@ -158,12 +158,12 @@ p.reset();  // T destroyed, weak still here`
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${decided ? ' fx-rank--trap' : ''}`}>
             <code>p</code>
             <span className="fx-note">up</span>
-            <span className="fx-note">{decided ? 'gone' : stepped ? 'own' : '—'}</span>
+            <span className="fx-note">{decided ? 'gn' : stepped ? 'ow' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>q</code>
             <span className="fx-note">up</span>
-            <span className="fx-note">{decided ? 'own' : '—'}</span>
+            <span className="fx-note">{decided ? 'ow' : '—'}</span>
           </div>
         </div>
       )}
@@ -171,13 +171,13 @@ p.reset();  // T destroyed, weak still here`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>n</code>
-            <span className="fx-note">use</span>
+            <span className="fx-note">us</span>
             <span className="fx-note">{recap ? '0' : decided ? '1' : stepped ? '2' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>T</code>
             <span className="fx-note">hp</span>
-            <span className="fx-note">{recap ? 'gone' : decided ? 'ok' : '—'}</span>
+            <span className="fx-note">{recap ? 'gn' : decided ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
@@ -186,11 +186,11 @@ p.reset();  // T destroyed, weak still here`
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${decided ? ' fx-rank--trap' : ''}`}>
             <code>T</code>
             <span className="fx-note">hp</span>
-            <span className="fx-note">{decided ? 'gone' : stepped ? 'ok' : '—'}</span>
+            <span className="fx-note">{decided ? 'gn' : stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${lockFail ? ' fx-rank--trap' : ''}`}>
             <code>lk</code>
-            <span className="fx-note">try</span>
+            <span className="fx-note">tr</span>
             <span className="fx-note">{lockFail ? 'no' : '—'}</span>
           </div>
         </div>

@@ -157,7 +157,7 @@ int main() { parse(); }`
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : ''}`}>
             <code>ct</code>
-            <span className="fx-note">hdl</span>
+            <span className="fx-note">hd</span>
             <span className="fx-note">{recap ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -171,7 +171,7 @@ int main() { parse(); }`
           </div>
           <div className={`fx-rank${uncaughtTrap ? ' fx-rank--trap' : ''}`}>
             <code>tm</code>
-            <span className="fx-note">die</span>
+            <span className="fx-note">di</span>
             <span className="fx-note">{uncaughtTrap ? 'ill' : '—'}</span>
           </div>
         </div>
@@ -185,7 +185,7 @@ int main() { parse(); }`
           </div>
           <div className={`fx-rank${noexceptTrap ? ' fx-rank--trap' : ''}`}>
             <code>tm</code>
-            <span className="fx-note">die</span>
+            <span className="fx-note">di</span>
             <span className="fx-note">{noexceptTrap ? 'ill' : '—'}</span>
           </div>
         </div>
@@ -199,7 +199,7 @@ int main() { parse(); }`
           </div>
           <div className={`fx-rank${dtorTrap ? ' fx-rank--trap' : ''}`}>
             <code>tm</code>
-            <span className="fx-note">die</span>
+            <span className="fx-note">di</span>
             <span className="fx-note">{dtorTrap ? 'ill' : '—'}</span>
           </div>
         </div>
