@@ -145,7 +145,7 @@ b = std::move(a);     // steal, a is nullptr`
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>b</code>
-            <span className="fx-note">steal</span>
+            <span className="fx-note">mv</span>
             <span className="fx-note">{stolen ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -173,7 +173,7 @@ b = std::move(a);     // steal, a is nullptr`
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>b</code>
-            <span className="fx-note">steal</span>
+            <span className="fx-note">mv</span>
             <span className="fx-note">{stolen ? 'ok' : '—'}</span>
           </div>
         </div>

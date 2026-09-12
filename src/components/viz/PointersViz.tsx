@@ -150,7 +150,7 @@ p = nullptr;`
     >
       {id === 'reseat' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${pAtB ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>p</code>
             <span className="fx-note">ptr</span>
             <span className="fx-note">{pAtB ? 'b' : stepped ? 'a' : '—'}</span>
@@ -185,7 +185,7 @@ p = nullptr;`
           </div>
           <div className={`fx-rank${starUb ? ' fx-rank--trap' : ''}`}>
             <code>*p</code>
-            <span className="fx-note">deref</span>
+            <span className="fx-note">rd</span>
             <span className="fx-note">{starUb ? 'ub' : '—'}</span>
           </div>
         </div>
