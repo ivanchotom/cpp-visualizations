@@ -189,8 +189,8 @@ Bag a, b = a;
             <span className="fx-note">{stepped ? 'yes' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${copied ? ' fx-rank--trap' : ''}`}>
-            <code>m</code>
-            <span className="fx-note">mv</span>
+            <code>mv</code>
+            <span className="fx-note">gen</span>
             <span className="fx-note">{copied ? 'cpy' : decided ? 'gone' : '—'}</span>
           </div>
         </div>
@@ -217,8 +217,8 @@ Bag a, b = a;
             <span className="fx-note">{stepped ? 'yes' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${virtTrap ? ' fx-rank--trap' : ''}`}>
-            <code>m</code>
-            <span className="fx-note">mv</span>
+            <code>mv</code>
+            <span className="fx-note">gen</span>
             <span className="fx-note">{virtTrap ? 'gone' : '—'}</span>
           </div>
         </div>
