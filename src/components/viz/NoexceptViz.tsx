@@ -197,7 +197,7 @@ open(path, ec);  // no throw
       {id === 'ec' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>open</code>
+            <code>op</code>
             <span className="fx-note">()</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
