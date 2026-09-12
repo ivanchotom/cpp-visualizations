@@ -28,7 +28,7 @@ export function AccessViz() {
   const won = id === 'friend' && decided
   const protTrap = id === 'prot' && decided
   const structOk = id === 'st' && recap
-  const trap = bounce || (protTrap && !recap)
+  const trap = bounce || protTrap
   const ok = privOk || (id === 'friend' && recap) || structOk || (id === 'prot' && recap)
 
   const code =
@@ -151,58 +151,56 @@ class Token { int id_; };  // private`
     >
       {id === 'priv' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${bounce ? ' fx-rank--trap' : ''}${privOk ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${bounce || privOk ? ' fx-rank--trap' : ''}`}>
             <code>{'T{1}'}</code>
-            <span className="fx-note">private ctor</span>
-            <span className="fx-note">{privOk ? 'ill' : bounce ? 'ill' : stepped ? 'no' : '—'}</span>
+            <span className="fx-note">ctor</span>
+            <span className="fx-note">{bounce || privOk ? 'ill' : stepped ? 'no' : '—'}</span>
           </div>
-          <div className={`fx-rank${privOk ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${privOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>id()</code>
-            <span className="fx-note">public name</span>
+            <span className="fx-note">name</span>
             <span className="fx-note">{privOk ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'friend' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${won ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${stepped ? ' fx-rank--trap' : ''}`}>
             <code>main</code>
-            <span className="fx-note">
-              <code>{'Token{id}'}</code>
-            </span>
+            <span className="fx-note">ctor</span>
             <span className="fx-note">{stepped ? 'ill' : '—'}</span>
           </div>
-          <div className={`fx-rank${won ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${won ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>make</code>
-            <span className="fx-note">friend fn</span>
+            <span className="fx-note">fn</span>
             <span className="fx-note">{won ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'prot' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${protTrap && !recap ? ' fx-rank--trap' : ''}${recap ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${protTrap ? ' fx-rank--trap' : ''}`}>
             <code>n_</code>
-            <span className="fx-note">{recap ? 'private data' : 'protected'}</span>
-            <span className="fx-note">{recap ? 'priv' : protTrap ? 'ok' : stepped ? 'ok' : '—'}</span>
+            <span className="fx-note">prot</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${protTrap ? ' fx-rank--trap' : ''}`}>
             <code>Der</code>
-            <span className="fx-note">{recap ? 'bump()' : 'n_ = 1'}</span>
-            <span className="fx-note">{recap ? 'ok' : protTrap ? 'ok' : '—'}</span>
+            <span className="fx-note">set</span>
+            <span className="fx-note">{protTrap ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'st' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${structOk ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>Dto</code>
-            <span className="fx-note">struct default</span>
+            <span className="fx-note">st</span>
             <span className="fx-note">{stepped ? 'pub' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>Tok</code>
-            <span className="fx-note">class default</span>
+            <span className="fx-note">cls</span>
             <span className="fx-note">{decided ? 'priv' : '—'}</span>
           </div>
         </div>

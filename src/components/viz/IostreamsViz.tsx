@@ -141,62 +141,56 @@ if (!in) throw std::runtime_error("open");`
     >
       {id === 'eof' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${eofTrap ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${eofTrap ? ' fx-rank--trap' : ''}`}>
             <code>eof</code>
-            <span className="fx-note">
-              <code>!in.eof()</code>
-            </span>
+            <span className="fx-note">test</span>
             <span className="fx-note">{eofTrap ? 'fail' : stepped ? 'no' : '—'}</span>
           </div>
-          <div className={`fx-rank${eofTrap ? ' fx-rank--trap' : stepped ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${eofTrap ? ' fx-rank--trap' : ''}`}>
             <code>x</code>
-            <span className="fx-note">use(x)</span>
+            <span className="fx-note">use</span>
             <span className="fx-note">{eofTrap ? 'old' : decided ? 'b' : stepped ? 'a' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'setw' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${setwOk ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>w</code>
-            <span className="fx-note">
-              <code>setw(4)</code>
-            </span>
+            <span className="fx-note">set</span>
             <span className="fx-note">{stepped ? '42' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${setwSpent ? ' fx-rank--trap' : ''}`}>
-            <code>7</code>
-            <span className="fx-note">next field</span>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>n</code>
+            <span className="fx-note">nxt</span>
             <span className="fx-note">{decided ? '7' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'tie' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${tieOk ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>out</code>
-            <span className="fx-note">flush first</span>
+            <span className="fx-note">flush</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>in</code>
-            <span className="fx-note">extract</span>
+            <span className="fx-note">get</span>
             <span className="fx-note">{tieOk ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'file' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${fileClosed ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>in</code>
-            <span className="fx-note">
-              <code>ifstream</code>
-            </span>
+            <span className="fx-note">file</span>
             <span className="fx-note">{fileClosed ? 'gone' : stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${fileClosed ? ' fx-rank--trap' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>h</code>
-            <span className="fx-note">handle</span>
+            <span className="fx-note">fd</span>
             <span className="fx-note">{fileClosed ? 'gone' : decided ? 'ok' : '—'}</span>
           </div>
         </div>
