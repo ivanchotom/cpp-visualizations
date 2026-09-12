@@ -150,7 +150,7 @@ for (auto x : v) { use(x); }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">copy</span>
+            <span className="fx-note">cpy</span>
             <span className="fx-note">{stepped ? xCopy : '—'}</span>
           </div>
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
@@ -178,8 +178,8 @@ for (auto x : v) { use(x); }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>A</code>
-            <span className="fx-note">case</span>
-            <span className="fx-note">{decided ? 'fall' : stepped ? 'on' : '—'}</span>
+            <span className="fx-note">cs</span>
+            <span className="fx-note">{decided ? 'fl' : stepped ? 'on' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>B</code>
@@ -192,7 +192,7 @@ for (auto x : v) { use(x); }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>a</code>
-            <span className="fx-note">skip</span>
+            <span className="fx-note">sk</span>
             <span className="fx-note">{stepped ? 'no' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>

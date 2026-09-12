@@ -144,13 +144,13 @@ std::lower_bound(v.begin(), v.end(), 7);`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>sz</code>
-            <span className="fx-note">size</span>
+            <span className="fx-note">n</span>
             <span className="fx-note">{recap ? '3' : stepped ? '5' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : decided ? ' fx-rank--trap' : ''}`}>
             <code>end</code>
             <span className="fx-note">cut</span>
-            <span className="fx-note">{recap ? 'ok' : decided ? 'junk' : '—'}</span>
+            <span className="fx-note">{recap ? 'ok' : decided ? 'jk' : '—'}</span>
           </div>
         </div>
       )}
@@ -163,7 +163,7 @@ std::lower_bound(v.begin(), v.end(), 7);`
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--trap' : ''}`}>
             <code>L</code>
-            <span className="fx-note">list</span>
+            <span className="fx-note">ls</span>
             <span className="fx-note">{recap ? 'ill' : '—'}</span>
           </div>
         </div>
