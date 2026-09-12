@@ -154,7 +154,7 @@ export function PreprocessorViz() {
           </div>
           <div className={`fx-rank${seen ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>add</code>
-            <span className="fx-note">decl</span>
+            <span className="fx-note">dc</span>
             <span className="fx-note">{seen ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -177,7 +177,7 @@ export function PreprocessorViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${looks ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>look</code>
-            <span className="fx-note">want</span>
+            <span className="fx-note">aim</span>
             <span className="fx-note">{looks ? '12' : '—'}</span>
           </div>
           <div className={`fx-rank${real ? ' fx-rank--on' : ''}${recap ? ' fx-rank--trap' : ''}`}>
@@ -196,8 +196,8 @@ export function PreprocessorViz() {
           </div>
           <div className={`fx-rank${skip ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>2nd</code>
-            <span className="fx-note">skip</span>
-            <span className="fx-note">{skip ? 'skip' : '—'}</span>
+            <span className="fx-note">sk</span>
+            <span className="fx-note">{skip ? 'sk' : '—'}</span>
           </div>
         </div>
       )}

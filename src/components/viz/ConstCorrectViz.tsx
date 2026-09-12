@@ -175,7 +175,7 @@ public:
           </div>
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>it</code>
-            <span className="fx-note">read</span>
+            <span className="fx-note">rd</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -204,7 +204,7 @@ public:
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${moveBlocked ? ' fx-rank--trap' : ''}`}>
             <code>s</code>
             <span className="fx-note">cpy</span>
-            <span className="fx-note">{moveBlocked ? 'copy' : '—'}</span>
+            <span className="fx-note">{moveBlocked ? 'cpy' : '—'}</span>
           </div>
         </div>
       )}
@@ -217,7 +217,7 @@ public:
           </div>
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${lieTrap ? ' fx-rank--trap' : ''}`}>
             <code>g</code>
-            <span className="fx-note">glob</span>
+            <span className="fx-note">gl</span>
             <span className="fx-note">{lieTrap ? '1' : stepped ? '0' : '—'}</span>
           </div>
         </div>
