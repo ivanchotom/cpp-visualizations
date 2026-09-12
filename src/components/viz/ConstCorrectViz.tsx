@@ -169,12 +169,12 @@ public:
       {id === 'observer' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${writeTrap ? ' fx-rank--trap' : ''}`}>
-            <code>empty</code>
+            <code>e()</code>
             <span className="fx-note">cst</span>
             <span className="fx-note">{writeTrap ? 'ill' : readOk ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>items</code>
+            <code>it</code>
             <span className="fx-note">read</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>

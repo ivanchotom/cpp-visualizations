@@ -164,13 +164,13 @@ int r = a / b;     // 0`
       )}
       {id === 'slice' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
-            <code>Base</code>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>B</code>
             <span className="fx-note">val</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${sliceTrap ? ' fx-rank--on' : ''}${sliceTrap ? ' fx-rank--trap' : ''}`}>
-            <code>extra</code>
+            <code>ex</code>
             <span className="fx-note">der</span>
             <span className="fx-note">{sliceTrap ? 'gone' : '—'}</span>
           </div>
