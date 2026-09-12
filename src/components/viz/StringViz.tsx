@@ -148,7 +148,7 @@ s.reserve(64);
             <span className="fx-note">{stepped ? '2' : '—'}</span>
           </div>
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${plusCopy ? ' fx-rank--trap' : ''}`}>
-            <code>s+x</code>
+            <code>+x</code>
             <span className="fx-note">cpy</span>
             <span className="fx-note">{plusCopy ? 'n²' : stepped ? '3' : '—'}</span>
           </div>
@@ -190,7 +190,7 @@ s.reserve(64);
             <span className="fx-note">{recap ? '5' : appendOk ? '3' : reserved ? '0' : '—'}</span>
           </div>
           <div className={`fx-rank${reserved ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>cap</code>
+            <code>cp</code>
             <span className="fx-note">cap</span>
             <span className="fx-note">{reserved ? '64' : '—'}</span>
           </div>
