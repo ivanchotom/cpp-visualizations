@@ -196,12 +196,12 @@ class Token { int id_; };  // private`
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>dt</code>
             <span className="fx-note">st</span>
-            <span className="fx-note">{stepped ? 'pub' : '—'}</span>
+            <span className="fx-note">{stepped ? 'pu' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>tk</code>
             <span className="fx-note">cls</span>
-            <span className="fx-note">{decided ? 'hid' : '—'}</span>
+            <span className="fx-note">{decided ? 'hd' : '—'}</span>
           </div>
         </div>
       )}
