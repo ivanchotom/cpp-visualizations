@@ -139,7 +139,7 @@ v.push_back(4);  // size 4, cap 4`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>a</code>
-            <span className="fx-note">T[N]</span>
+            <span className="fx-note">[N]</span>
             <span className="fx-note">{stepped ? '16' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--trap' : stepped ? ' fx-rank--on' : ''}`}>
@@ -158,7 +158,7 @@ v.push_back(4);  // size 4, cap 4`
           </div>
           <div className={`fx-rank${arrayOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">copy</span>
+            <span className="fx-note">cpy</span>
             <span className="fx-note">{arrayOk ? '4' : '—'}</span>
           </div>
         </div>
