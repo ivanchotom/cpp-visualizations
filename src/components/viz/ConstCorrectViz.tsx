@@ -169,7 +169,7 @@ public:
       {id === 'observer' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${writeTrap ? ' fx-rank--trap' : ''}`}>
-            <code>e()</code>
+            <code>e</code>
             <span className="fx-note">cst</span>
             <span className="fx-note">{writeTrap ? 'ill' : readOk ? 'ok' : '—'}</span>
           </div>
@@ -197,7 +197,7 @@ public:
       {id === 'byval' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${moveBlocked ? ' fx-rank--trap' : ''}`}>
-            <code>tmp</code>
+            <code>tm</code>
             <span className="fx-note">cst</span>
             <span className="fx-note">{moveBlocked ? 'ill' : stepped ? 'ok' : '—'}</span>
           </div>

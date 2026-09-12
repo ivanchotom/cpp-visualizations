@@ -122,7 +122,7 @@ export function CvQualViz() {
       {id === 'pointee' && (
         <div className="fx-ladder">
           <div className={`fx-rank${pcIll ? ' fx-rank--trap' : stepped ? ' fx-rank--on' : ''}`}>
-            <code>*pc</code>
+            <code>*p</code>
             <span className="fx-note">set</span>
             <span className="fx-note">{pcIll ? 'ill' : '—'}</span>
           </div>
@@ -141,7 +141,7 @@ export function CvQualViz() {
             <span className="fx-note">{cpIll ? 'ill' : '—'}</span>
           </div>
           <div className={`fx-rank${writeOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>*cp</code>
+            <code>*c</code>
             <span className="fx-note">set</span>
             <span className="fx-note">{writeOk ? '2' : '—'}</span>
           </div>
@@ -150,7 +150,7 @@ export function CvQualViz() {
       {id === 'mutable' && (
         <div className="fx-ladder">
           <div className={`fx-rank${getOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>get</code>
+            <code>gt</code>
             <span className="fx-note">cst</span>
             <span className="fx-note">{getOn ? 'ok' : '—'}</span>
           </div>
