@@ -156,7 +156,7 @@ n = 4;  // error — n is const`
           </div>
           <div className={`fx-rank${baked ? ' fx-rank--on fx-rank--done' : ''}`}>
             <code>n</code>
-            <span className="fx-note">arr</span>
+            <span className="fx-note">ar</span>
             <span className="fx-note">{baked ? '8' : '—'}</span>
           </div>
         </div>
@@ -165,12 +165,12 @@ n = 4;  // error — n is const`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${ran ? ' fx-rank--done' : ''}`}>
             <code>r</code>
-            <span className="fx-note">run</span>
+            <span className="fx-note">rt</span>
             <span className="fx-note">{stepped ? r : '—'}</span>
           </div>
           <div className={`fx-rank${ran ? ' fx-rank--on fx-rank--done' : ''}`}>
             <code>k</code>
-            <span className="fx-note">arr</span>
+            <span className="fx-note">ar</span>
             <span className="fx-note">{ran ? '8' : '—'}</span>
           </div>
         </div>
@@ -184,7 +184,7 @@ n = 4;  // error — n is const`
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>k</code>
-            <span className="fx-note">int</span>
+            <span className="fx-note">in</span>
             <span className="fx-note">{recap ? '4' : decided ? '3' : '—'}</span>
           </div>
         </div>

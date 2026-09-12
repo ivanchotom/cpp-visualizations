@@ -157,7 +157,7 @@ struct D : A, B {};  // one Base`
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>B</code>
-            <span className="fx-note">off</span>
+            <span className="fx-note">of</span>
             <span className="fx-note">{decided ? '8' : '—'}</span>
           </div>
         </div>
@@ -166,7 +166,7 @@ struct D : A, B {};  // one Base`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${diamondTrap ? ' fx-rank--trap' : ''}`}>
             <code>n</code>
-            <span className="fx-note">dup</span>
+            <span className="fx-note">dp</span>
             <span className="fx-note">{diamondTrap ? '2' : stepped ? '1' : '—'}</span>
           </div>
           <div className={`fx-rank${diamondTrap ? ' fx-rank--trap' : ''}`}>
@@ -180,7 +180,7 @@ struct D : A, B {};  // one Base`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>n</code>
-            <span className="fx-note">dup</span>
+            <span className="fx-note">dp</span>
             <span className="fx-note">{recap ? '1' : stepped ? '0' : '—'}</span>
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : ''}`}>
