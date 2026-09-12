@@ -23,9 +23,8 @@ export function CopyMoveViz() {
   const stepped = i >= 1
   const decided = i >= 2
   const recap = i >= 3
-  const stolen = (mode === 'move' || mode === 'mass') && recap
-  const cloned = (mode === 'copy' || mode === 'cass') && recap
-  const ok = stolen || cloned
+  const stolen = (mode === 'move' || mode === 'mass') && decided
+  const ok = recap
 
   const code =
     mode === 'copy'
@@ -125,59 +124,57 @@ b = std::move(a);     // steal, a is nullptr`
     >
       {mode === 'copy' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${cloned ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>a</code>
-            <span className="fx-note">source keeps</span>
+            <span className="fx-note">src</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>b</code>
-            <span className="fx-note">copy ctor</span>
-            <span className="fx-note">{cloned ? 'ok' : decided ? 'new' : '—'}</span>
+            <span className="fx-note">copy</span>
+            <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {mode === 'move' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${stolen ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${stolen ? ' fx-rank--trap' : ''}`}>
             <code>a</code>
-            <span className="fx-note">source</span>
+            <span className="fx-note">src</span>
             <span className="fx-note">{stolen ? 'gone' : stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>b</code>
-            <span className="fx-note">steal buffer</span>
-            <span className="fx-note">{stolen ? 'ok' : decided ? 'own' : '—'}</span>
+            <span className="fx-note">steal</span>
+            <span className="fx-note">{stolen ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {mode === 'cass' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${cloned ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>a</code>
-            <span className="fx-note">unchanged</span>
+            <span className="fx-note">src</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>b</code>
-            <span className="fx-note">copy assign</span>
-            <span className="fx-note">{cloned ? 'ok' : decided ? 'over' : '—'}</span>
+            <span className="fx-note">asgn</span>
+            <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {mode === 'mass' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${stolen ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${stolen ? ' fx-rank--trap' : ''}`}>
             <code>a</code>
-            <span className="fx-note">
-              <code>nullptr</code>
-            </span>
+            <span className="fx-note">src</span>
             <span className="fx-note">{stolen ? 'gone' : stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>b</code>
-            <span className="fx-note">steal after free</span>
-            <span className="fx-note">{stolen ? 'ok' : decided ? 'own' : '—'}</span>
+            <span className="fx-note">steal</span>
+            <span className="fx-note">{stolen ? 'ok' : '—'}</span>
           </div>
         </div>
       )}

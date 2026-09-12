@@ -31,8 +31,8 @@ export function PointersViz() {
   const dangling = id === 'dangle' && decided
   const writeB = id === 'write' && stepped
   const writeA = id === 'write' && decided
-  const trap = (id === 'null' && decided && !recap) || dangling
-  const ok = (id === 'reseat' && recap) || (id === 'write' && recap) || (id === 'null' && recap)
+  const trap = (id === 'null' && decided) || dangling
+  const ok = (id === 'reseat' && recap) || (id === 'write' && recap)
 
   const code =
     id === 'reseat'
@@ -150,43 +150,37 @@ p = nullptr;`
     >
       {id === 'reseat' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${pAtB ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${pAtB ? ' fx-rank--done' : ''}`}>
             <code>p</code>
-            <span className="fx-note">
-              <code>{'int*'}</code>
-            </span>
+            <span className="fx-note">ptr</span>
             <span className="fx-note">{pAtB ? 'b' : stepped ? 'a' : '—'}</span>
           </div>
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${pAtB ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>r</code>
-            <span className="fx-note">
-              <code>{'int&'}</code>
-            </span>
+            <span className="fx-note">ref</span>
             <span className="fx-note">{stepped ? 'a' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'write' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${writeB ? ' fx-rank--on' : ''}${writeA ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${writeB ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>*p</code>
-            <span className="fx-note">writes b</span>
+            <span className="fx-note">b</span>
             <span className="fx-note">{writeB ? '21' : '—'}</span>
           </div>
-          <div className={`fx-rank${writeA ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${writeA ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>r</code>
-            <span className="fx-note">writes a</span>
+            <span className="fx-note">a</span>
             <span className="fx-note">{writeA ? '11' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'null' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${pNull ? ' fx-rank--on' : ''}${starUb ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${pNull ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>p</code>
-            <span className="fx-note">
-              <code>nullptr</code>
-            </span>
+            <span className="fx-note">nil</span>
             <span className="fx-note">{pNull ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${starUb ? ' fx-rank--trap' : ''}`}>
@@ -198,16 +192,14 @@ p = nullptr;`
       )}
       {id === 'dangle' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${xAlive ? ' fx-rank--on' : ''}${dangling ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${xAlive ? ' fx-rank--on' : ''}${dangling ? ' fx-rank--trap' : ''}`}>
             <code>x</code>
-            <span className="fx-note">automatic</span>
-            <span className="fx-note">{xAlive ? '7' : dangling ? 'gone' : '—'}</span>
+            <span className="fx-note">auto</span>
+            <span className="fx-note">{dangling ? 'gone' : xAlive ? '7' : '—'}</span>
           </div>
           <div className={`fx-rank${xAlive ? ' fx-rank--on' : ''}${dangling ? ' fx-rank--trap' : ''}`}>
             <code>p</code>
-            <span className="fx-note">
-              <code>{'return &x'}</code>
-            </span>
+            <span className="fx-note">ret</span>
             <span className="fx-note">{dangling ? 'ub' : xAlive ? 'ok' : '—'}</span>
           </div>
         </div>
