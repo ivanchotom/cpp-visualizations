@@ -147,16 +147,14 @@ export function PreprocessorViz() {
     >
       {id === 'include' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${seen ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>#inc</code>
-            <span className="fx-note">
-              <code>math.hpp</code>
-            </span>
+            <span className="fx-note">hpp</span>
             <span className="fx-note">{seen ? 'gone' : stepped ? 'paste' : '—'}</span>
           </div>
-          <div className={`fx-rank${seen ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${seen ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>add</code>
-            <span className="fx-note">declaration</span>
+            <span className="fx-note">decl</span>
             <span className="fx-note">{seen ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -165,16 +163,12 @@ export function PreprocessorViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${x1 ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>x1</code>
-            <span className="fx-note">
-              <code>++i</code>
-            </span>
+            <span className="fx-note">++</span>
             <span className="fx-note">{x1 ? '3' : '—'}</span>
           </div>
           <div className={`fx-rank${x2 ? ' fx-rank--on' : ''}${recap ? ' fx-rank--trap' : ''}`}>
             <code>x2</code>
-            <span className="fx-note">
-              <code>++i</code>
-            </span>
+            <span className="fx-note">++</span>
             <span className="fx-note">{x2 ? '4' : '—'}</span>
           </div>
         </div>
@@ -183,30 +177,26 @@ export function PreprocessorViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${looks ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>look</code>
-            <span className="fx-note">
-              <code>{'2*(3+3)'}</code>
-            </span>
+            <span className="fx-note">want</span>
             <span className="fx-note">{looks ? '12' : '—'}</span>
           </div>
           <div className={`fx-rank${real ? ' fx-rank--on' : ''}${recap ? ' fx-rank--trap' : ''}`}>
             <code>exp</code>
-            <span className="fx-note">
-              <code>{'2*3+3'}</code>
-            </span>
+            <span className="fx-note">got</span>
             <span className="fx-note">{recap || real ? '9' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'guard' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${first ? ' fx-rank--on' : ''}${skip ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${first ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>1st</code>
-            <span className="fx-note">paste header</span>
+            <span className="fx-note">paste</span>
             <span className="fx-note">{first ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${skip ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${skip ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>2nd</code>
-            <span className="fx-note">same header</span>
+            <span className="fx-note">skip</span>
             <span className="fx-note">{skip ? 'skip' : '—'}</span>
           </div>
         </div>

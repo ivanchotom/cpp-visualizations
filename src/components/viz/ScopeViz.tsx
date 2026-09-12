@@ -122,58 +122,54 @@ export function ScopeViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${nOn ? ' fx-rank--on' : ''}${nGone ? ' fx-rank--done' : ''}`}>
             <code>n</code>
-            <span className="fx-note">automatic</span>
+            <span className="fx-note">auto</span>
             <span className="fx-note">{nOn ? '1' : nGone ? 'gone' : '—'}</span>
           </div>
-          <div className={`fx-rank${nGone ? ' fx-rank--on' : ''}`}>
-            <code>outer</code>
-            <span className="fx-note">cannot see n</span>
+          <div className={`fx-rank${nGone ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>out</code>
+            <span className="fx-note">see</span>
             <span className="fx-note">{nGone ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'stat' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${initOn ? ' fx-rank--on' : ''}${nTwo ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${initOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>init</code>
-            <span className="fx-note">first pass only</span>
+            <span className="fx-note">once</span>
             <span className="fx-note">{initOn ? '0' : '—'}</span>
           </div>
-          <div className={`fx-rank${nOne ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${nOne ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>++n</code>
-            <span className="fx-note">same object</span>
+            <span className="fx-note">n</span>
             <span className="fx-note">{nTwo ? '2' : nOne ? '1' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'dangle' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${localOn ? ' fx-rank--on' : ''}${localGone ? ' fx-rank--done' : ''}`}>
-            <code>local</code>
-            <span className="fx-note">callee block</span>
-            <span className="fx-note">{localOn ? '7' : localGone ? 'gone' : '—'}</span>
+          <div className={`fx-rank${localOn ? ' fx-rank--on' : ''}${localGone ? ' fx-rank--trap' : ''}`}>
+            <code>loc</code>
+            <span className="fx-note">auto</span>
+            <span className="fx-note">{localGone ? 'gone' : localOn ? '7' : '—'}</span>
           </div>
           <div className={`fx-rank${localOn ? ' fx-rank--on' : ''}${localGone ? ' fx-rank--trap' : ''}`}>
             <code>r</code>
-            <span className="fx-note">
-              <code>{'int&'}</code>
-            </span>
+            <span className="fx-note">ref</span>
             <span className="fx-note">{localGone ? 'ub' : localOn ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'using' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${leaked ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>std</code>
-            <span className="fx-note">
-              <code>cout</code>
-            </span>
+            <span className="fx-note">cout</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${leaked ? ' fx-rank--trap' : ''}`}>
             <code>hdr</code>
-            <span className="fx-note">using-directive</span>
+            <span className="fx-note">use</span>
             <span className="fx-note">{leaked ? 'leak' : '—'}</span>
           </div>
         </div>
