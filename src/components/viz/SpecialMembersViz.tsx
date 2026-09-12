@@ -145,8 +145,8 @@ Handle& operator=(const Handle&) = delete;`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${stolen ? ' fx-rank--done' : ''}`}>
             <code>a</code>
-            <span className="fx-note">mbr</span>
-            <span className="fx-note">{stolen ? 'gone' : stepped ? 'ok' : '—'}</span>
+            <span className="fx-note">mb</span>
+            <span className="fx-note">{stolen ? 'gn' : stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : decided ? ' fx-rank--on' : ''}`}>
             <code>b</code>
@@ -159,13 +159,13 @@ Handle& operator=(const Handle&) = delete;`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${copied ? ' fx-rank--trap' : ''}`}>
             <code>~</code>
-            <span className="fx-note">usr</span>
+            <span className="fx-note">us</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${copied ? ' fx-rank--trap' : ''}`}>
             <code>mv</code>
-            <span className="fx-note">T&&</span>
-            <span className="fx-note">{copied ? 'cpy' : decided ? 'no' : '—'}</span>
+            <span className="fx-note">&&</span>
+            <span className="fx-note">{copied ? 'cp' : decided ? 'no' : '—'}</span>
           </div>
         </div>
       )}
@@ -178,7 +178,7 @@ Handle& operator=(const Handle&) = delete;`
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>mv</code>
-            <span className="fx-note">all</span>
+            <span className="fx-note">al</span>
             <span className="fx-note">{recap ? 'ok' : decided ? 'no' : '—'}</span>
           </div>
         </div>
@@ -187,13 +187,13 @@ Handle& operator=(const Handle&) = delete;`
         <div className="fx-ladder">
           <div className={`fx-rank${decided ? ' fx-rank--on' : stepped ? ' fx-rank--on' : ''}${decided ? ' fx-rank--trap' : ''}`}>
             <code>cp</code>
-            <span className="fx-note">cpy</span>
+            <span className="fx-note">cp</span>
             <span className="fx-note">{decided ? 'ill' : '—'}</span>
           </div>
           <div className={`fx-rank${stolen ? ' fx-rank--on fx-rank--done' : ''}`}>
             <code>a</code>
             <span className="fx-note">mv</span>
-            <span className="fx-note">{stolen ? 'gone' : '—'}</span>
+            <span className="fx-note">{stolen ? 'gn' : '—'}</span>
           </div>
         </div>
       )}
