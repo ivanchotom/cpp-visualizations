@@ -159,13 +159,13 @@ int n = *reinterpret_cast<int*>(&f);  // UB`
     >
       {id === 'oob' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>a</code>
             <span className="fx-note">arr</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${okRead || oobTrap ? ' fx-rank--on' : ''}${oobTrap ? ' fx-rank--trap' : ''}`}>
-            <code>{'a[i]'}</code>
+            <code>[]</code>
             <span className="fx-note">idx</span>
             <span className="fx-note">{oobTrap ? 'ub' : okRead ? '1' : '—'}</span>
           </div>
@@ -201,7 +201,7 @@ int n = *reinterpret_cast<int*>(&f);  // UB`
       )}
       {id === 'alias' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>f</code>
             <span className="fx-note">flt</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>

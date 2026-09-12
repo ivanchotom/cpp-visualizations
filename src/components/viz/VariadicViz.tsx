@@ -215,7 +215,7 @@ void print(const T& first, Rest... rest) {
             <span className="fx-note">{stepped ? restN : '—'}</span>
           </div>
           <div className={`fx-rank${peelTrap ? ' fx-rank--trap' : ''}`}>
-            <code>print</code>
+            <code>fn</code>
             <span className="fx-note">base</span>
             <span className="fx-note">{peelTrap ? 'ill' : '—'}</span>
           </div>
