@@ -159,12 +159,12 @@ struct Box<T*> { using type = T; };`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${intWin ? ' fx-rank--done' : ''}`}>
             <code>int</code>
-            <span className="fx-note">enable</span>
+            <span className="fx-note">eif</span>
             <span className="fx-note">{intWin ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
             <code>fp</code>
-            <span className="fx-note">enable</span>
+            <span className="fx-note">eif</span>
             <span className="fx-note">{intWin ? 'no' : '—'}</span>
           </div>
         </div>
@@ -173,12 +173,12 @@ struct Box<T*> { using type = T; };`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${hard ? ' fx-rank--trap' : ''}`}>
             <code>int</code>
-            <span className="fx-note">enable</span>
+            <span className="fx-note">eif</span>
             <span className="fx-note">{hard ? 'no' : '—'}</span>
           </div>
           <div className={`fx-rank${hard ? ' fx-rank--trap' : ''}`}>
             <code>fp</code>
-            <span className="fx-note">enable</span>
+            <span className="fx-note">eif</span>
             <span className="fx-note">{hard ? 'ill' : '—'}</span>
           </div>
         </div>
@@ -187,7 +187,7 @@ struct Box<T*> { using type = T; };`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
             <code>T</code>
-            <span className="fx-note">primary</span>
+            <span className="fx-note">pri</span>
             <span className="fx-note">{fullWin ? 'no' : '—'}</span>
           </div>
           <div className={`fx-rank${fullWin ? ' fx-rank--on fx-rank--done' : ''}`}>
@@ -201,12 +201,12 @@ struct Box<T*> { using type = T; };`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
             <code>T</code>
-            <span className="fx-note">primary</span>
+            <span className="fx-note">pri</span>
             <span className="fx-note">{partWin ? 'no' : '—'}</span>
           </div>
           <div className={`fx-rank${partWin ? ' fx-rank--on fx-rank--done' : ''}`}>
             <code>T*</code>
-            <span className="fx-note">partial</span>
+            <span className="fx-note">par</span>
             <span className="fx-note">{partWin ? 'ok' : '—'}</span>
           </div>
         </div>

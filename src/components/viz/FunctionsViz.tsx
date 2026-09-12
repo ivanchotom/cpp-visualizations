@@ -142,12 +142,12 @@ int add(int a, int b) { return a + b; }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">scale(5)</span>
+            <span className="fx-note">arg</span>
             <span className="fx-note">{stepped ? '5' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>n</code>
-            <span className="fx-note">factor</span>
+            <span className="fx-note">def</span>
             <span className="fx-note">{decided ? '2' : '—'}</span>
           </div>
         </div>
@@ -156,12 +156,12 @@ int add(int a, int b) { return a + b; }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>p</code>
-            <span className="fx-note">static B*</span>
+            <span className="fx-note">B*</span>
             <span className="fx-note">{decided ? '1' : stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>D</code>
-            <span className="fx-note">D::f</span>
+            <span className="fx-note">ov</span>
             <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -170,12 +170,12 @@ int add(int a, int b) { return a + b; }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>a</code>
-            <span className="fx-note">TU a</span>
+            <span className="fx-note">tu</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>b</code>
-            <span className="fx-note">TU b</span>
+            <span className="fx-note">tu</span>
             <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -184,12 +184,12 @@ int add(int a, int b) { return a + b; }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
             <code>a</code>
-            <span className="fx-note">TU a</span>
+            <span className="fx-note">tu</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${trap ? ' fx-rank--trap' : ''}`}>
             <code>b</code>
-            <span className="fx-note">TU b</span>
+            <span className="fx-note">tu</span>
             <span className="fx-note">{trap ? 'ill' : decided ? 'ok' : '—'}</span>
           </div>
         </div>
