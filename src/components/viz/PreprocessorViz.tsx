@@ -150,7 +150,7 @@ export function PreprocessorViz() {
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>#inc</code>
             <span className="fx-note">hpp</span>
-            <span className="fx-note">{seen ? 'gone' : stepped ? 'paste' : '—'}</span>
+            <span className="fx-note">{seen ? 'gone' : stepped ? 'in' : '—'}</span>
           </div>
           <div className={`fx-rank${seen ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>add</code>
@@ -191,7 +191,7 @@ export function PreprocessorViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${first ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>1st</code>
-            <span className="fx-note">paste</span>
+            <span className="fx-note">in</span>
             <span className="fx-note">{first ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${skip ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
