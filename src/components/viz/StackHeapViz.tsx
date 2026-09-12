@@ -150,13 +150,13 @@ export function StackHeapViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${leaked ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">stk</span>
-            <span className="fx-note">{leaked ? 'gone' : stepped ? '7' : '—'}</span>
+            <span className="fx-note">sk</span>
+            <span className="fx-note">{leaked ? 'gn' : stepped ? '7' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${leaked ? ' fx-rank--trap' : ''}`}>
             <code>p</code>
             <span className="fx-note">hp</span>
-            <span className="fx-note">{leaked ? 'leak' : decided ? '42' : '—'}</span>
+            <span className="fx-note">{leaked ? 'lk' : decided ? '42' : '—'}</span>
           </div>
         </div>
       )}
@@ -164,8 +164,8 @@ export function StackHeapViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${deleted ? ' fx-rank--done' : ''}`}>
             <code>p</code>
-            <span className="fx-note">own</span>
-            <span className="fx-note">{deleted ? 'gone' : stepped ? 'own' : '—'}</span>
+            <span className="fx-note">ow</span>
+            <span className="fx-note">{deleted ? 'gn' : stepped ? 'ow' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${deleted ? ' fx-rank--done' : ''}`}>
             <code>T</code>
@@ -178,12 +178,12 @@ export function StackHeapViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${dangling ? ' fx-rank--trap' : ''}`}>
             <code>x</code>
-            <span className="fx-note">stk</span>
-            <span className="fx-note">{dangling ? 'gone' : stepped ? '7' : '—'}</span>
+            <span className="fx-note">sk</span>
+            <span className="fx-note">{dangling ? 'gn' : stepped ? '7' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${dangling ? ' fx-rank--trap' : ''}`}>
             <code>p</code>
-            <span className="fx-note">ret</span>
+            <span className="fx-note">rt</span>
             <span className="fx-note">{dangling ? 'ub' : '—'}</span>
           </div>
         </div>
@@ -192,13 +192,13 @@ export function StackHeapViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${staticLive ? ' fx-rank--done' : ''}`}>
             <code>n</code>
-            <span className="fx-note">stc</span>
+            <span className="fx-note">sc</span>
             <span className="fx-note">{staticLive ? '2' : decided ? '1' : stepped ? '0' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>f</code>
-            <span className="fx-note">frm</span>
-            <span className="fx-note">{decided ? 'gone' : '—'}</span>
+            <span className="fx-note">fr</span>
+            <span className="fx-note">{decided ? 'gn' : '—'}</span>
           </div>
         </div>
       )}

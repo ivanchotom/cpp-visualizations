@@ -162,7 +162,7 @@ int add(int a, int b) { return a + b; }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${headerTrap ? ' fx-rank--trap' : ''}`}>
             <code>cc</code>
-            <span className="fx-note">cmp</span>
+            <span className="fx-note">cm</span>
             <span className="fx-note">{headerTrap ? 'ill' : '—'}</span>
           </div>
           <div className={`fx-rank${headerTrap ? ' fx-rank--trap' : ''}`}>
@@ -176,12 +176,12 @@ int add(int a, int b) { return a + b; }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>cc</code>
-            <span className="fx-note">cmp</span>
+            <span className="fx-note">cm</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${undefTrap ? ' fx-rank--trap' : ''}`}>
             <code>ld</code>
-            <span className="fx-note">und</span>
+            <span className="fx-note">ud</span>
             <span className="fx-note">{undefTrap ? 'ill' : '—'}</span>
           </div>
         </div>
@@ -190,12 +190,12 @@ int add(int a, int b) { return a + b; }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${odrTrap ? ' fx-rank--trap' : ''}`}>
             <code>a</code>
-            <span className="fx-note">def</span>
+            <span className="fx-note">df</span>
             <span className="fx-note">{odrTrap ? 'ill' : stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${odrTrap ? ' fx-rank--trap' : ''}`}>
             <code>b</code>
-            <span className="fx-note">def</span>
+            <span className="fx-note">df</span>
             <span className="fx-note">{odrTrap ? 'ill' : '—'}</span>
           </div>
         </div>
