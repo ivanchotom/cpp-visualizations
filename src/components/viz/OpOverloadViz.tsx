@@ -172,7 +172,7 @@ if (a && b) { }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>if</code>
-            <span className="fx-note">bool</span>
+            <span className="fx-note">bl</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${arithTrap ? ' fx-rank--trap' : ''}${recap ? ' fx-rank--trap' : ''}`}>
@@ -186,7 +186,7 @@ if (a && b) { }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>old</code>
-            <span className="fx-note">copy</span>
+            <span className="fx-note">cpy</span>
             <span className="fx-note">{stepped ? '3' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
@@ -205,7 +205,7 @@ if (a && b) { }`
           </div>
           <div className={`fx-rank${bRan ? ' fx-rank--trap' : ''}`}>
             <code>b</code>
-            <span className="fx-note">skip</span>
+            <span className="fx-note">sc</span>
             <span className="fx-note">{bRan ? 'ran' : '—'}</span>
           </div>
         </div>
