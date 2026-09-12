@@ -121,44 +121,42 @@ export function LiteralsViz() {
     >
       {id === 'octal' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${octOn ? ' fx-rank--on' : ''}${eight ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${octOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>010</code>
-            <span className="fx-note">leading 0</span>
+            <span className="fx-note">oct</span>
             <span className="fx-note">{octOn ? '8' : '—'}</span>
           </div>
           <div className={`fx-rank${eight ? ' fx-rank--trap' : ''}`}>
             <code>ten</code>
-            <span className="fx-note">looks decimal</span>
+            <span className="fx-note">dec</span>
             <span className="fx-note">{eight ? 'no' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'suffix' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${sufOn ? ' fx-rank--on' : ''}${unsOn ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${sufOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>42u</code>
-            <span className="fx-note">suffix u</span>
+            <span className="fx-note">suf</span>
             <span className="fx-note">{sufOn ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${unsOn ? ' fx-rank--on' : ''}`}>
-            <code>type</code>
-            <span className="fx-note">unsigned int</span>
+          <div className={`fx-rank${unsOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>ty</code>
+            <span className="fx-note">uns</span>
             <span className="fx-note">{unsOn ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'nullptr' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${nilOn ? ' fx-rank--on' : ''}${notInt ? ' fx-rank--done' : ''}`}>
-            <code>null</code>
-            <span className="fx-note">
-              <code>nullptr_t</code>
-            </span>
+          <div className={`fx-rank${nilOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>nil</code>
+            <span className="fx-note">nilt</span>
             <span className="fx-note">{nilOn ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${notInt ? ' fx-rank--trap' : ''}`}>
             <code>0</code>
-            <span className="fx-note">as int</span>
+            <span className="fx-note">int</span>
             <span className="fx-note">{notInt ? 'no' : '—'}</span>
           </div>
         </div>
@@ -167,16 +165,12 @@ export function LiteralsViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${listOn ? ' fx-rank--trap' : ''}`}>
             <code>{'{1}'}</code>
-            <span className="fx-note">
-              <code>{'auto x{1}'}</code>
-            </span>
+            <span className="fx-note">list</span>
             <span className="fx-note">{listOn ? 'list' : '—'}</span>
           </div>
-          <div className={`fx-rank${intAlt ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${intAlt ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>= 1</code>
-            <span className="fx-note">
-              <code>auto x = 1</code>
-            </span>
+            <span className="fx-note">int</span>
             <span className="fx-note">{intAlt ? 'int' : '—'}</span>
           </div>
         </div>

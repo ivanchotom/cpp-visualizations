@@ -123,56 +123,54 @@ export function CvQualViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${pcIll ? ' fx-rank--trap' : stepped ? ' fx-rank--on' : ''}`}>
             <code>*pc</code>
-            <span className="fx-note">write pointee</span>
+            <span className="fx-note">set</span>
             <span className="fx-note">{pcIll ? 'ill' : '—'}</span>
           </div>
-          <div className={`fx-rank${reseatOk ? ' fx-rank--on' : ''}`}>
-            <code>pc =</code>
-            <span className="fx-note">reseat handle</span>
+          <div className={`fx-rank${reseatOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>pc</code>
+            <span className="fx-note">rst</span>
             <span className="fx-note">{reseatOk ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'ptr' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${cpIll && !writeOk ? ' fx-rank--trap' : stepped ? ' fx-rank--on' : ''}${writeOk ? ' fx-rank--done' : ''}`}>
-            <code>cp =</code>
-            <span className="fx-note">reseat handle</span>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${cpIll ? ' fx-rank--trap' : ''}`}>
+            <code>cp</code>
+            <span className="fx-note">rst</span>
             <span className="fx-note">{cpIll ? 'ill' : '—'}</span>
           </div>
-          <div className={`fx-rank${writeOk ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${writeOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>*cp</code>
-            <span className="fx-note">write int</span>
+            <span className="fx-note">set</span>
             <span className="fx-note">{writeOk ? '2' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'mutable' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${getOn ? ' fx-rank--on' : ''}${hitsOn ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${getOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>get</code>
-            <span className="fx-note">const method</span>
+            <span className="fx-note">cst</span>
             <span className="fx-note">{getOn ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${hitsOn ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${hitsOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>hits</code>
-            <span className="fx-note">mutable field</span>
+            <span className="fx-note">mut</span>
             <span className="fx-note">{hitsOn ? '1' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'cast' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${castOk ? ' fx-rank--on' : ''}${ub ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${castOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>cast</code>
-            <span className="fx-note">
-              <code>const_cast</code>
-            </span>
+            <span className="fx-note">cst</span>
             <span className="fx-note">{castOk ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${ub ? ' fx-rank--trap' : decided ? ' fx-rank--on' : ''}`}>
             <code>*p</code>
-            <span className="fx-note">write through</span>
+            <span className="fx-note">set</span>
             <span className="fx-note">{ub ? 'ub' : '—'}</span>
           </div>
         </div>
