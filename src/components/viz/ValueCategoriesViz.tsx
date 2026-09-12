@@ -160,7 +160,7 @@ x;          // lvalue`
           </div>
           <div className={`fx-rank${prTrap ? ' fx-rank--trap' : ''}`}>
             <code>ad</code>
-            <span className="fx-note">&42</span>
+            <span className="fx-note">&</span>
             <span className="fx-note">{prTrap ? 'ill' : '—'}</span>
           </div>
         </div>

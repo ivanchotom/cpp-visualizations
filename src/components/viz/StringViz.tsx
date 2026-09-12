@@ -150,7 +150,7 @@ s.reserve(64);
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${plusCopy ? ' fx-rank--trap' : ''}`}>
             <code>+x</code>
             <span className="fx-note">cpy</span>
-            <span className="fx-note">{plusCopy ? 'n²' : stepped ? '3' : '—'}</span>
+            <span className="fx-note">{plusCopy ? 'n2' : stepped ? '3' : '—'}</span>
           </div>
         </div>
       )}
