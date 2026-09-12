@@ -176,7 +176,7 @@ f(42);  // operator()<int>`
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>T</code>
             <span className="fx-note">T&&</span>
-            <span className="fx-note">{decided ? 'int&' : '—'}</span>
+            <span className="fx-note">{decided ? 'i&' : '—'}</span>
           </div>
         </div>
       )}

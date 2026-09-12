@@ -168,7 +168,7 @@ auto b = std::chrono::system_clock::now();
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>ms</code>
             <span className="fx-note">dur</span>
-            <span className="fx-note">{stepped ? '1500' : '—'}</span>
+            <span className="fx-note">{stepped ? '1k5' : '—'}</span>
           </div>
           <div className={`fx-rank${castOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>s</code>
