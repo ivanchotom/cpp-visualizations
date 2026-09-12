@@ -24,9 +24,9 @@ export function PimplViz() {
   const decided = i >= 2
   const recap = i >= 3
   const fireOk = id === 'firewall' && decided
-  const dtorTrap = id === 'dtor' && decided && !recap
+  const dtorTrap = id === 'dtor' && decided
   const dtorFix = id === 'dtor' && recap
-  const movesGone = id === 'moves' && decided && !recap
+  const movesGone = id === 'moves' && decided
   const movesOk = id === 'moves' && recap
   const abiOk = id === 'abi' && decided
   const trap = dtorTrap || movesGone
@@ -172,60 +172,56 @@ public:
     >
       {id === 'firewall' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${fireOk ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>W</code>
-            <span className="fx-note">
-              <code>unique_ptr</code>
-            </span>
+            <span className="fx-note">ptr</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>Impl</code>
-            <span className="fx-note">only in .cpp</span>
+            <span className="fx-note">cpp</span>
             <span className="fx-note">{fireOk ? 'ok' : stepped ? 'n' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'dtor' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${dtorTrap ? ' fx-rank--trap' : ''}${dtorFix ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${dtorTrap ? ' fx-rank--trap' : ''}`}>
             <code>{'~W'}</code>
-            <span className="fx-note">{dtorFix ? 'declared in hpp' : 'default in hpp'}</span>
-            <span className="fx-note">{dtorFix ? 'ok' : dtorTrap ? 'ill' : stepped ? 'need' : '—'}</span>
+            <span className="fx-note">dtor</span>
+            <span className="fx-note">{dtorTrap ? 'ill' : stepped ? 'need' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${dtorTrap ? ' fx-rank--trap' : ''}`}>
             <code>Impl</code>
-            <span className="fx-note">{dtorFix ? 'complete in .cpp' : 'incomplete'}</span>
-            <span className="fx-note">{dtorFix ? 'ok' : dtorTrap ? 'ill' : '—'}</span>
+            <span className="fx-note">inc</span>
+            <span className="fx-note">{dtorTrap ? 'ill' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'moves' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${movesOk ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
             <code>{'~W'}</code>
-            <span className="fx-note">user-declared</span>
-            <span className="fx-note">{stepped ? 'user' : '—'}</span>
+            <span className="fx-note">user</span>
+            <span className="fx-note">{stepped ? 'yes' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${movesGone ? ' fx-rank--trap' : ''}`}>
             <code>{'T&&'}</code>
-            <span className="fx-note">{movesOk ? 'declared, default .cpp' : 'implicit move'}</span>
-            <span className="fx-note">{movesOk ? 'ok' : movesGone ? 'gone' : '—'}</span>
+            <span className="fx-note">mv</span>
+            <span className="fx-note">{movesGone ? 'gone' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'abi' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${abiOk ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>W</code>
-            <span className="fx-note">
-              <code>sizeof</code>
-            </span>
+            <span className="fx-note">sz</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>Impl</code>
-            <span className="fx-note">private fields</span>
+            <span className="fx-note">fld</span>
             <span className="fx-note">{recap ? '2' : decided ? '1' : '—'}</span>
           </div>
         </div>

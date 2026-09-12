@@ -140,68 +140,56 @@ t2.join();`
     >
       {id === 'race' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${raced ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
             <code>t1</code>
-            <span className="fx-note">
-              <code>++hits</code>
-            </span>
+            <span className="fx-note">inc</span>
             <span className="fx-note">{stepped ? '1' : '—'}</span>
           </div>
-          <div className={`fx-rank${raced ? ' fx-rank--trap' : ''}`}>
+          <div className={`fx-rank${raced ? ' fx-rank--on' : ''}${raced ? ' fx-rank--trap' : ''}`}>
             <code>t2</code>
-            <span className="fx-note">
-              <code>++hits</code>
-            </span>
+            <span className="fx-note">inc</span>
             <span className="fx-note">{raced ? 'ub' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'guard' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${t1Held || serialized ? ' fx-rank--on' : ''}${serialized ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${t1Held || serialized ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>t1</code>
-            <span className="fx-note">
-              <code>lock_guard</code>
-            </span>
+            <span className="fx-note">lock</span>
             <span className="fx-note">{serialized ? '1' : t1Held ? 'lock' : '—'}</span>
           </div>
-          <div className={`fx-rank${serialized ? ' fx-rank--on' : decided ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>t2</code>
-            <span className="fx-note">waits then runs</span>
+            <span className="fx-note">wait</span>
             <span className="fx-note">{serialized ? '2' : decided ? 'wait' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'join' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${joinTrap ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${joinTrap ? ' fx-rank--trap' : ''}`}>
             <code>t</code>
-            <span className="fx-note">joinable</span>
+            <span className="fx-note">join</span>
             <span className="fx-note">{stepped ? 'yes' : '—'}</span>
           </div>
-          <div className={`fx-rank${joinTrap ? ' fx-rank--trap' : ''}`}>
+          <div className={`fx-rank${joinTrap ? ' fx-rank--on' : ''}${joinTrap ? ' fx-rank--trap' : ''}`}>
             <code>dtor</code>
-            <span className="fx-note">
-              <code>~thread</code>
-            </span>
+            <span className="fx-note">end</span>
             <span className="fx-note">{joinTrap ? 'fail' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'atomic' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${atomicOk ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>t1</code>
-            <span className="fx-note">
-              <code>fetch_add</code>
-            </span>
+            <span className="fx-note">add</span>
             <span className="fx-note">{stepped ? '1' : '—'}</span>
           </div>
-          <div className={`fx-rank${atomicOk ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${atomicOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>t2</code>
-            <span className="fx-note">
-              <code>fetch_add</code>
-            </span>
+            <span className="fx-note">add</span>
             <span className="fx-note">{atomicOk ? '2' : '—'}</span>
           </div>
         </div>
