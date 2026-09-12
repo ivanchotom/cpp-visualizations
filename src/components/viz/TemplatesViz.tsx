@@ -199,7 +199,7 @@ void f(T& c) {
         <div className="fx-ladder">
           <div className={`fx-rank${tnNeed ? ' fx-rank--on' : ''}${tnTrap ? ' fx-rank--trap' : ''}`}>
             <code>it</code>
-            <span className="fx-note">nest</span>
+            <span className="fx-note">dep</span>
             <span className="fx-note">{tnTrap ? 'ill' : tnNeed ? '?' : '—'}</span>
           </div>
           <div className={`fx-rank${tnOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>

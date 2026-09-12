@@ -171,8 +171,8 @@ int m = (std::min)(a, b);`
       {id === 'stream' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>cout</code>
-            <span className="fx-note">strm</span>
+            <code>co</code>
+            <span className="fx-note">os</span>
             <span className="fx-note">{stepped ? 'std' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
@@ -185,7 +185,7 @@ int m = (std::min)(a, b);`
       {id === 'friend' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
-            <code>name</code>
+            <code>nm</code>
             <span className="fx-note">ord</span>
             <span className="fx-note">{stepped ? 'no' : '—'}</span>
           </div>
