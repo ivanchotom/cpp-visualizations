@@ -160,7 +160,7 @@ export function PassByViz() {
           </div>
           <div className={`fx-rank${aliasOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">cref</span>
+            <span className="fx-note">c&</span>
             <span className="fx-note">{wrote ? 'ok' : aliasOn ? '7' : '—'}</span>
           </div>
         </div>
