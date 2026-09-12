@@ -140,62 +140,56 @@ std::tie(std::ignore, name) = p;`
     >
       {id === 'pair' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${pairOk ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>fst</code>
             <span className="fx-note">int</span>
             <span className="fx-note">{stepped ? '1' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>snd</code>
-            <span className="fx-note">decayed ptr</span>
+            <span className="fx-note">ptr</span>
             <span className="fx-note">{decided ? 'n' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'get' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${getOk ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>t</code>
-            <span className="fx-note">tuple size 3</span>
+            <span className="fx-note">tup</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${getOk ? ' fx-rank--on' : ''}`}>
-            <code>{'I=1'}</code>
-            <span className="fx-note">
-              <code>{'get<1>'}</code>
-            </span>
+          <div className={`fx-rank${getOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>I</code>
+            <span className="fx-note">get</span>
             <span className="fx-note">{getOk ? '2.0' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'tie' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${tieOk ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>id</code>
-            <span className="fx-note">
-              <code>ignore</code>
-            </span>
+            <span className="fx-note">ign</span>
             <span className="fx-note">{stepped ? 'skip' : '—'}</span>
           </div>
-          <div className={`fx-rank${tieOk ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${tieOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>nm</code>
-            <span className="fx-note">second</span>
+            <span className="fx-note">snd</span>
             <span className="fx-note">{tieOk ? 'n' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'dangle' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${dangled ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${dangled ? ' fx-rank--trap' : ''}`}>
             <code>tmp</code>
-            <span className="fx-note">temporary</span>
+            <span className="fx-note">auto</span>
             <span className="fx-note">{dangled ? 'gone' : stepped ? '42' : '—'}</span>
           </div>
-          <div className={`fx-rank${dangled ? ' fx-rank--trap' : stepped ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${dangled ? ' fx-rank--trap' : ''}`}>
             <code>t</code>
-            <span className="fx-note">
-              <code>tuple&&</code>
-            </span>
+            <span className="fx-note">ref</span>
             <span className="fx-note">{dangled ? 'ub' : stepped ? 'ok' : '—'}</span>
           </div>
         </div>

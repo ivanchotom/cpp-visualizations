@@ -154,14 +154,14 @@ open(path, ec);  // no throw
     >
       {id === 'move' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${copied ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>old</code>
-            <span className="fx-note">full buffer</span>
+            <span className="fx-note">buf</span>
             <span className="fx-note">{copied ? 'ok' : stepped ? 'full' : '—'}</span>
           </div>
-          <div className={`fx-rank${throwing ? ' fx-rank--on' : ''}${throwing && !copied ? ' fx-rank--trap' : ''}`}>
+          <div className={`fx-rank${throwing ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>new</code>
-            <span className="fx-note">move_if_noexcept</span>
+            <span className="fx-note">mv</span>
             <span className="fx-note">{copied ? 'copy' : throwing ? 'no' : '—'}</span>
           </div>
         </div>
@@ -170,44 +170,40 @@ open(path, ec);  // no throw
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${termTrap ? ' fx-rank--trap' : ''}`}>
             <code>f</code>
-            <span className="fx-note">
-              <code>noexcept</code>
-            </span>
+            <span className="fx-note">nx</span>
             <span className="fx-note">{termTrap ? 'ill' : stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${termTrap ? ' fx-rank--trap' : ''}`}>
             <code>g</code>
-            <span className="fx-note">may throw</span>
-            <span className="fx-note">{recap ? 'end' : termTrap ? 'throw' : '—'}</span>
+            <span className="fx-note">thr</span>
+            <span className="fx-note">{recap ? 'end' : termTrap ? 'yes' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'query' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${queried ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>f</code>
             <span className="fx-note">spec</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${queried ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${queried ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>q</code>
-            <span className="fx-note">
-              <code>noexcept()</code>
-            </span>
+            <span className="fx-note">qry</span>
             <span className="fx-note">{queried ? 'true' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'ec' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${checked ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>open</code>
-            <span className="fx-note">no throw</span>
+            <span className="fx-note">call</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${ignored ? ' fx-rank--trap' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${ignored ? ' fx-rank--trap' : ''}${checked ? ' fx-rank--done' : ''}`}>
             <code>ec</code>
-            <span className="fx-note">error_code</span>
+            <span className="fx-note">err</span>
             <span className="fx-note">{checked ? 'ok' : ignored ? 'no' : stepped ? 'err' : '—'}</span>
           </div>
         </div>
