@@ -158,7 +158,7 @@ const auto& y = v[i];  // borrow`
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>f</code>
             <span className="fx-note">T</span>
-            <span className="fx-note">{recap ? 'gone' : stepped ? 'own' : '—'}</span>
+            <span className="fx-note">{recap ? 'gn' : stepped ? 'own' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>h</code>
@@ -172,7 +172,7 @@ const auto& y = v[i];  // borrow`
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${decided ? ' fx-rank--trap' : ''}`}>
             <code>p</code>
             <span className="fx-note">up</span>
-            <span className="fx-note">{decided ? 'gone' : stepped ? 'own' : '—'}</span>
+            <span className="fx-note">{decided ? 'gn' : stepped ? 'own' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>q</code>
