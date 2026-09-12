@@ -142,7 +142,7 @@ m.emplace('d', 1);  // may still fit`
       {id === 'vector' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${vectorRealloc ? ' fx-rank--trap' : recap ? ' fx-rank--done' : ''}`}>
-            <code>cap</code>
+            <code>cp</code>
             <span className="fx-note">fit</span>
             <span className="fx-note">{vectorRealloc ? 'no' : stepped ? 'ok' : '—'}</span>
           </div>

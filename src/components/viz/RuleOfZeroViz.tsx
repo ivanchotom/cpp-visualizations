@@ -184,12 +184,12 @@ Bag a, b = a;
       {id === 'quiet' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>{'~T'}</code>
+            <code>~</code>
             <span className="fx-note">usr</span>
             <span className="fx-note">{stepped ? 'yes' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${copied ? ' fx-rank--trap' : ''}`}>
-            <code>{'&&'}</code>
+            <code>m</code>
             <span className="fx-note">mv</span>
             <span className="fx-note">{copied ? 'cpy' : decided ? 'gone' : '—'}</span>
           </div>
@@ -212,12 +212,12 @@ Bag a, b = a;
       {id === 'virt' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>{'~B'}</code>
+            <code>B</code>
             <span className="fx-note">vt</span>
             <span className="fx-note">{stepped ? 'yes' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${virtTrap ? ' fx-rank--trap' : ''}`}>
-            <code>{'&&'}</code>
+            <code>m</code>
             <span className="fx-note">mv</span>
             <span className="fx-note">{virtTrap ? 'gone' : '—'}</span>
           </div>
