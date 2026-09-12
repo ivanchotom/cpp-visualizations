@@ -148,7 +148,7 @@ std::lower_bound(v.begin(), v.end(), 7);`
             <span className="fx-note">{recap ? '3' : stepped ? '5' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : decided ? ' fx-rank--trap' : ''}`}>
-            <code>end</code>
+            <code>en</code>
             <span className="fx-note">cut</span>
             <span className="fx-note">{recap ? 'ok' : decided ? 'jk' : '—'}</span>
           </div>
@@ -176,7 +176,7 @@ std::lower_bound(v.begin(), v.end(), 7);`
             <span className="fx-note">{decided ? '9' : stepped ? '7' : '—'}</span>
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : decided ? ' fx-rank--on' : ''}`}>
-            <code>hit</code>
+            <code>ht</code>
             <span className="fx-note">*it</span>
             <span className="fx-note">{recap ? 'ok' : '—'}</span>
           </div>

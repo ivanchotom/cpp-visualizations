@@ -155,12 +155,12 @@ open(path, ec);  // no throw
       {id === 'move' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>old</code>
+            <code>ol</code>
             <span className="fx-note">buf</span>
             <span className="fx-note">{copied ? 'ok' : stepped ? 'ful' : '—'}</span>
           </div>
           <div className={`fx-rank${throwing ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>new</code>
+            <code>nw</code>
             <span className="fx-note">mv</span>
             <span className="fx-note">{copied ? 'cpy' : throwing ? 'no' : '—'}</span>
           </div>
