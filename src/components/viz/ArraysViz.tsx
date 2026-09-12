@@ -137,18 +137,14 @@ v.push_back(4);  // size 4, cap 4`
     >
       {id === 'decay' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${decided ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>a</code>
-            <span className="fx-note">
-              <code>{'int[4]'}</code>
-            </span>
+            <span className="fx-note">T[N]</span>
             <span className="fx-note">{stepped ? '16' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--trap' : stepped ? ' fx-rank--on' : ''}`}>
             <code>p</code>
-            <span className="fx-note">
-              <code>{'int*'}</code>
-            </span>
+            <span className="fx-note">ptr</span>
             <span className="fx-note">{trap ? '2' : decided ? '8' : '—'}</span>
           </div>
         </div>
@@ -157,48 +153,40 @@ v.push_back(4);  // size 4, cap 4`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>a</code>
-            <span className="fx-note">
-              <code>{'array<int,4>'}</code>
-            </span>
+            <span className="fx-note">arr</span>
             <span className="fx-note">{stepped ? '4' : '—'}</span>
           </div>
-          <div className={`fx-rank${arrayOk ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${arrayOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">copy · size travels</span>
+            <span className="fx-note">copy</span>
             <span className="fx-note">{arrayOk ? '4' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'cstr' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${decided ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>s</code>
-            <span className="fx-note">
-              <code>{'char[]'}</code>
-            </span>
+            <span className="fx-note">str</span>
             <span className="fx-note">{stepped ? '3' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--trap' : stepped ? ' fx-rank--on' : ''}`}>
             <code>p</code>
-            <span className="fx-note">
-              <code>{'char*'}</code>
-            </span>
+            <span className="fx-note">ptr</span>
             <span className="fx-note">{decided ? 'nul' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'vec' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${vecOk ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>v</code>
-            <span className="fx-note">size / cap</span>
+            <span className="fx-note">sz</span>
             <span className="fx-note">{stepped ? '4' : '—'}</span>
           </div>
-          <div className={`fx-rank${vecOk ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${vecOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>p</code>
-            <span className="fx-note">
-              <code>data() + n</code>
-            </span>
+            <span className="fx-note">n</span>
             <span className="fx-note">{vecOk ? 'ok' : '—'}</span>
           </div>
         </div>

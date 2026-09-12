@@ -124,12 +124,12 @@ export function NewDeleteViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${cleaned ? ' fx-rank--done' : ''}`}>
             <code>new</code>
-            <span className="fx-note">allocate + ctor</span>
+            <span className="fx-note">alloc</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${cleaned ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${cleaned ? ' fx-rank--on' : ''}${cleaned ? ' fx-rank--done' : ''}`}>
             <code>del</code>
-            <span className="fx-note">destroy then free</span>
+            <span className="fx-note">free</span>
             <span className="fx-note">{cleaned ? 'gone' : '—'}</span>
           </div>
         </div>
@@ -137,27 +137,27 @@ export function NewDeleteViz() {
       {id === 'array' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${cleaned ? ' fx-rank--done' : ''}`}>
-            <code>new[]</code>
-            <span className="fx-note">cookie + 3</span>
+            <code>n[]</code>
+            <span className="fx-note">n</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${cleaned ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${cleaned ? ' fx-rank--on' : ''}${cleaned ? ' fx-rank--done' : ''}`}>
             <code>del[]</code>
-            <span className="fx-note">reverse dtors</span>
+            <span className="fx-note">rev</span>
             <span className="fx-note">{cleaned ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'mismatch' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${mismatched ? ' fx-rank--done' : ''}`}>
-            <code>new[]</code>
-            <span className="fx-note">cookie + 3</span>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+            <code>n[]</code>
+            <span className="fx-note">n</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${mismatched ? ' fx-rank--trap' : decided ? ' fx-rank--on' : ''}`}>
             <code>del</code>
-            <span className="fx-note">scalar delete</span>
+            <span className="fx-note">scal</span>
             <span className="fx-note">{mismatched ? 'ub' : '—'}</span>
           </div>
         </div>
@@ -166,12 +166,12 @@ export function NewDeleteViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${cleaned ? ' fx-rank--done' : ''}`}>
             <code>buf</code>
-            <span className="fx-note">no heap</span>
+            <span className="fx-note">buf</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${cleaned ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${cleaned ? ' fx-rank--on' : ''}${cleaned ? ' fx-rank--done' : ''}`}>
             <code>~T</code>
-            <span className="fx-note">you destroy</span>
+            <span className="fx-note">dtor</span>
             <span className="fx-note">{cleaned ? 'ok' : '—'}</span>
           </div>
         </div>
