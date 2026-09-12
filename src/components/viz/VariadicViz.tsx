@@ -174,7 +174,7 @@ void print(const T& first, Rest... rest) {
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>t</code>
-            <span className="fx-note">foreach</span>
+            <span className="fx-note">each</span>
             <span className="fx-note">{decided ? '6' : '—'}</span>
           </div>
         </div>
@@ -183,12 +183,12 @@ void print(const T& first, Rest... rest) {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>len</code>
-            <span className="fx-note">sizeof...</span>
+            <span className="fx-note">n...</span>
             <span className="fx-note">{stepped ? '2' : '—'}</span>
           </div>
           <div className={`fx-rank${sizeTrap ? ' fx-rank--trap' : decided ? ' fx-rank--on' : ''}`}>
             <code>xs</code>
-            <span className="fx-note">sizeof(xs)</span>
+            <span className="fx-note">sz</span>
             <span className="fx-note">{sizeTrap ? 'ill' : '—'}</span>
           </div>
         </div>
@@ -197,12 +197,12 @@ void print(const T& first, Rest... rest) {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>I</code>
-            <span className="fx-note">index_seq</span>
+            <span className="fx-note">seq</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>get</code>
-            <span className="fx-note">expand</span>
+            <span className="fx-note">exp</span>
             <span className="fx-note">{decided ? 'ok' : '—'}</span>
           </div>
         </div>

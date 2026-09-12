@@ -156,12 +156,12 @@ f(42);  // operator()<int>`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">const int&</span>
+            <span className="fx-note">c&</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>T</code>
-            <span className="fx-note">by value</span>
+            <span className="fx-note">val</span>
             <span className="fx-note">{decided ? 'int' : '—'}</span>
           </div>
         </div>
@@ -170,7 +170,7 @@ f(42);  // operator()<int>`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">lvalue</span>
+            <span className="fx-note">lv</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
@@ -184,12 +184,12 @@ f(42);  // operator()<int>`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${clashTrap ? ' fx-rank--trap' : ''}`}>
             <code>a</code>
-            <span className="fx-note">from 1</span>
+            <span className="fx-note">1</span>
             <span className="fx-note">{stepped ? 'int' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${clashTrap ? ' fx-rank--trap' : ''}`}>
             <code>b</code>
-            <span className="fx-note">from 2.0</span>
+            <span className="fx-note">2.0</span>
             <span className="fx-note">{decided ? 'dbl' : '—'}</span>
           </div>
         </div>
