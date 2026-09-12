@@ -145,12 +145,12 @@ export function LifetimeViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>B</code>
-            <span className="fx-note">Base</span>
+            <span className="fx-note">sub</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : ''}`}>
             <code>bd</code>
-            <span className="fx-note">body</span>
+            <span className="fx-note">fn</span>
             <span className="fx-note">{recap ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -159,12 +159,12 @@ export function LifetimeViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>D</code>
-            <span className="fx-note">body</span>
+            <span className="fx-note">fn</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : ''}`}>
             <code>B</code>
-            <span className="fx-note">Base</span>
+            <span className="fx-note">sub</span>
             <span className="fx-note">{recap ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -178,7 +178,7 @@ export function LifetimeViz() {
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : ''}`}>
             <code>b</code>
-            <span className="fx-note">list</span>
+            <span className="fx-note">ini</span>
             <span className="fx-note">{recap ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -187,7 +187,7 @@ export function LifetimeViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${throwTrap ? ' fx-rank--trap' : ''}`}>
             <code>m2</code>
-            <span className="fx-note">ctor</span>
+            <span className="fx-note">ct</span>
             <span className="fx-note">{throwTrap ? 'ill' : '—'}</span>
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : ''}`}>

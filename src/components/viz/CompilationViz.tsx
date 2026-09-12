@@ -148,12 +148,12 @@ int add(int a, int b) { return a + b; }`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>T</code>
-            <span className="fx-note">math</span>
+            <span className="fx-note">mo</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>U</code>
-            <span className="fx-note">main</span>
+            <span className="fx-note">mn</span>
             <span className="fx-note">{recap ? 'ok' : decided ? 'U' : '—'}</span>
           </div>
         </div>
@@ -167,7 +167,7 @@ int add(int a, int b) { return a + b; }`
           </div>
           <div className={`fx-rank${headerTrap ? ' fx-rank--trap' : ''}`}>
             <code>ld</code>
-            <span className="fx-note">link</span>
+            <span className="fx-note">ln</span>
             <span className="fx-note">{headerTrap ? 'no' : '—'}</span>
           </div>
         </div>
