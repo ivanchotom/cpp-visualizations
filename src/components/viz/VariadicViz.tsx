@@ -210,7 +210,7 @@ void print(const T& first, Rest... rest) {
       {id === 'nobase' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${peelTrap ? ' fx-rank--trap' : ''}`}>
-            <code>rest</code>
+            <code>...</code>
             <span className="fx-note">pop</span>
             <span className="fx-note">{stepped ? restN : '—'}</span>
           </div>

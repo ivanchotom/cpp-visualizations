@@ -175,7 +175,7 @@ d.f(1);`
             <span className="fx-note">{stepped ? 'no' : '—'}</span>
           </div>
           <div className={`fx-rank${boolWarn ? ' fx-rank--trap' : ''}`}>
-            <code>bool</code>
+            <code>bl</code>
             <span className="fx-note">ptr</span>
             <span className="fx-note">{boolWarn ? 'yes' : '—'}</span>
           </div>
