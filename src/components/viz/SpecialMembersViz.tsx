@@ -150,7 +150,7 @@ Handle& operator=(const Handle&) = delete;`
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : decided ? ' fx-rank--on' : ''}`}>
             <code>b</code>
-            <span className="fx-note">steal</span>
+            <span className="fx-note">mv</span>
             <span className="fx-note">{stolen ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -192,7 +192,7 @@ Handle& operator=(const Handle&) = delete;`
           </div>
           <div className={`fx-rank${stolen ? ' fx-rank--on fx-rank--done' : ''}`}>
             <code>a</code>
-            <span className="fx-note">steal</span>
+            <span className="fx-note">mv</span>
             <span className="fx-note">{stolen ? 'gone' : '—'}</span>
           </div>
         </div>

@@ -198,9 +198,9 @@ if (a && b) { }`
       )}
       {id === 'andop' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>a</code>
-            <span className="fx-note">false</span>
+            <span className="fx-note">off</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${bRan ? ' fx-rank--trap' : ''}`}>
