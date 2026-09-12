@@ -155,7 +155,7 @@ struct D : Base { void speak(); };`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${bounced ? ' fx-rank--trap' : ''}`}>
             <code>den_</code>
-            <span className="fx-note">private</span>
+            <span className="fx-note">priv</span>
             <span className="fx-note">{bounced ? 'ill' : stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : bounced ? ' fx-rank--on' : ''}`}>
@@ -174,7 +174,7 @@ struct D : Base { void speak(); };`
           </div>
           <div className={`fx-rank${threw ? ' fx-rank--trap' : ''}`}>
             <code>R</code>
-            <span className="fx-note">object</span>
+            <span className="fx-note">obj</span>
             <span className="fx-note">{threw ? 'no' : '—'}</span>
           </div>
         </div>
@@ -183,7 +183,7 @@ struct D : Base { void speak(); };`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>this</code>
-            <span className="fx-note">const</span>
+            <span className="fx-note">cst</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${writeBlocked ? ' fx-rank--trap' : ''}`}>
@@ -197,7 +197,7 @@ struct D : Base { void speak(); };`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>B</code>
-            <span className="fx-note">Base()</span>
+            <span className="fx-note">ctor</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${wrongSpeak ? ' fx-rank--trap' : ''}`}>

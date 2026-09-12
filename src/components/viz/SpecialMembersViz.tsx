@@ -145,7 +145,7 @@ Handle& operator=(const Handle&) = delete;`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${stolen ? ' fx-rank--done' : ''}`}>
             <code>a</code>
-            <span className="fx-note">members</span>
+            <span className="fx-note">mbr</span>
             <span className="fx-note">{stolen ? 'gone' : stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : decided ? ' fx-rank--on' : ''}`}>
