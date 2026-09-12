@@ -190,7 +190,7 @@ open(path, ec);  // no throw
           <div className={`fx-rank${queried ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>q</code>
             <span className="fx-note">qry</span>
-            <span className="fx-note">{queried ? 'true' : '—'}</span>
+            <span className="fx-note">{queried ? 'yes' : '—'}</span>
           </div>
         </div>
       )}
