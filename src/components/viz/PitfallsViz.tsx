@@ -23,13 +23,13 @@ export function PitfallsViz() {
   const stepped = i >= 1
   const decided = i >= 2
   const recap = i >= 3
-  const parseTrap = id === 'parse' && decided && !recap
+  const parseTrap = id === 'parse' && decided
   const parseFix = id === 'parse' && recap
-  const sliceTrap = id === 'slice' && decided && !recap
+  const sliceTrap = id === 'slice' && decided
   const sliceFix = id === 'slice' && recap
-  const nsTrap = id === 'ns' && decided && !recap
+  const nsTrap = id === 'ns' && decided
   const nsFix = id === 'ns' && recap
-  const divTrap = id === 'div' && decided && !recap
+  const divTrap = id === 'div' && decided
   const divFix = id === 'div' && recap
   const trap = parseTrap || sliceTrap || nsTrap || divTrap
   const ok = parseFix || sliceFix || nsFix || divFix
@@ -150,58 +150,56 @@ int r = a / b;     // 0`
     >
       {id === 'parse' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped && !parseFix ? ' fx-rank--on' : ''}${parseTrap ? ' fx-rank--trap' : ''}${parseFix ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${parseTrap ? ' fx-rank--trap' : ''}`}>
             <code>{'w()'}</code>
-            <span className="fx-note">function decl</span>
-            <span className="fx-note">{parseFix ? 'no' : stepped ? 'fn' : '—'}</span>
+            <span className="fx-note">decl</span>
+            <span className="fx-note">{stepped ? 'fn' : '—'}</span>
           </div>
-          <div className={`fx-rank${parseFix ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${parseFix ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>{'w{}'}</code>
-            <span className="fx-note">brace-init</span>
+            <span className="fx-note">brc</span>
             <span className="fx-note">{parseFix ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'slice' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${sliceFix ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
             <code>Base</code>
-            <span className="fx-note">by value</span>
-            <span className="fx-note">{sliceFix ? 'ref' : stepped ? 'ok' : '—'}</span>
+            <span className="fx-note">val</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${sliceTrap ? ' fx-rank--trap' : sliceFix ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${sliceTrap ? ' fx-rank--on' : ''}${sliceTrap ? ' fx-rank--trap' : ''}`}>
             <code>extra</code>
-            <span className="fx-note">Derived</span>
-            <span className="fx-note">{sliceFix ? 'ok' : sliceTrap ? 'gone' : '—'}</span>
+            <span className="fx-note">der</span>
+            <span className="fx-note">{sliceTrap ? 'gone' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'ns' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped && !nsFix ? ' fx-rank--on' : ''}${nsTrap ? ' fx-rank--trap' : ''}${nsFix ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${nsTrap ? ' fx-rank--trap' : ''}`}>
             <code>hpp</code>
-            <span className="fx-note">using namespace</span>
-            <span className="fx-note">{nsFix ? 'no' : nsTrap ? 'leak' : stepped ? 'all' : '—'}</span>
+            <span className="fx-note">ns</span>
+            <span className="fx-note">{nsTrap ? 'leak' : stepped ? 'all' : '—'}</span>
           </div>
-          <div className={`fx-rank${nsFix ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${nsFix ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>cpp</code>
-            <span className="fx-note">
-              <code>std::string</code>
-            </span>
+            <span className="fx-note">use</span>
             <span className="fx-note">{nsFix ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'div' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped && !divFix ? ' fx-rank--on' : ''}${divTrap ? ' fx-rank--trap' : ''}${divFix ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${divTrap ? ' fx-rank--trap' : ''}`}>
             <code>1/2</code>
-            <span className="fx-note">int / int</span>
+            <span className="fx-note">int</span>
             <span className="fx-note">{stepped ? '0' : '—'}</span>
           </div>
-          <div className={`fx-rank${divFix ? ' fx-rank--on' : ''}`}>
-            <code>1.0</code>
-            <span className="fx-note">float operand</span>
+          <div className={`fx-rank${divFix ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>f</code>
+            <span className="fx-note">flt</span>
             <span className="fx-note">{divFix ? '0.5' : '—'}</span>
           </div>
         </div>

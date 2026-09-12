@@ -144,28 +144,28 @@ bool ok = x.compare_exchange_weak(
     >
       {id === 'seq' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${seqOk ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">store seq_cst</span>
+            <span className="fx-note">st</span>
             <span className="fx-note">{stepped ? '1' : '—'}</span>
           </div>
-          <div className={`fx-rank${seqOk ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${seqOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>v</code>
-            <span className="fx-note">load</span>
+            <span className="fx-note">ld</span>
             <span className="fx-note">{seqOk ? '1' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'pub' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${pubOk ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>data</code>
-            <span className="fx-note">write first</span>
+            <span className="fx-note">wr</span>
             <span className="fx-note">{stepped ? '7' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>flag</code>
-            <span className="fx-note">release / acquire</span>
+            <span className="fx-note">rel</span>
             <span className="fx-note">{pubOk ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -174,28 +174,26 @@ bool ok = x.compare_exchange_weak(
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${relaxedTrap ? ' fx-rank--trap' : ''}`}>
             <code>data</code>
-            <span className="fx-note">non-atomic</span>
+            <span className="fx-note">na</span>
             <span className="fx-note">{relaxedTrap ? 'ub' : stepped ? '7' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--trap' : stepped ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${relaxedTrap ? ' fx-rank--trap' : ''}`}>
             <code>flag</code>
-            <span className="fx-note">relaxed · no sync</span>
+            <span className="fx-note">relx</span>
             <span className="fx-note">{decided ? '1' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'cas' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${casWin ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>e</code>
-            <span className="fx-note">expected</span>
+            <span className="fx-note">exp</span>
             <span className="fx-note">{stepped ? '0' : '—'}</span>
           </div>
-          <div className={`fx-rank${casFail ? ' fx-rank--trap' : casWin || stepped ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${casFail ? ' fx-rank--trap' : ''}${casWin ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">
-              <code>CAS</code>
-            </span>
+            <span className="fx-note">cas</span>
             <span className="fx-note">{casWin ? '1' : casFail ? 'fail' : stepped ? '0' : '—'}</span>
           </div>
         </div>
