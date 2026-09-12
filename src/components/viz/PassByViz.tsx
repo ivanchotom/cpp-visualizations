@@ -141,12 +141,12 @@ export function PassByViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${copyOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>ob</code>
-            <span className="fx-note">arg</span>
+            <span className="fx-note">ag</span>
             <span className="fx-note">{bound ? '7' : '—'}</span>
           </div>
           <div className={`fx-rank${copyOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">cpy</span>
+            <span className="fx-note">cp</span>
             <span className="fx-note">{wrote ? '8' : copyOn ? '7' : '—'}</span>
           </div>
         </div>
@@ -155,7 +155,7 @@ export function PassByViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${aliasOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>ob</code>
-            <span className="fx-note">arg</span>
+            <span className="fx-note">ag</span>
             <span className="fx-note">{bound ? '7' : '—'}</span>
           </div>
           <div className={`fx-rank${aliasOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
@@ -169,12 +169,12 @@ export function PassByViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${aliasOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>ob</code>
-            <span className="fx-note">arg</span>
+            <span className="fx-note">ag</span>
             <span className="fx-note">{writeThru ? '8' : bound ? '7' : '—'}</span>
           </div>
           <div className={`fx-rank${writeThru ? ' fx-rank--on' : aliasOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">ref</span>
+            <span className="fx-note">rf</span>
             <span className="fx-note">{writeThru ? '8' : aliasOn ? '7' : '—'}</span>
           </div>
         </div>
@@ -183,12 +183,12 @@ export function PassByViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${ptrOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>ob</code>
-            <span className="fx-note">tgt</span>
+            <span className="fx-note">tg</span>
             <span className="fx-note">{writeThru ? '8' : bound ? '7' : '—'}</span>
           </div>
           <div className={`fx-rank${ptrOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>p</code>
-            <span className="fx-note">ptr</span>
+            <span className="fx-note">pt</span>
             <span className="fx-note">{ptrOn ? 'ok' : '—'}</span>
           </div>
         </div>
@@ -202,7 +202,7 @@ export function PassByViz() {
           </div>
           <div className={`fx-rank${forwarded ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>fw</code>
-            <span className="fx-note">cat</span>
+            <span className="fx-note">ct</span>
             <span className="fx-note">{forwarded ? 'ok' : '—'}</span>
           </div>
         </div>

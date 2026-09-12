@@ -157,7 +157,7 @@ sink(std::move(t));`
           </div>
           <div className={`fx-rank${collapsed ? ' fx-rank--on' : ''}${forwarded ? ' fx-rank--done' : ''}`}>
             <code>fw</code>
-            <span className="fx-note">col</span>
+            <span className="fx-note">cl</span>
             <span className="fx-note">{forwarded ? 'ok' : collapsed ? 'T&' : '—'}</span>
           </div>
         </div>
@@ -167,11 +167,11 @@ sink(std::move(t));`
           <div className={`fx-rank${deduced ? ' fx-rank--on' : ''}${forwarded ? ' fx-rank--done' : ''}`}>
             <code>T</code>
             <span className="fx-note">42</span>
-            <span className="fx-note">{deduced ? 'int' : '—'}</span>
+            <span className="fx-note">{deduced ? 'in' : '—'}</span>
           </div>
           <div className={`fx-rank${collapsed ? ' fx-rank--on' : ''}${forwarded ? ' fx-rank--done' : ''}`}>
             <code>sk</code>
-            <span className="fx-note">fwd</span>
+            <span className="fx-note">fw</span>
             <span className="fx-note">{forwarded ? 'ok' : collapsed ? '&&' : '—'}</span>
           </div>
         </div>
@@ -181,12 +181,12 @@ sink(std::move(t));`
           <div className={`fx-rank${deduced ? ' fx-rank--on' : ''}${forwarded ? ' fx-rank--done' : ''}`}>
             <code>T</code>
             <span className="fx-note">mv</span>
-            <span className="fx-note">{deduced ? 'int' : '—'}</span>
+            <span className="fx-note">{deduced ? 'in' : '—'}</span>
           </div>
           <div className={`fx-rank${collapsed ? ' fx-rank--on' : ''}${forwarded ? ' fx-rank--done' : ''}`}>
             <code>fw</code>
             <span className="fx-note">xv</span>
-            <span className="fx-note">{forwarded ? 'own' : collapsed ? '&&' : '—'}</span>
+            <span className="fx-note">{forwarded ? 'ow' : collapsed ? '&&' : '—'}</span>
           </div>
         </div>
       )}
@@ -195,12 +195,12 @@ sink(std::move(t));`
           <div className={`fx-rank${deduced ? ' fx-rank--on' : ''}${trap ? ' fx-rank--trap' : ''}`}>
             <code>x</code>
             <span className="fx-note">lv</span>
-            <span className="fx-note">{trap ? 'gone' : deduced ? 'ok' : '—'}</span>
+            <span className="fx-note">{trap ? 'gn' : deduced ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${collapsed ? ' fx-rank--on' : ''}${trap ? ' fx-rank--trap' : ''}`}>
             <code>sk</code>
             <span className="fx-note">mv</span>
-            <span className="fx-note">{trap ? 'own' : collapsed ? '&&' : '—'}</span>
+            <span className="fx-note">{trap ? 'ow' : collapsed ? '&&' : '—'}</span>
           </div>
         </div>
       )}
