@@ -197,7 +197,7 @@ n = 4;  // error — n is const`
             <span className="fx-note">{heapTrap ? 'ill' : heapTry ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${heapTrap ? ' fx-rank--trap' : heapTry ? ' fx-rank--on' : ''}`}>
-            <code>new</code>
+            <code>nw</code>
             <span className="fx-note">hp</span>
             <span className="fx-note">{heapTrap ? 'ill' : '—'}</span>
           </div>

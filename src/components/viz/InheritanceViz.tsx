@@ -142,7 +142,7 @@ struct D : A, B {};  // one Base`
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>B*</code>
+            <code>B</code>
             <span className="fx-note">ad</span>
             <span className="fx-note">{decided ? '0' : '—'}</span>
           </div>
@@ -151,12 +151,12 @@ struct D : A, B {};  // one Base`
       {kind === 'multi' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>A*</code>
+            <code>A</code>
             <span className="fx-note">ad</span>
             <span className="fx-note">{stepped ? '0' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>B*</code>
+            <code>B</code>
             <span className="fx-note">off</span>
             <span className="fx-note">{decided ? '8' : '—'}</span>
           </div>
