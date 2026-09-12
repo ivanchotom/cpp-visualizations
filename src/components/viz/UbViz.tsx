@@ -25,11 +25,11 @@ export function UbViz() {
   const recap = i >= 3
   const okRead = id === 'oob' && i === 1
   const oobTrap = id === 'oob' && decided
-  const signedTrap = id === 'overflow' && decided && !recap
+  const signedTrap = id === 'overflow' && decided
   const unsignedOk = id === 'overflow' && recap
-  const uninitTrap = id === 'uninit' && decided && !recap
+  const uninitTrap = id === 'uninit' && decided
   const uninitFix = id === 'uninit' && recap
-  const aliasTrap = id === 'alias' && decided && !recap
+  const aliasTrap = id === 'alias' && decided
   const memcpyOk = id === 'alias' && recap
   const trap = oobTrap || signedTrap || uninitTrap || aliasTrap
   const ok = okRead || unsignedOk || uninitFix || memcpyOk
@@ -159,59 +159,57 @@ int n = *reinterpret_cast<int*>(&f);  // UB`
     >
       {id === 'oob' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${oobTrap ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
             <code>a</code>
-            <span className="fx-note">
-              <code>{'int[4]'}</code>
-            </span>
+            <span className="fx-note">arr</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${oobTrap ? ' fx-rank--trap' : okRead ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${okRead || oobTrap ? ' fx-rank--on' : ''}${oobTrap ? ' fx-rank--trap' : ''}`}>
             <code>{'a[i]'}</code>
-            <span className="fx-note">index</span>
+            <span className="fx-note">idx</span>
             <span className="fx-note">{oobTrap ? 'ub' : okRead ? '1' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'overflow' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${signedTrap ? ' fx-rank--trap' : ''}${unsignedOk ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${signedTrap ? ' fx-rank--trap' : ''}`}>
             <code>n</code>
-            <span className="fx-note">signed int</span>
-            <span className="fx-note">{signedTrap || unsignedOk ? 'ub' : stepped ? 'max' : '—'}</span>
+            <span className="fx-note">s32</span>
+            <span className="fx-note">{signedTrap ? 'ub' : stepped ? 'max' : '—'}</span>
           </div>
-          <div className={`fx-rank${unsignedOk ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${unsignedOk ? ' fx-rank--on' : ''}${unsignedOk ? ' fx-rank--done' : ''}`}>
             <code>u</code>
-            <span className="fx-note">unsigned wrap</span>
+            <span className="fx-note">uns</span>
             <span className="fx-note">{unsignedOk ? '0' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'uninit' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${uninitTrap ? ' fx-rank--trap' : ''}${uninitFix ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${uninitTrap ? ' fx-rank--trap' : ''}`}>
             <code>x</code>
-            <span className="fx-note">automatic</span>
-            <span className="fx-note">{uninitFix ? '0' : stepped ? 'no' : '—'}</span>
+            <span className="fx-note">auto</span>
+            <span className="fx-note">{stepped ? 'no' : '—'}</span>
           </div>
-          <div className={`fx-rank${uninitTrap ? ' fx-rank--trap' : uninitFix ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${uninitTrap ? ' fx-rank--on' : ''}${uninitTrap ? ' fx-rank--trap' : ''}`}>
             <code>y</code>
-            <span className="fx-note">copy of x</span>
-            <span className="fx-note">{uninitFix ? '0' : uninitTrap ? 'ub' : '—'}</span>
+            <span className="fx-note">cpy</span>
+            <span className="fx-note">{uninitTrap ? 'ub' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'alias' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${memcpyOk ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
             <code>f</code>
-            <span className="fx-note">float object</span>
+            <span className="fx-note">flt</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${aliasTrap ? ' fx-rank--trap' : memcpyOk ? ' fx-rank--on' : ''}`}>
-            <code>{memcpyOk ? 'cpy' : 'p'}</code>
-            <span className="fx-note">{memcpyOk ? 'memcpy bits' : 'int* load'}</span>
-            <span className="fx-note">{memcpyOk ? 'ok' : aliasTrap ? 'ub' : '—'}</span>
+          <div className={`fx-rank${aliasTrap ? ' fx-rank--on' : ''}${aliasTrap ? ' fx-rank--trap' : ''}`}>
+            <code>p</code>
+            <span className="fx-note">pun</span>
+            <span className="fx-note">{aliasTrap ? 'ub' : '—'}</span>
           </div>
         </div>
       )}

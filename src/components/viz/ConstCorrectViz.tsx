@@ -27,7 +27,7 @@ export function ConstCorrectViz() {
   const writeTrap = id === 'observer' && decided
   const constFind = id === 'find' && stepped
   const mutFind = id === 'find' && decided
-  const moveBlocked = id === 'byval' && decided && !recap
+  const moveBlocked = id === 'byval' && decided
   const returnT = id === 'byval' && recap
   const lieTrap = id === 'lie' && decided
   const trap = writeTrap || moveBlocked || lieTrap
@@ -170,60 +170,54 @@ public:
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${writeTrap ? ' fx-rank--trap' : ''}`}>
             <code>empty</code>
-            <span className="fx-note">
-              <code>const</code>
-            </span>
+            <span className="fx-note">cst</span>
             <span className="fx-note">{writeTrap ? 'ill' : readOk ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${writeTrap ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>items</code>
-            <span className="fx-note">read, not write</span>
+            <span className="fx-note">read</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'find' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${constFind ? ' fx-rank--on' : ''}${mutFind ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${constFind ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>c*</code>
-            <span className="fx-note">
-              <code>const Bag&</code>
-            </span>
+            <span className="fx-note">c&</span>
             <span className="fx-note">{constFind ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${mutFind ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${mutFind ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>p</code>
-            <span className="fx-note">
-              <code>Bag&</code>
-            </span>
+            <span className="fx-note">mut</span>
             <span className="fx-note">{mutFind ? '1' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'byval' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${moveBlocked ? ' fx-rank--trap' : ''}${returnT ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${moveBlocked ? ' fx-rank--trap' : ''}`}>
             <code>tmp</code>
-            <span className="fx-note">{returnT ? 'return T' : 'const T'}</span>
-            <span className="fx-note">{returnT ? 'ok' : moveBlocked ? 'ill' : stepped ? 'ok' : '—'}</span>
+            <span className="fx-note">cst</span>
+            <span className="fx-note">{moveBlocked ? 'ill' : stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${moveBlocked ? ' fx-rank--trap' : ''}`}>
             <code>s</code>
-            <span className="fx-note">{returnT ? 'move / NRVO' : 'copy'}</span>
-            <span className="fx-note">{returnT ? 'ok' : moveBlocked ? 'copy' : '—'}</span>
+            <span className="fx-note">cpy</span>
+            <span className="fx-note">{moveBlocked ? 'copy' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'lie' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${lieTrap ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>this</code>
-            <span className="fx-note">members const</span>
+            <span className="fx-note">obj</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${lieTrap ? ' fx-rank--trap' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${lieTrap ? ' fx-rank--trap' : ''}`}>
             <code>g</code>
-            <span className="fx-note">global hits</span>
+            <span className="fx-note">glob</span>
             <span className="fx-note">{lieTrap ? '1' : stepped ? '0' : '—'}</span>
           </div>
         </div>
