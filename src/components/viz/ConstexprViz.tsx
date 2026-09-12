@@ -151,12 +151,12 @@ n = 4;  // error — n is const`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${baked ? ' fx-rank--done' : ''}`}>
             <code>r</code>
-            <span className="fx-note">compile-time loop</span>
+            <span className="fx-note">cx</span>
             <span className="fx-note">{stepped ? r : '—'}</span>
           </div>
-          <div className={`fx-rank${baked ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${baked ? ' fx-rank--on fx-rank--done' : ''}`}>
             <code>n</code>
-            <span className="fx-note">table_size</span>
+            <span className="fx-note">arr</span>
             <span className="fx-note">{baked ? '8' : '—'}</span>
           </div>
         </div>
@@ -165,12 +165,12 @@ n = 4;  // error — n is const`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${ran ? ' fx-rank--done' : ''}`}>
             <code>r</code>
-            <span className="fx-note">CPU loop</span>
+            <span className="fx-note">run</span>
             <span className="fx-note">{stepped ? r : '—'}</span>
           </div>
-          <div className={`fx-rank${ran ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${ran ? ' fx-rank--on fx-rank--done' : ''}`}>
             <code>k</code>
-            <span className="fx-note">not a bound</span>
+            <span className="fx-note">arr</span>
             <span className="fx-note">{ran ? '8' : '—'}</span>
           </div>
         </div>
@@ -179,12 +179,12 @@ n = 4;  // error — n is const`
         <div className="fx-ladder">
           <div className={`fx-rank${nConst ? ' fx-rank--on' : ''}${assignTrap ? ' fx-rank--trap' : ''}`}>
             <code>n</code>
-            <span className="fx-note">constexpr</span>
+            <span className="fx-note">cxpr</span>
             <span className="fx-note">{assignTrap ? 'ill' : nConst ? '3' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>k</code>
-            <span className="fx-note">plain int</span>
+            <span className="fx-note">int</span>
             <span className="fx-note">{recap ? '4' : decided ? '3' : '—'}</span>
           </div>
         </div>
@@ -193,12 +193,12 @@ n = 4;  // error — n is const`
         <div className="fx-ladder">
           <div className={`fx-rank${heapTry ? ' fx-rank--on' : ''}${heapTrap ? ' fx-rank--done' : ''}`}>
             <code>f</code>
-            <span className="fx-note">constexpr</span>
+            <span className="fx-note">cxpr</span>
             <span className="fx-note">{heapTrap ? 'ill' : heapTry ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${heapTrap ? ' fx-rank--trap' : heapTry ? ' fx-rank--on' : ''}`}>
             <code>new</code>
-            <span className="fx-note">C++14 heap</span>
+            <span className="fx-note">heap</span>
             <span className="fx-note">{heapTrap ? 'ill' : '—'}</span>
           </div>
         </div>
