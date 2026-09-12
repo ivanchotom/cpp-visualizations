@@ -164,12 +164,12 @@ export function LiteralsViz() {
       {id === 'brace' && (
         <div className="fx-ladder">
           <div className={`fx-rank${listOn ? ' fx-rank--trap' : ''}`}>
-            <code>{'x{}'}</code>
+            <code>x</code>
             <span className="fx-note">{'{}'}</span>
             <span className="fx-note">{listOn ? 'il' : '—'}</span>
           </div>
           <div className={`fx-rank${intAlt ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>= 1</code>
+            <code>y</code>
             <span className="fx-note">int</span>
             <span className="fx-note">{intAlt ? 'int' : '—'}</span>
           </div>
