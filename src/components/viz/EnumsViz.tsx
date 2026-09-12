@@ -147,8 +147,8 @@ int x = FLAG_ON;        // implicit`
       {id === 'legacy' && (
         <div className="fx-ladder">
           <div className={`fx-rank${leaked ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
-            <code>FLAG</code>
-            <span className="fx-note">leak</span>
+            <code>fg</code>
+            <span className="fx-note">lk</span>
             <span className="fx-note">{leaked ? 'yes' : '—'}</span>
           </div>
           <div className={`fx-rank${converted ? ' fx-rank--trap' : ''}`}>
