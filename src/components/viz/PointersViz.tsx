@@ -194,7 +194,7 @@ p = nullptr;`
         <div className="fx-ladder">
           <div className={`fx-rank${xAlive ? ' fx-rank--on' : ''}${dangling ? ' fx-rank--trap' : ''}`}>
             <code>x</code>
-            <span className="fx-note">auto</span>
+            <span className="fx-note">stk</span>
             <span className="fx-note">{dangling ? 'gone' : xAlive ? '7' : '—'}</span>
           </div>
           <div className={`fx-rank${xAlive ? ' fx-rank--on' : ''}${dangling ? ' fx-rank--trap' : ''}`}>
