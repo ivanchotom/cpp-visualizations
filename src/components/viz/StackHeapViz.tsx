@@ -25,7 +25,7 @@ export function StackHeapViz() {
   const recap = i >= 3
   const leaked = mode === 'leak' && recap
   const deleted = mode === 'raii' && recap
-  const dangling = mode === 'dangle' && recap
+  const dangling = mode === 'dangle' && decided
   const staticLive = mode === 'stat' && recap
   const trap = leaked || dangling
   const ok = deleted || staticLive
@@ -150,14 +150,12 @@ export function StackHeapViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${leaked ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">automatic</span>
+            <span className="fx-note">auto</span>
             <span className="fx-note">{leaked ? 'gone' : stepped ? '7' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${leaked ? ' fx-rank--trap' : ''}`}>
             <code>p</code>
-            <span className="fx-note">
-              <code>new int</code>
-            </span>
+            <span className="fx-note">heap</span>
             <span className="fx-note">{leaked ? 'leak' : decided ? '42' : '—'}</span>
           </div>
         </div>
@@ -166,44 +164,40 @@ export function StackHeapViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${deleted ? ' fx-rank--done' : ''}`}>
             <code>p</code>
-            <span className="fx-note">
-              <code>unique_ptr</code>
-            </span>
-            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+            <span className="fx-note">own</span>
+            <span className="fx-note">{deleted ? 'gone' : stepped ? 'own' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${deleted ? ' fx-rank--done' : ''}`}>
             <code>T</code>
-            <span className="fx-note">heap int</span>
-            <span className="fx-note">{deleted ? 'gone' : decided ? '42' : '—'}</span>
+            <span className="fx-note">heap</span>
+            <span className="fx-note">{deleted ? 'ok' : decided ? '42' : '—'}</span>
           </div>
         </div>
       )}
       {mode === 'dangle' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${dangling ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${dangling ? ' fx-rank--trap' : ''}`}>
             <code>x</code>
-            <span className="fx-note">automatic</span>
-            <span className="fx-note">{dangling || decided ? 'gone' : stepped ? '7' : '—'}</span>
+            <span className="fx-note">auto</span>
+            <span className="fx-note">{dangling ? 'gone' : stepped ? '7' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${dangling ? ' fx-rank--trap' : ''}`}>
             <code>p</code>
-            <span className="fx-note">
-              <code>{'return &x'}</code>
-            </span>
-            <span className="fx-note">{dangling ? 'ub' : decided ? 'ok' : '—'}</span>
+            <span className="fx-note">ret</span>
+            <span className="fx-note">{dangling ? 'ub' : '—'}</span>
           </div>
         </div>
       )}
       {mode === 'stat' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${staticLive ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${staticLive ? ' fx-rank--done' : ''}`}>
             <code>n</code>
-            <span className="fx-note">static local</span>
+            <span className="fx-note">stat</span>
             <span className="fx-note">{staticLive ? '2' : decided ? '1' : stepped ? '0' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>f</code>
-            <span className="fx-note">this frame</span>
+            <span className="fx-note">frm</span>
             <span className="fx-note">{decided ? 'gone' : '—'}</span>
           </div>
         </div>

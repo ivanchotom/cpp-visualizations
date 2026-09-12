@@ -31,7 +31,7 @@ export function PassByViz() {
   const fwdOn = id === 'fwd' && bound
   const forwarded = id === 'fwd' && wrote
   const writeThru = (id === 'ref' || id === 'ptr') && wrote
-  const ok = wrote
+  const ok = recap
 
   const code =
     id === 'value'
@@ -139,14 +139,14 @@ export function PassByViz() {
     >
       {id === 'value' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${copyOn ? ' fx-rank--on' : ''}${wrote ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${copyOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>obj</code>
-            <span className="fx-note">caller</span>
+            <span className="fx-note">call</span>
             <span className="fx-note">{bound ? '7' : '—'}</span>
           </div>
-          <div className={`fx-rank${copyOn ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${copyOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">distinct copy</span>
+            <span className="fx-note">copy</span>
             <span className="fx-note">{wrote ? '8' : copyOn ? '7' : '—'}</span>
           </div>
         </div>
@@ -155,64 +155,54 @@ export function PassByViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${aliasOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>obj</code>
-            <span className="fx-note">caller</span>
+            <span className="fx-note">call</span>
             <span className="fx-note">{bound ? '7' : '—'}</span>
           </div>
-          <div className={`fx-rank${aliasOn ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${aliasOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">
-              <code>{'const T&'}</code>
-            </span>
+            <span className="fx-note">cref</span>
             <span className="fx-note">{wrote ? 'ok' : aliasOn ? '7' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'ref' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${aliasOn ? ' fx-rank--on' : ''}${writeThru ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${aliasOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>obj</code>
-            <span className="fx-note">caller</span>
+            <span className="fx-note">call</span>
             <span className="fx-note">{writeThru ? '8' : bound ? '7' : '—'}</span>
           </div>
-          <div className={`fx-rank${writeThru ? ' fx-rank--on' : aliasOn ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${writeThru ? ' fx-rank--on' : aliasOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>x</code>
-            <span className="fx-note">
-              <code>{'T&'}</code>
-            </span>
+            <span className="fx-note">ref</span>
             <span className="fx-note">{writeThru ? '8' : aliasOn ? '7' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'ptr' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${ptrOn ? ' fx-rank--on' : ''}${writeThru ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${ptrOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>obj</code>
-            <span className="fx-note">pointee</span>
+            <span className="fx-note">tgt</span>
             <span className="fx-note">{writeThru ? '8' : bound ? '7' : '—'}</span>
           </div>
-          <div className={`fx-rank${ptrOn ? ' fx-rank--on' : ''}${writeThru ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${ptrOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>p</code>
-            <span className="fx-note">
-              <code>{'T*'}</code>
-            </span>
+            <span className="fx-note">ptr</span>
             <span className="fx-note">{ptrOn ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'fwd' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${fwdOn ? ' fx-rank--on' : ''}${forwarded ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${fwdOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>U</code>
-            <span className="fx-note">
-              <code>{'U = T&'}</code>
-            </span>
+            <span className="fx-note">T&</span>
             <span className="fx-note">{fwdOn ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${forwarded ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${forwarded ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>fwd</code>
-            <span className="fx-note">
-              <code>std::forward</code>
-            </span>
+            <span className="fx-note">fwd</span>
             <span className="fx-note">{forwarded ? 'ok' : '—'}</span>
           </div>
         </div>
