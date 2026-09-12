@@ -158,7 +158,7 @@ int n{d};           // error (narrowing)`
           </div>
           <div className={`fx-rank${rejected ? ' fx-rank--trap' : ''}`}>
             <code>n</code>
-            <span className="fx-note">{}</span>
+            <span className="fx-note">{'{}'}</span>
             <span className="fx-note">{rejected ? 'ill' : '—'}</span>
           </div>
         </div>
