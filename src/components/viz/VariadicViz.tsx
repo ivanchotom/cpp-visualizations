@@ -169,12 +169,12 @@ void print(const T& first, Rest... rest) {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>xs</code>
-            <span className="fx-note">pack</span>
+            <span className="fx-note">...</span>
             <span className="fx-note">{stepped ? '3' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>t</code>
-            <span className="fx-note">each</span>
+            <span className="fx-note">+=</span>
             <span className="fx-note">{decided ? '6' : '—'}</span>
           </div>
         </div>
@@ -183,7 +183,7 @@ void print(const T& first, Rest... rest) {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>len</code>
-            <span className="fx-note">n...</span>
+            <span className="fx-note">n</span>
             <span className="fx-note">{stepped ? '2' : '—'}</span>
           </div>
           <div className={`fx-rank${sizeTrap ? ' fx-rank--trap' : decided ? ' fx-rank--on' : ''}`}>
@@ -211,12 +211,12 @@ void print(const T& first, Rest... rest) {
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${peelTrap ? ' fx-rank--trap' : ''}`}>
             <code>rest</code>
-            <span className="fx-note">peel</span>
+            <span className="fx-note">pop</span>
             <span className="fx-note">{stepped ? restN : '—'}</span>
           </div>
           <div className={`fx-rank${peelTrap ? ' fx-rank--trap' : ''}`}>
             <code>fn</code>
-            <span className="fx-note">base</span>
+            <span className="fx-note">end</span>
             <span className="fx-note">{peelTrap ? 'ill' : '—'}</span>
           </div>
         </div>

@@ -189,7 +189,7 @@ int n = *reinterpret_cast<int*>(&f);  // UB`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${uninitTrap ? ' fx-rank--trap' : ''}`}>
             <code>x</code>
-            <span className="fx-note">auto</span>
+            <span className="fx-note">stk</span>
             <span className="fx-note">{stepped ? 'no' : '—'}</span>
           </div>
           <div className={`fx-rank${uninitTrap ? ' fx-rank--on' : ''}${uninitTrap ? ' fx-rank--trap' : ''}`}>
