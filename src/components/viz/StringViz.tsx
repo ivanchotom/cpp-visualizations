@@ -23,7 +23,7 @@ export function StringViz() {
   const stepped = i >= 1
   const decided = i >= 2
   const recap = i >= 3
-  const plusCopy = id === 'plus' && decided && !recap
+  const plusCopy = id === 'plus' && decided
   const plusFix = id === 'plus' && recap
   const ssoInline = id === 'sso' && i === 1
   const ssoHeap = id === 'sso' && decided
@@ -142,58 +142,56 @@ s.reserve(64);
     >
       {id === 'plus' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${plusFix ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
             <code>s</code>
-            <span className="fx-note">owns buffer</span>
-            <span className="fx-note">{plusFix ? '3' : stepped ? '2' : '—'}</span>
+            <span className="fx-note">buf</span>
+            <span className="fx-note">{stepped ? '2' : '—'}</span>
           </div>
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${plusCopy ? ' fx-rank--trap' : ''}`}>
-            <code>{plusFix ? '+=' : 's+x'}</code>
-            <span className="fx-note">{plusFix ? 'in place' : 'new string'}</span>
-            <span className="fx-note">{plusFix ? 'ok' : i === 2 ? 'n²' : i === 1 ? '3' : '—'}</span>
+            <code>s+x</code>
+            <span className="fx-note">cpy</span>
+            <span className="fx-note">{plusCopy ? 'n²' : stepped ? '3' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'sso' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${ssoHeap ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>a</code>
-            <span className="fx-note">inline SSO</span>
-            <span className="fx-note">{stepped ? 'sso' : '—'}</span>
+            <span className="fx-note">sso</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${ssoHeap ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${ssoHeap ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>b</code>
-            <span className="fx-note">too big</span>
-            <span className="fx-note">{ssoHeap ? 'heap' : '—'}</span>
+            <span className="fx-note">heap</span>
+            <span className="fx-note">{ssoHeap ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'cstr' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${cstrDangle ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
             <code>s</code>
-            <span className="fx-note">owns buffer</span>
+            <span className="fx-note">buf</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--trap' : stepped ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${cstrDangle ? ' fx-rank--trap' : ''}`}>
             <code>p</code>
-            <span className="fx-note">
-              <code>c_str()</code>
-            </span>
+            <span className="fx-note">ptr</span>
             <span className="fx-note">{cstrDangle ? 'ub' : cstrLive ? 'ok' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'reserve' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${appendOk ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>s</code>
-            <span className="fx-note">size</span>
+            <span className="fx-note">sz</span>
             <span className="fx-note">{recap ? '5' : appendOk ? '3' : reserved ? '0' : '—'}</span>
           </div>
-          <div className={`fx-rank${reserved ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${reserved ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>cap</code>
-            <span className="fx-note">paid up front</span>
+            <span className="fx-note">cap</span>
             <span className="fx-note">{reserved ? '64' : '—'}</span>
           </div>
         </div>

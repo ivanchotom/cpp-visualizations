@@ -137,61 +137,57 @@ auto b = std::chrono::system_clock::now();
     >
       {id === 'steady' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${steadyOk ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>t0</code>
-            <span className="fx-note">steady now</span>
+            <span className="fx-note">now</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>dt</code>
-            <span className="fx-note">
-              <code>.count()</code>
-            </span>
+            <span className="fx-note">cnt</span>
             <span className="fx-note">{steadyOk ? '42' : decided ? 'ms' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'jump' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${jumped ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
             <code>t0</code>
-            <span className="fx-note">wall clock</span>
+            <span className="fx-note">wall</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${jumped ? ' fx-rank--trap' : ''}`}>
+          <div className={`fx-rank${jumped ? ' fx-rank--on' : ''}${jumped ? ' fx-rank--trap' : ''}`}>
             <code>dt</code>
-            <span className="fx-note">now − t0</span>
-            <span className="fx-note">{recap ? '-2' : jumped ? '??' : '—'}</span>
+            <span className="fx-note">sub</span>
+            <span className="fx-note">{recap ? '-2' : jumped ? 'neg' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'cast' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${castOk ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>ms</code>
-            <span className="fx-note">milliseconds</span>
+            <span className="fx-note">dur</span>
             <span className="fx-note">{stepped ? '1500' : '—'}</span>
           </div>
-          <div className={`fx-rank${castOk ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${castOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>s</code>
-            <span className="fx-note">toward zero</span>
+            <span className="fx-note">trunc</span>
             <span className="fx-note">{castOk ? '1' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'mix' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${mixTrap ? ' fx-rank--done' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
             <code>A</code>
-            <span className="fx-note">steady now</span>
+            <span className="fx-note">stdy</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
-          <div className={`fx-rank${mixTrap ? ' fx-rank--trap' : ''}`}>
+          <div className={`fx-rank${mixTrap ? ' fx-rank--on' : ''}${mixTrap ? ' fx-rank--trap' : ''}`}>
             <code>B</code>
-            <span className="fx-note">
-              <code>a - b</code>
-            </span>
-            <span className="fx-note">{mixTrap ? 'err' : '—'}</span>
+            <span className="fx-note">sub</span>
+            <span className="fx-note">{mixTrap ? 'ill' : '—'}</span>
           </div>
         </div>
       )}
