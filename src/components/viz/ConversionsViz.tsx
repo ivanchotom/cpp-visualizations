@@ -139,12 +139,12 @@ int n{d};           // error (narrowing)`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>d</code>
-            <span className="fx-note">double</span>
+            <span className="fx-note">dbl</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${silent ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>n</code>
-            <span className="fx-note">copy-init</span>
+            <span className="fx-note">asgn</span>
             <span className="fx-note">{silent ? '3' : '—'}</span>
           </div>
         </div>
@@ -153,12 +153,12 @@ int n{d};           // error (narrowing)`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>d</code>
-            <span className="fx-note">double</span>
+            <span className="fx-note">dbl</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${rejected ? ' fx-rank--trap' : ''}`}>
             <code>n</code>
-            <span className="fx-note">list-init</span>
+            <span className="fx-note">list</span>
             <span className="fx-note">{rejected ? 'ill' : '—'}</span>
           </div>
         </div>
@@ -167,19 +167,19 @@ int n{d};           // error (narrowing)`
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>d</code>
-            <span className="fx-note">double</span>
+            <span className="fx-note">dbl</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${namedOk ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>n</code>
-            <span className="fx-note">static_cast</span>
+            <span className="fx-note">cast</span>
             <span className="fx-note">{namedOk ? '3' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'dynamic' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>a</code>
             <span className="fx-note">A*</span>
             <span className="fx-note">{stepped ? 'ok' : '—'}</span>

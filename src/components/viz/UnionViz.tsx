@@ -144,24 +144,24 @@ int t = u.a.tag;  // allowed prefix
             <span className="fx-note">int</span>
             <span className="fx-note">{stepped ? 'on' : '—'}</span>
           </div>
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>f</code>
-            <span className="fx-note">float</span>
+            <span className="fx-note">flt</span>
             <span className="fx-note">{stepped ? 'off' : '—'}</span>
           </div>
         </div>
       )}
       {id === 'pun' && (
         <div className="fx-ladder">
-          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}`}>
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>i</code>
             <span className="fx-note">int</span>
             <span className="fx-note">{stepped ? 'on' : '—'}</span>
           </div>
           <div className={`fx-rank${punTrap ? ' fx-rank--trap' : ''}`}>
             <code>f</code>
-            <span className="fx-note">float</span>
-            <span className="fx-note">{punTrap ? 'ub' : 'off'}</span>
+            <span className="fx-note">flt</span>
+            <span className="fx-note">{punTrap ? 'ub' : stepped ? 'off' : '—'}</span>
           </div>
         </div>
       )}
@@ -174,7 +174,7 @@ int t = u.a.tag;  // allowed prefix
           </div>
           <div className={`fx-rank${noAddr ? ' fx-rank--trap' : ''}`}>
             <code>&a</code>
-            <span className="fx-note">address</span>
+            <span className="fx-note">addr</span>
             <span className="fx-note">{noAddr ? 'ill' : '—'}</span>
           </div>
         </div>
@@ -183,7 +183,7 @@ int t = u.a.tag;  // allowed prefix
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>tag</code>
-            <span className="fx-note">prefix</span>
+            <span className="fx-note">pre</span>
             <span className="fx-note">{decided ? 'ok' : stepped ? 'same' : '—'}</span>
           </div>
           <div className={`fx-rank${decided ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
