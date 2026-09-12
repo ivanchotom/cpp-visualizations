@@ -151,7 +151,7 @@ export function LiteralsViz() {
         <div className="fx-ladder">
           <div className={`fx-rank${nilOn ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>nil</code>
-            <span className="fx-note">nilt</span>
+            <span className="fx-note">ptr</span>
             <span className="fx-note">{nilOn ? 'ok' : '—'}</span>
           </div>
           <div className={`fx-rank${notInt ? ' fx-rank--trap' : ''}`}>
@@ -164,9 +164,9 @@ export function LiteralsViz() {
       {id === 'brace' && (
         <div className="fx-ladder">
           <div className={`fx-rank${listOn ? ' fx-rank--trap' : ''}`}>
-            <code>{'{1}'}</code>
+            <code>{'x{}'}</code>
             <span className="fx-note">list</span>
-            <span className="fx-note">{listOn ? 'list' : '—'}</span>
+            <span className="fx-note">{listOn ? 'il' : '—'}</span>
           </div>
           <div className={`fx-rank${intAlt ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
             <code>= 1</code>

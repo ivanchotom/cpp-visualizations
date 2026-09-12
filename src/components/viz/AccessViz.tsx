@@ -152,7 +152,7 @@ class Token { int id_; };  // private`
       {id === 'priv' && (
         <div className="fx-ladder">
           <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${bounce || privOk ? ' fx-rank--trap' : ''}`}>
-            <code>{'T{1}'}</code>
+            <code>{'T{}'}</code>
             <span className="fx-note">ctor</span>
             <span className="fx-note">{bounce || privOk ? 'ill' : stepped ? 'no' : '—'}</span>
           </div>
