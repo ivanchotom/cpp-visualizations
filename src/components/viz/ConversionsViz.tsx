@@ -187,7 +187,7 @@ int n{d};           // error (narrowing)`
           <div className={`fx-rank${dynFail ? ' fx-rank--trap' : ''}`}>
             <code>p</code>
             <span className="fx-note">B*</span>
-            <span className="fx-note">{dynFail ? 'null' : '—'}</span>
+            <span className="fx-note">{dynFail ? 'nil' : '—'}</span>
           </div>
         </div>
       )}

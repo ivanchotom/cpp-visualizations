@@ -176,7 +176,7 @@ t2.join();`
           <div className={`fx-rank${joinTrap ? ' fx-rank--on' : ''}${joinTrap ? ' fx-rank--trap' : ''}`}>
             <code>dt</code>
             <span className="fx-note">end</span>
-            <span className="fx-note">{joinTrap ? 'fail' : '—'}</span>
+            <span className="fx-note">{joinTrap ? 'ill' : '—'}</span>
           </div>
         </div>
       )}
