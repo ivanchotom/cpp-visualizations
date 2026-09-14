@@ -65,6 +65,7 @@ int main() { return add(1, 2); }`,
     blurb: 'Text in, text out — before the compiler',
     track: 'foundations',
     keywords: ['#include', '#define', 'macro', 'ifdef', 'pragma once'],
+    viz: 'preprocessor',
     summary:
       'The preprocessor is a text engine. It pastes headers, expands macros, and strips code behind #if. Prefer the language (constants, inline, templates) over macros whenever you can.',
     facts: [
@@ -158,6 +159,7 @@ std::size_t   n = 0;     // unsigned, object size / index`,
     blurb: 'What you may change, and when',
     track: 'foundations',
     keywords: ['const', 'constexpr', 'mutable', 'volatile', 'const-correct'],
+    viz: 'cv-qualifiers',
     summary:
       'const is a compile-time promise: this object will not be mutated through this name. It is the backbone of APIs that are safe to reason about. volatile is almost never what you want in application code.',
     facts: [
@@ -206,6 +208,7 @@ struct Counter {
     blurb: 'How values enter the language',
     track: 'foundations',
     keywords: ['literal', 'auto', 'brace', 'uniform init', 'nullptr'],
+    viz: 'literals',
     summary:
       'A literal has a type. Initialization syntax decides what that type becomes in a variable, and whether narrowing is allowed. Brace initialization is the modern default because it refuses silent narrowing.',
     facts: [
@@ -300,6 +303,7 @@ std::cout << (a ? b : c);`,
     blurb: 'if, switch, loops, jump',
     track: 'foundations',
     keywords: ['if', 'switch', 'for', 'while', 'break', 'goto'],
+    viz: 'control-flow',
     summary:
       'Structured control is boring on purpose. Prefer range-for for containers, switch for dense integer dispatch, and keep goto in the museum except for a few low-level cleanup patterns you will rarely need.',
     facts: [
@@ -358,6 +362,7 @@ switch (kind) {
     blurb: 'Who can see a name, how long it lives',
     track: 'foundations',
     keywords: ['scope', 'namespace', 'static', 'global', 'ADL'],
+    viz: 'scope',
     summary:
       'Scope is visibility. Lifetime is how long the object exists. They often line up (a local lives until its block ends) and sometimes don’t (new lives until delete; static locals live until program exit).',
     facts: [
@@ -406,6 +411,7 @@ int counter() {
     blurb: 'Implicit vs named, and the four casts',
     track: 'foundations',
     keywords: ['static_cast', 'const_cast', 'reinterpret_cast', 'dynamic_cast', 'narrowing'],
+    viz: 'conversions',
     summary:
       'C++ converts more eagerly than you might like. Named casts document intent. C-style (T)x is a blunt instrument that can mix several cast kinds — avoid it.',
     facts: [
@@ -430,11 +436,15 @@ int counter() {
       {
         title: 'Name the conversion',
         snippet: `double d = 3.9;
-auto n = static_cast<int>(d);     // 3, explicit
+int n = d;                        // narrowing, silent
+int m{d};                         // C++11: ill-formed
+auto k = static_cast<int>(d);     // 3, named
 
-Base* b = new Derived;
-auto* p = dynamic_cast<Derived*>(b);
-if (p) p->derivedOnly();
+struct B { virtual ~B() {} };
+struct D : B {};
+B b;
+B* p = &b;
+D* q = dynamic_cast<D*>(p);       // nullptr
 
 // int* ip = (int*)dp;            // don't: C-style`,
       },
@@ -546,6 +556,7 @@ r = b;           // assigns to a, does not reseat r
     blurb: 'Fixed buffers and the decay trap',
     track: 'memory',
     keywords: ['array', 'decay', 'cstring', 'std::array', 'vector'],
+    viz: 'arrays',
     summary:
       'Built-in arrays are a raw block of objects. They decay to a pointer at the slightest excuse, losing their length. Prefer std::array for fixed size and std::vector for dynamic size. C-strings are arrays of char terminated by \\0.',
     facts: [
@@ -737,6 +748,7 @@ void wrap(std::string&& s) {
     blurb: 'Bare allocation, and why to hide it',
     track: 'memory',
     keywords: ['new', 'delete', 'nothrow', 'placement new', 'allocator'],
+    viz: 'new-delete',
     summary:
       'new T allocates and constructs; delete p destroys and deallocates. new T[n] pairs with delete[]. You almost never write these in application code — unique_ptr, vector, and make_unique wrap them.',
     facts: [
@@ -781,6 +793,7 @@ p->~Widget();`,
     blurb: 'Declarations, defaults, inline',
     track: 'functions',
     keywords: ['function', 'inline', 'default argument', 'trailing return'],
+    viz: 'functions',
     summary:
       'A function declaration names a callable. Definitions live in one TU unless the function is inline (or a template). Default arguments are filled in at the call site from the declaration the caller sees.',
     facts: [
@@ -824,6 +837,7 @@ auto add(int a, int b) -> int {
     blurb: 'Which f() did you mean?',
     track: 'functions',
     keywords: ['overload', 'ADL', 'viable', 'best match'],
+    viz: 'overloading',
     summary:
       'The compiler builds a set of viable functions, then ranks conversions. Identity beats promotion beats standard conversion beats user-defined conversion. If two winners tie, the program is ill-formed.',
     facts: [
@@ -913,6 +927,7 @@ store(std::string{"tmp"});    // constructs into the parameter`,
     blurb: 'Inline function objects',
     track: 'functions',
     keywords: ['lambda', 'capture', 'closure', 'generic lambda'],
+    viz: 'lambdas',
     summary:
       'A lambda is syntactic sugar for a unique unnamed class with operator(). Captures become members. In C++14, generic lambdas (auto parameters) and init-captures are available.',
     facts: [
@@ -962,6 +977,7 @@ f();`,
     blurb: 'Work the compiler can finish for you',
     track: 'functions',
     keywords: ['constexpr', 'const', 'compile time', 'C++14'],
+    viz: 'constexpr',
     summary:
       'constexpr means “can be evaluated at compile time if the inputs are constant.” C++14 relaxed constexpr functions: loops, locals, mutation of locals are allowed. It is not the same as const.',
     facts: [
@@ -1014,6 +1030,7 @@ int k = pow2(x);                      // run time if x is not const`,
     blurb: 'Members, access, construction',
     track: 'classes',
     keywords: ['class', 'struct', 'public', 'private', 'this'],
+    viz: 'classes',
     summary:
       'A class is a user-defined type: data + functions + invariants. struct and class are the same except default access (public vs private) and default inheritance. Keep data private and enforce invariants in constructors.',
     facts: [
@@ -1063,6 +1080,7 @@ private:
     blurb: 'The five the compiler may write',
     track: 'classes',
     keywords: ['destructor', 'copy', 'move', 'rule of five', 'default'],
+    viz: 'special-members',
     summary:
       'Default ctor, destructor, copy ctor, copy assign, move ctor, move assign. The compiler generates them under specific rules. If you define one, look at all of them. =default and =delete make intent explicit.',
     facts: [
@@ -1246,6 +1264,7 @@ private:
     blurb: 'Make types feel built-in',
     track: 'classes',
     keywords: ['operator', '<<', '<=>', 'member vs free'],
+    viz: 'op-overload',
     summary:
       'Overload operators to match existing notation, not to be clever. Prefer non-member overloads when either operand should convert (operator+). Keep overloaded operators’ semantics unsurprising: + shouldn’t mutate, == should be an equivalence.',
     facts: [
@@ -1388,6 +1407,7 @@ twice(T x) {
     blurb: '<type_traits> as compile-time reflection',
     track: 'templates',
     keywords: ['type_traits', 'enable_if', 'decltype', 'declval'],
+    viz: 'type-traits',
     summary:
       'Traits are metafunctions: they map types (and sometimes values) to other types or bools. Combined with decltype, std::declval, and enable_if they let generic code branch at compile time in C++14.',
     facts: [
@@ -1482,6 +1502,7 @@ using value_t = typename std::iterator_traits<It>::value_type;`,
     blurb: 'Pick a policy and stick to it',
     track: 'errors',
     keywords: ['noexcept', 'error_code', 'expected', 'terminate'],
+    viz: 'noexcept',
     summary:
       'C++ offers exceptions, error codes, and abort. Mixing them without a boundary is how APIs become unusable. noexcept is both documentation and an optimization hint (vector moves). A violation calls terminate.',
     facts: [
@@ -1531,6 +1552,7 @@ void relocate(T* d, T* s)
     blurb: 'Owning text, not char*',
     track: 'stdlib',
     keywords: ['string', 'string_view', 'c_str', 'SSO'],
+    viz: 'string',
     summary:
       'std::string owns a mutable buffer of char, guarantees contiguous storage, and always keeps a terminating \\0 so c_str() is cheap. Small-string optimization (SSO) keeps short strings off the heap — implementation-defined size.',
     facts: [
@@ -1759,6 +1781,7 @@ struct Node {
     blurb: 'iostream, files, and formatting',
     track: 'stdlib',
     keywords: ['cout', 'cin', 'fstream', 'stringstream', 'iomanip'],
+    viz: 'iostreams',
     summary:
       'Streams are typed, overloadable I/O. operator<< / >> chain. Failures set failbit/eofbit/badbit — check the stream or enable exceptions. For files, RAII fstream closes the handle in the destructor.',
     facts: [
@@ -1803,6 +1826,7 @@ while (std::getline(in, line)) {
     blurb: 'Durations, clocks, casts',
     track: 'stdlib',
     keywords: ['chrono', 'duration', 'steady_clock', 'time_point'],
+    viz: 'chrono',
     summary:
       '<chrono> separates duration (how long) from time_point (when) from clock (which epoch). Use steady_clock to measure intervals; system_clock to talk to the wall / std::time.',
     facts: [
@@ -1850,6 +1874,7 @@ std::cout << ms.count() << " ms\\n";`,
     blurb: 'std::thread, mutex, memory order',
     track: 'stdlib',
     keywords: ['thread', 'mutex', 'atomic', 'data race', 'lock_guard'],
+    viz: 'concurrency',
     summary:
       'A data race is undefined behavior — not a “maybe stale value.” Protect shared mutable data with a mutex or make it atomic. RAII locks (lock_guard / unique_lock) are mandatory. Join or detach every thread; destroying a joinable thread calls terminate.',
     facts: [
@@ -1948,6 +1973,7 @@ private:
     blurb: 'Members manage; the class stays quiet',
     track: 'idioms',
     keywords: ['rule of zero', 'rule of five', 'RAII'],
+    viz: 'rule-of-zero',
     summary:
       'If every resource is already owned by a member that knows how to copy/move/destroy (string, vector, unique_ptr), your class needs no custom special members. That’s the Rule of Zero — the one you want.',
     facts: [
@@ -1993,6 +2019,7 @@ public:
     blurb: 'The compiler owes you nothing',
     track: 'idioms',
     keywords: ['UB', 'data race', 'dangling', 'overflow', 'aliasing'],
+    viz: 'undefined-behavior',
     summary:
       'Undefined behavior is not “implementation-defined” or “a crash.” The compiler may assume it never happens and delete your checks. Signed overflow, use-after-free, data races, out-of-bounds, uninitialized reads — all UB.',
     facts: [
@@ -2037,6 +2064,7 @@ int n = INT_MAX;
     blurb: 'A habit that documents and enables',
     track: 'idioms',
     keywords: ['const', 'constexpr', 'member', 'thread-safe'],
+    viz: 'const-correctness',
     summary:
       'Mark everything that doesn’t mutate. Const member functions can be called on const objects and are the first step toward thinking about thread safety. Compilers also use const to reason about aliasing.',
     facts: [
@@ -2083,6 +2111,7 @@ private:
     blurb: 'A field guide to classic own-goals',
     track: 'idioms',
     keywords: ['gotcha', 'slicing', 'most vexing parse', 'using namespace'],
+    viz: 'pitfalls',
     summary:
       'A short list of mistakes that keep showing up in real code reviews. If you only re-read one page before an interview or a refactor, make it this one plus Undefined behavior.',
     facts: [

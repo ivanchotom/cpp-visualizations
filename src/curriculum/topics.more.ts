@@ -7,6 +7,7 @@ export const moreTopics: Topic[] = [
     blurb: 'Named integer constants, scoped and unscoped',
     track: 'foundations',
     keywords: ['enum', 'enum class', 'scoped', 'underlying type'],
+    viz: 'enums',
     summary:
       'Unscoped enum leaks enumerators into the surrounding scope and converts to int without asking. enum class (C++11) is the default choice: scoped names, no implicit conversion to int.',
     facts: [
@@ -52,6 +53,7 @@ int x = FLAG_ON;               // implicit, and FLAG_ON is in this scope`,
     blurb: 'Overlay storage, pack bits',
     track: 'foundations',
     keywords: ['union', 'bit-field', 'active member', 'punning'],
+    viz: 'unions',
     summary:
       'A union stores one of its members at a time in the same bytes. Reading a member that is not the active one is usually undefined (type punning via union is not the portable C++ tool — memcpy / std::memcpy is). Bit-fields pack integer fields into a word; layout is implementation-defined.',
     facts: [
@@ -109,6 +111,7 @@ struct Bits {
     blurb: 'Callables as values',
     track: 'functions',
     keywords: ['function pointer', 'member pointer', 'std::function', 'mem_fn'],
+    viz: 'function-pointers',
     summary:
       'A function pointer stores the address of a function with a given signature. Pointers to members are a different, fat type — they need an object to apply to. std::function<Sig> type-erases any callable that matches Sig, at the cost of a possible heap allocation.',
     facts: [
@@ -158,6 +161,7 @@ int g = (w.*pm)();`,
     blurb: 'Where the compiler searches for names',
     track: 'functions',
     keywords: ['ADL', 'Koenig', 'lookup', 'using', 'hidden friend'],
+    viz: 'adl',
     summary:
       'Unqualified lookup walks the scopes around the use. Argument-dependent lookup (ADL, “Koenig lookup”) also searches the namespaces of the argument types — that is why std::cout << x works: operator<< is found in namespace std. Hidden friends are found only via ADL.',
     facts: [
@@ -205,6 +209,7 @@ void f(N::Item a, N::Item b) {
     blurb: 'public, protected, private, friend',
     track: 'classes',
     keywords: ['public', 'private', 'protected', 'friend', 'encapsulation'],
+    viz: 'access-control',
     summary:
       'Access is a compile-time check on names, not a runtime sandbox. class defaults to private; struct defaults to public. protected is for derived classes. friend punches a hole for a function or class. Invariants belong in the private section, not in a comment.',
     facts: [
@@ -253,6 +258,7 @@ Token makeToken(int id) { return Token{id}; }`,
     blurb: 'How T is inferred from a call',
     track: 'templates',
     keywords: ['deduction', 'auto', 'decltype', 'universal reference', 'C++14'],
+    viz: 'template-deduction',
     summary:
       'For a function template, each T is deduced from the arguments (or given explicitly). References and cv drop or stick according to the parameter form: T by value decays; T& keeps lvalue-ness; T&& is a forwarding reference if T is deduced. C++14 also lets auto stand in for a deduced return type and for generic lambda parameters.',
     facts: [
@@ -305,6 +311,7 @@ auto id = [](auto x) { return x; };   // C++14 generic lambda`,
     blurb: 'Parameter packs and expansion',
     track: 'templates',
     keywords: ['variadic', 'parameter pack', 'sizeof...', 'index_sequence'],
+    viz: 'variadic-templates',
     summary:
       'A parameter pack is a list of types or values. You expand it with Pattern... in the right place: function parameter lists, template argument lists, initializer lists. Recursion or an index_sequence (C++14) is how you walk a pack when you need per-element work.',
     facts: [
@@ -411,6 +418,7 @@ auto c = make<Widget>(std::move(local));  // moves`,
     blurb: 'Fixed-size heterogeneous bundles',
     track: 'stdlib',
     keywords: ['pair', 'tuple', 'tie', 'get', 'make_pair'],
+    viz: 'pair-tuple',
     summary:
       'std::pair<A,B> is first/second. std::tuple<Ts...> is an indexed pack of values. They are the vocabulary types for “return two things” and for generic zip. C++14 has no structured bindings — use std::tie, std::get<I>, or a named pair.',
     facts: [
@@ -463,6 +471,7 @@ bool operator<(const Rec& a, const Rec& b) {
     blurb: 'std::atomic without inventing a protocol',
     track: 'stdlib',
     keywords: ['atomic', 'memory_order', 'CAS', 'race', 'mutex'],
+    viz: 'atomics',
     summary:
       'A data race on a non-atomic is undefined behavior, not “a torn read.” std::atomic<T> makes loads and stores atomic. Start with seq_cst (the default). Relaxed/acquire/release exist for when you have measured and you know the protocol. mutex + lock_guard remains the default for anything bigger than a counter or a flag.',
     facts: [
@@ -517,6 +526,7 @@ if (ready.load(std::memory_order_acquire)) {
     blurb: 'Hide the implementation behind a unique_ptr',
     track: 'idioms',
     keywords: ['pimpl', 'opaque', 'compilation firewall', 'unique_ptr'],
+    viz: 'pimpl',
     summary:
       'Pointer to IMPLementation: the public class holds unique_ptr<Impl> where Impl is defined only in the .cpp. Clients recompile when the public header changes, not when private members change. You pay an allocation and a pointer hop; you gain a stable ABI and faster incremental builds.',
     facts: [

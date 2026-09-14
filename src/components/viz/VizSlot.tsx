@@ -2,7 +2,6 @@ import type { ReactElement } from 'react'
 import type { VizKind } from '../../curriculum/schema.ts'
 import { DataTypesView } from '../DataTypesView.tsx'
 import { MemoryLayoutView } from '../MemoryLayoutView.tsx'
-import { PatternsView } from '../PatternsView.tsx'
 import { CompilationViz } from './CompilationViz.tsx'
 import { OperatorsViz } from './OperatorsViz.tsx'
 import { StackHeapViz } from './StackHeapViz.tsx'
@@ -21,11 +20,47 @@ import { ForwardingViz } from './ForwardingViz.tsx'
 import { VtableViz } from './VtableViz.tsx'
 import { AlgorithmsViz } from './AlgorithmsViz.tsx'
 import { InvalidationViz } from './InvalidationViz.tsx'
+import { LambdasViz } from './LambdasViz.tsx'
+import { ArraysViz } from './ArraysViz.tsx'
+import { NewDeleteViz } from './NewDeleteViz.tsx'
+import { ConstexprViz } from './ConstexprViz.tsx'
+import { PreprocessorViz } from './PreprocessorViz.tsx'
+import { CvQualViz } from './CvQualViz.tsx'
+import { ConversionsViz } from './ConversionsViz.tsx'
+import { SpecialMembersViz } from './SpecialMembersViz.tsx'
+import { LiteralsViz } from './LiteralsViz.tsx'
+import { ControlFlowViz } from './ControlFlowViz.tsx'
+import { ScopeViz } from './ScopeViz.tsx'
+import { FunctionsViz } from './FunctionsViz.tsx'
+import { OverloadViz } from './OverloadViz.tsx'
+import { ClassesViz } from './ClassesViz.tsx'
+import { OpOverloadViz } from './OpOverloadViz.tsx'
+import { TypeTraitsViz } from './TypeTraitsViz.tsx'
+import { NoexceptViz } from './NoexceptViz.tsx'
+import { StringViz } from './StringViz.tsx'
+import { IostreamsViz } from './IostreamsViz.tsx'
+import { ChronoViz } from './ChronoViz.tsx'
+import { ConcurrencyViz } from './ConcurrencyViz.tsx'
+import { RuleOfZeroViz } from './RuleOfZeroViz.tsx'
+import { UbViz } from './UbViz.tsx'
+import { ConstCorrectViz } from './ConstCorrectViz.tsx'
+import { PitfallsViz } from './PitfallsViz.tsx'
+import { EnumsViz } from './EnumsViz.tsx'
+import { UnionViz } from './UnionViz.tsx'
+import { FnPtrViz } from './FnPtrViz.tsx'
+import { AdlViz } from './AdlViz.tsx'
+import { AccessViz } from './AccessViz.tsx'
+import { DeductionViz } from './DeductionViz.tsx'
+import { VariadicViz } from './VariadicViz.tsx'
+import { PairViz } from './PairViz.tsx'
+import { AtomicsViz } from './AtomicsViz.tsx'
+import { PimplViz } from './PimplViz.tsx'
+import { PatternsViz } from './PatternsViz.tsx'
 
 const registry: Record<VizKind, () => ReactElement> = {
   types: () => <DataTypesView />,
   layout: () => <MemoryLayoutView />,
-  patterns: () => <PatternsView />,
+  patterns: () => <PatternsViz />,
   compilation: () => <CompilationViz />,
   operators: () => <OperatorsViz />,
   'stack-heap': () => <StackHeapViz />,
@@ -44,6 +79,41 @@ const registry: Record<VizKind, () => ReactElement> = {
   vtable: () => <VtableViz />,
   algorithms: () => <AlgorithmsViz />,
   invalidation: () => <InvalidationViz />,
+  lambdas: () => <LambdasViz />,
+  arrays: () => <ArraysViz />,
+  'new-delete': () => <NewDeleteViz />,
+  constexpr: () => <ConstexprViz />,
+  preprocessor: () => <PreprocessorViz />,
+  'cv-qualifiers': () => <CvQualViz />,
+  conversions: () => <ConversionsViz />,
+  'special-members': () => <SpecialMembersViz />,
+  literals: () => <LiteralsViz />,
+  'control-flow': () => <ControlFlowViz />,
+  scope: () => <ScopeViz />,
+  functions: () => <FunctionsViz />,
+  overloading: () => <OverloadViz />,
+  classes: () => <ClassesViz />,
+  'op-overload': () => <OpOverloadViz />,
+  'type-traits': () => <TypeTraitsViz />,
+  noexcept: () => <NoexceptViz />,
+  string: () => <StringViz />,
+  iostreams: () => <IostreamsViz />,
+  chrono: () => <ChronoViz />,
+  concurrency: () => <ConcurrencyViz />,
+  'rule-of-zero': () => <RuleOfZeroViz />,
+  'undefined-behavior': () => <UbViz />,
+  'const-correctness': () => <ConstCorrectViz />,
+  pitfalls: () => <PitfallsViz />,
+  enums: () => <EnumsViz />,
+  unions: () => <UnionViz />,
+  'function-pointers': () => <FnPtrViz />,
+  adl: () => <AdlViz />,
+  'access-control': () => <AccessViz />,
+  'template-deduction': () => <DeductionViz />,
+  'variadic-templates': () => <VariadicViz />,
+  'pair-tuple': () => <PairViz />,
+  atomics: () => <AtomicsViz />,
+  pimpl: () => <PimplViz />,
 }
 
 export function VizSlot({ kind }: { kind: VizKind }) {

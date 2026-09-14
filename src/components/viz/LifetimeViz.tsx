@@ -1,82 +1,209 @@
 import { useState } from 'react'
+import { SceneShell } from './scene/SceneShell.tsx'
+import { useBeats } from './scene/useBeats.ts'
 
-const happy = [
-  { t: 'Base()', label: 'construct Base subobject' },
-  { t: 'm1()', label: 'construct member m1 (declaration order)' },
-  { t: 'm2()', label: 'construct member m2' },
-  { t: 'Derived() body', label: 'run Derived constructor body' },
-  { t: '~Derived() body', label: 'run Derived destructor body' },
-  { t: '~m2()', label: 'destroy m2 (reverse of construction)' },
-  { t: '~m1()', label: 'destroy m1' },
-  { t: '~Base()', label: 'destroy Base' },
-] as const
+type Mode = 'ctor' | 'dtor' | 'order' | 'throw'
 
-const boom = [
-  { t: 'Base()', label: 'construct Base' },
-  { t: 'm1()', label: 'construct m1' },
-  { t: 'm2() throws', label: 'm2 constructor throws — m2 never existed' },
-  { t: '~m1()', label: 'unwind destroys m1' },
-  { t: '~Base()', label: 'unwind destroys Base. Derived never lived.' },
-] as const
+const MODES: { id: Mode; title: string }[] = [
+  { id: 'ctor', title: 'construct' },
+  { id: 'dtor', title: 'destroy' },
+  { id: 'order', title: 'list order' },
+  { id: 'throw', title: 'throw' },
+]
 
 export function LifetimeViz() {
-  const [mode, setMode] = useState<'happy' | 'throw'>('happy')
-  const [i, setI] = useState(0)
-  const steps = mode === 'happy' ? happy : boom
-  const n = Math.min(i, steps.length - 1)
+  const [id, setId] = useState<Mode>('ctor')
+  const { i, playing, play, reset } = useBeats(4)
 
-  const base = mode === 'happy' ? n < 7 : n < 4
-  const m1 = mode === 'happy' ? n >= 1 && n < 6 : n >= 1 && n < 3
-  const m2 = mode === 'happy' ? n >= 2 && n < 5 : false
-  const body = mode === 'happy' && (n === 3 || n === 4)
-  const constructing = mode === 'happy' ? n < 4 : n < 2
+  function select(next: string) {
+    reset()
+    setId(next as Mode)
+  }
+
+  const stepped = i >= 1
+  const decided = i >= 2
+  const recap = i >= 3
+  const aJunk = id === 'order' && decided
+  const throwTrap = id === 'throw' && decided
+  const trap = aJunk || throwTrap
+  const ok = (id === 'ctor' && recap) || (id === 'dtor' && recap)
+
+  const code =
+    id === 'ctor'
+      ? `struct Derived : Base {
+  Mem m1, m2;
+  Derived() : Base(), m1(), m2() {
+    // body runs last
+  }
+};`
+      : id === 'dtor'
+        ? `// ~Derived runs first, then members
+// in reverse declaration order, then ~Base
+~Derived() { /* body */ }`
+        : id === 'order'
+          ? recap
+            ? `S(int x) : b(x), a(b) {}
+// a is initialized FIRST — b is still junk
+// list order is ignored`
+            : `struct S {
+  int a;
+  int b;
+  S(int x) : b(x), a(b) {}
+};`
+          : recap
+            ? `// m2() threw
+// ~m1 ran, then ~Base
+// Derived body never ran`
+            : `Derived() : Base(), m1(), m2() {
+  // m2() throws
+}`
+
+  const caption =
+    i === 0
+      ? id === 'ctor'
+        ? 'Play construct. Bases first, then members in declaration order, then the constructor body. Stations light in place.'
+        : id === 'dtor'
+          ? 'Play destroy. Destruction is the exact reverse of construction. That is why RAII works.'
+          : id === 'order'
+            ? 'Play list order. The mem-initializer list writes values, but order is still declaration order. List order is ignored.'
+            : 'Play throw in ctor. If a later member’s constructor throws, already-constructed members and bases are destroyed. The Derived body never runs.'
+      : id === 'ctor' && i === 1
+        ? 'Base subobject exists first — members and the Derived body do not exist yet.'
+        : id === 'ctor' && i === 2
+          ? 'm1 constructs. Declaration order wins. The initializer-list order does not rearrange this.'
+          : id === 'ctor'
+            ? 'm2, then the Derived body. Only now does user code in the braces run.'
+            : id === 'dtor' && i === 1
+              ? '~Derived body first. Members are still alive. You can use them here — not after.'
+              : id === 'dtor' && i === 2
+                ? '~m2 then ~m1. Reverse declaration order. Base is still alive.'
+                : id === 'dtor'
+                  ? '~Base last. The object is fully dead. RAII: members clean up even if a later ctor threw on the way in.'
+                  : id === 'order' && i === 1
+                    ? 'a is declared first, so a() runs first. The list said b(x), a(b) — that does not change the order.'
+                    : id === 'order' && i === 2
+                      ? 'a(b) runs while b is still junk. Using a later member to init an earlier one is a classic trap.'
+                      : id === 'order'
+                        ? 'b finally gets x. a already holds garbage. Write the list in declaration order so it matches reality.'
+                        : i === 1
+                          ? 'Base and m1 constructed. m2 is next. If it throws, the body will not run.'
+                          : i === 2
+                            ? 'm2() throws. Already-constructed m1 and Base will unwind. Derived’s body is skipped.'
+                            : '~m1, then ~Base. That is why RAII still works when a constructor fails halfway.'
+
+  const tone = trap ? 'warn' : ok ? 'ok' : 'idle'
+  const playLabel =
+    id === 'ctor' ? 'Play construct' : id === 'dtor' ? 'Play destroy' : id === 'order' ? 'Play list order' : 'Play throw in ctor'
+
+  const verdict =
+    id === 'ctor' && recap
+      ? 'm2() then body · last'
+      : id === 'ctor' && decided
+        ? 'm1() · declaration order'
+        : id === 'ctor' && stepped
+          ? 'Base() · members not yet'
+          : id === 'dtor' && recap
+            ? '~Base last · object dead'
+            : id === 'dtor' && decided
+              ? '~m2 then ~m1'
+              : id === 'dtor' && stepped
+                ? '~Derived body · members alive'
+                : aJunk && recap
+                  ? 'declaration order wins'
+                  : aJunk
+                    ? 'a(b) · b is junk'
+                    : id === 'order' && stepped
+                      ? 'a first · list order ignored'
+                      : throwTrap && recap
+                        ? '~m1, ~Base · body skipped'
+                        : throwTrap
+                          ? 'm2() threw · unwind'
+                          : id === 'throw' && stepped
+                            ? 'Base, m1 · m2 next'
+                            : ''
 
   return (
-    <div className="viz viz--col">
-      <div className="stepper">
-        <button
-          className={`chip${mode === 'happy' ? ' chip--active' : ''}`}
-          onClick={() => {
-            setMode('happy')
-            setI(0)
-          }}
-        >
-          Happy path
-        </button>
-        <button
-          className={`chip${mode === 'throw' ? ' chip--active' : ''}`}
-          onClick={() => {
-            setMode('throw')
-            setI(0)
-          }}
-        >
-          m2 throws
-        </button>
-        <button className="chip" onClick={() => setI((x) => Math.max(0, x - 1))}>
-          ◂ prev
-        </button>
-        <button className="chip chip--active">
-          step {n + 1} / {steps.length}
-        </button>
-        <button className="chip" onClick={() => setI((x) => Math.min(steps.length - 1, x + 1))}>
-          next ▸
-        </button>
-      </div>
-      <div className="life-layout">
-        <div className={`life-block life-base${base ? ' life-block--on' : ''}`}>Base</div>
-        <div className="life-members">
-          <div className={`life-block${m1 ? ' life-block--on' : ''}`}>m1</div>
-          <div className={`life-block${m2 ? ' life-block--on' : ''}${mode === 'throw' && n >= 2 ? ' life-block--boom' : ''}`}>
-            m2{mode === 'throw' && n >= 2 ? ' ✕' : ''}
+    <SceneShell
+      modes={MODES}
+      mode={id}
+      onSelect={select}
+      playing={playing}
+      onPlay={play}
+      onReset={() => {
+        reset()
+        setId(id)
+      }}
+      playLabel={playLabel}
+      step={i}
+      stepCount={4}
+      sig={MODES.find((m) => m.id === id)?.title}
+      caption={caption}
+      code={code}
+      tone={tone}
+    >
+      {id === 'ctor' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>B</code>
+            <span className="fx-note">sb</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : ''}`}>
+            <code>bd</code>
+            <span className="fx-note">fn</span>
+            <span className="fx-note">{recap ? 'ok' : '—'}</span>
           </div>
         </div>
-        <div className={`life-block life-body${body ? ' life-block--on' : ''}`}>
-          Derived body {constructing ? '(ctor)' : mode === 'happy' ? '(dtor)' : '(never)'}
+      )}
+      {id === 'dtor' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${recap ? ' fx-rank--done' : ''}`}>
+            <code>D</code>
+            <span className="fx-note">fn</span>
+            <span className="fx-note">{stepped ? 'ok' : '—'}</span>
+          </div>
+          <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : ''}`}>
+            <code>B</code>
+            <span className="fx-note">sb</span>
+            <span className="fx-note">{recap ? 'ok' : '—'}</span>
+          </div>
         </div>
+      )}
+      {id === 'order' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${aJunk ? ' fx-rank--trap' : ''}`}>
+            <code>a</code>
+            <span className="fx-note">1</span>
+            <span className="fx-note">{aJunk ? 'ub' : '—'}</span>
+          </div>
+          <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : ''}`}>
+            <code>b</code>
+            <span className="fx-note">in</span>
+            <span className="fx-note">{recap ? 'ok' : '—'}</span>
+          </div>
+        </div>
+      )}
+      {id === 'throw' && (
+        <div className="fx-ladder">
+          <div className={`fx-rank${stepped ? ' fx-rank--on' : ''}${throwTrap ? ' fx-rank--trap' : ''}`}>
+            <code>m2</code>
+            <span className="fx-note">ct</span>
+            <span className="fx-note">{throwTrap ? 'ill' : '—'}</span>
+          </div>
+          <div className={`fx-rank${recap ? ' fx-rank--on fx-rank--done' : ''}`}>
+            <code>un</code>
+            <span className="fx-note">un</span>
+            <span className="fx-note">{recap ? 'ok' : '—'}</span>
+          </div>
+        </div>
+      )}
+      <div
+        className={`fx-verdict${verdict ? ' fx-verdict--show' : ''} ${
+          trap ? 'fx-verdict--warn' : ok ? 'fx-verdict--ok' : ''
+        }`}
+      >
+        {verdict}
       </div>
-      <p className="layout-hint">
-        <strong>{steps[n].t}</strong> — {steps[n].label}
-      </p>
-    </div>
+    </SceneShell>
   )
 }
