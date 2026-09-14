@@ -34,8 +34,8 @@ export function Sidebar({
       <button className="brand brand--link" onClick={onGoHome}>
         <span className="brand-badge">C++</span>
         <div>
-          <div className="brand-title">Cheatsheet</div>
-          <div className="brand-sub">visual rehash · C++14</div>
+          <div className="brand-title">Object model</div>
+          <div className="brand-sub">visual lab · C++14</div>
         </div>
       </button>
 
@@ -88,9 +88,11 @@ export function Sidebar({
       </nav>
 
       <footer className="sidebar-foot">
-        {filtered.length} topic{filtered.length === 1 ? '' : 's'} · LP64 sizes
+        {filtered.length} lab{filtered.length === 1 ? '' : 's'} · visualize + voice
         <br />
-        Snippets are C++14.
+        <a href="#/ahead">Plans</a>
+        {' · '}
+        <a href="#/voice">Scripts</a>
       </footer>
     </aside>
   )
@@ -104,9 +106,7 @@ function TopicLink({ topic, active }: { topic: Topic; active: boolean }) {
       aria-current={active ? 'page' : undefined}
     >
       <span className="nav-label">{topic.title}</span>
-      {topic.viz && (
-        <span className="nav-viz-dot" title="Has an interactive visualization" />
-      )}
+      <span className="nav-viz-dot" title="Interactive lab with voice" />
     </a>
   )
 }

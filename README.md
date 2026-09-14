@@ -1,46 +1,63 @@
-# cpp-visualizations
+# C++ object-model lab
 
-An interactive C++14 cheatsheet: eight tracks, 56 topics, and 21 live visualizations for the parts of the language that are easier to *see* than to recite.
+A public visual lab that makes the C++ object model visible: identity versus
+steal, constructor order and unwind, ownership contracts, and why a
+`static_cast<BaseB*>(p)` moves the address.
 
-It is a single-page app (React 19 + TypeScript + Vite) with hash routes (`#/` overview, `#/t/<topic>`). Search the sidebar, open a topic, and — where a cyan dot appears — play with a visualization.
+It is a single-page app (React + TypeScript + Vite) with hash routes
+(`#/` overview, `#/t/<topic>`, `#/ahead` plans, `#/voice` narration scripts).
+Every topic keeps the C++14 cheatsheet and adds a **lab**: a visualization,
+a voice script you can play or record, and a try-it control (buttons or a
+snippet the lab interprets as a teaching pattern — not a compiler).
 
-## What’s here
+## What this is not
 
-- **Foundations** — compilation pipeline, preprocessor, types, cv-qualifiers, literals, operators, control flow, scope, casts, enums, unions
-- **Memory & values** — stack vs heap, pointers/references, arrays, struct layout & padding, value categories, copy/move, new/delete
-- **Functions** — overloading, pass-by, lambdas, constexpr, function pointers, ADL
-- **Classes** — special members, lifetime/ctor order, inheritance layouts, virtual dispatch / vtables, operator overloading, access control
-- **Templates** — instantiation, deduction, packs, perfect forwarding, specialization / SFINAE, type traits
-- **Errors** — exceptions & unwind, noexcept
-- **Standard library** — string, containers, iterator invalidation, erase-remove, smart pointers, pair/tuple, iostreams, chrono, threads, atomics
-- **Idioms** — RAII patterns, Rule of Zero, PIMPL, undefined behavior, const-correctness, classic pitfalls
+These tools already exist. We keep them as references and do not clone them:
 
-Snippets are C++14. Topics that changed later carry a short “Looking ahead” note for C++17/20/23 — they are not the examples.
+| Tool | Job it owns |
+| --- | --- |
+| Compiler Explorer | Source → assembly |
+| C++ Insights | Source → desugared C++ |
+| cxxfilt layout | Clang-accurate ABI offsets |
+| NothingLeaves layout | Padding sandbox / ABI compare |
+| Python Tutor C++ | Step *your* code (Valgrind-backed) |
+| codevisualizer.app | Generic RAII stepper |
 
-Sizes in the type and layout views assume a typical **64-bit LP64** platform (Linux x86-64).
+This site’s job is **concept theater with a voice**: the whiteboard pictures,
+driven by you.
+
+## Curriculum
+
+Eight tracks. Snippets are C++14. Topics that changed later carry a short
+“Looking ahead” note. Sizes assume typical **64-bit LP64**.
 
 ## Getting started
 
-Requires Node.js 20+ (developed against Node 22).
+Requires Node.js 20+.
 
 ```bash
-npm ci        # install exact locked dependencies
-npm run dev   # start the Vite dev server at http://localhost:5173
+npm ci
+npm run dev    # http://localhost:5173
 ```
 
 ## Scripts
 
 | Command | Description |
 | --- | --- |
-| `npm run dev` | Start the dev server with hot reload. |
-| `npm run build` | Type-check (`tsc --noEmit`) and produce a production build in `dist/`. |
-| `npm run preview` | Serve the production build locally. |
-| `npm run typecheck` | Run the TypeScript type checker only. |
+| `npm run dev` | Vite dev server |
+| `npm run build` | Type-check and production build |
+| `npm run preview` | Serve `dist/` |
+| `npm run typecheck` | `tsc --noEmit` |
+
+## Voice
+
+Open `#/voice` for every clip. Play uses the browser synthesizer. Copy a
+script and record it yourself if you want a human voice. Drop files later as
+`public/voice/<topic>--<scene>.wav` — the lab will learn to prefer those
+(see `#/ahead`).
 
 ## Cloud Agent environment
 
-`.cursor/environment.json` configures the Cursor Cloud Agent environment: it runs
-`npm ci` on setup, then `scripts/setup-git-attribution.sh` (git hooks + Ivan as
-the only commit author), and launches `npm run dev` in a persistent terminal,
-exposing port 5173. Commits must not list Cursor as author or co-author; see
+`.cursor/environment.json` runs `npm ci`, git attribution hooks, and
+`npm run dev` on port 5173. Commits must not list Cursor as author; see
 `AGENTS.md`.

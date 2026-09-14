@@ -3,21 +3,20 @@ import { getTopic, getTrack, type Topic } from '../curriculum/index.ts'
 import { topicHash } from '../lib/hashRoute.ts'
 import { CodeBlock } from './CodeBlock.tsx'
 import { FactGrid } from './FactGrid.tsx'
-import { VizSlot } from './viz/VizSlot.tsx'
+import { TopicLab } from './lab/TopicLab.tsx'
 
 export function TopicPage({ topic }: { topic: Topic }) {
   const track = getTrack(topic.track)
-  const viz = topic.viz ? <VizSlot kind={topic.viz} /> : null
 
   return (
     <section className="view">
       <header className="view-head">
-        {track && <p className="kicker">{track.title}</p>}
+        {track && <p className="kicker">{track.title} · object-model lab</p>}
         <h1>{topic.title}</h1>
         <p>{topic.summary}</p>
       </header>
 
-      {viz && <div className="viz-slot">{viz}</div>}
+      <TopicLab key={topic.id} topic={topic} />
 
       <h2 className="section-title">Key facts</h2>
       <FactGrid facts={topic.facts} />
